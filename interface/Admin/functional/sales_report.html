@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <style>
+      body {
+        background-color: #f5f6fa;
+      }
+
+
+
+      .navbar {
+        min-height: 60px;
+      }
+
+      .navbar-brand {
+        font-weight: 600;
+      }
+
+      .navbar-nav .nav-link {
+        color: rgba(255, 255, 255, 0.85);
+
+        padding: 8px 12px;
+
+        border-radius: 6px;
+
+        margin-left: 3px;
+      }
+
+      .navbar-nav .nav-link:hover {
+        background-color: rgba(255, 255, 255, 0.15);
+
+        color: white;
+      }
+
+      .navbar-nav .nav-link.active {
+        background-color: rgba(255, 255, 255, 0.2);
+
+        color: white;
+      }
+
+      .content {
+        padding: 30px;
+      }
+
+      .page-title {
+        font-weight: 600;
+      }
+
+      .page-subtitle {
+        color: #6c757d;
+      }
+
+      .card {
+        border: none;
+
+        border-radius: 10px;
+
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      }
+
+      #main-div {
+        overflow-x: auto;
+      }
+
+      table {
+        white-space: nowrap;
+      }
+
+      @media (max-width: 991px) {
+        .navbar-nav {
+          padding-top: 10px;
+        }
+
+        .navbar-nav .nav-link {
+          margin-bottom: 3px;
+        }
+      }
+    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sales Report</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+
+   <nav class="navbar navbar-dark bg-primary">
+  <div class="container-fluid">
+
+
+
+    <a class="navbar-brand" href="dashboard.html">
+      POS & AR Management System
+    </a>
+
+
+
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#mainNavbar"
+      aria-controls="mainNavbar"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+
+
+    <div class="collapse navbar-collapse" id="mainNavbar">
+
+      <ul class="navbar-nav ms-auto mt-2">
+
+
+        <li class="nav-item">
+          <a class="nav-link active" href="../dashboard.html">
+            Dashboard
+          </a>
+        </li>
+
+      
+
+        <li class="nav-item">
+          <a class="nav-link" href="../products.html">
+            Products
+          </a>
+        </li>
+
+     
+
+        <li class="nav-item">
+          <a class="nav-link" href="../customers.html">
+            Customers
+          </a>
+        </li>
+
+    
+
+        <li class="nav-item">
+          <a class="nav-link" href="../group_days.html">
+            Group Days
+          </a>
+        </li>
+
+   
+
+        <li class="nav-item">
+          <a class="nav-link" href="../payment_methods.html">
+            Payment Methods
+          </a>
+        </li>
+
+   
+
+        <li class="nav-item">
+          <a class="nav-link" href="../pos_terminals.html">
+            POS Terminals
+          </a>
+        </li>
+
+     
+
+        <li class="nav-item">
+          <a class="nav-link" href="../roles.html">
+            Roles
+          </a>
+        </li>
+
+   
+
+        <li class="nav-item">
+          <a class="nav-link" href="../units.html">
+            Units
+          </a>
+        </li>
+
+
+        <li class="nav-item">
+          <a class="nav-link" href="../product_categories.html">
+            Product Categories
+          </a>
+        </li>
+
+       
+
+        <li class="nav-item">
+          <a class="nav-link" href="../users.html">
+            Users
+          </a>
+        </li>
+
+         <!-- NAV FUNCTIONAL FILES -->
+        
+        <li class="nav-item">
+          <a class="nav-link" href="invoice.html">
+            Invoice(FUNCTIONAL)
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="pos.html">
+            POS(FUNCTIONAL)
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="returns.html">
+            Sales Return(FUNCTIONAL)
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="sales_report.html">
+            Sales Report(FUNCTIONAL)
+          </a>
+        </li>
+       
+
+
+      </ul>
+    </div>
+
+  </div>
+</nav>
+
+  <h3>Sales Report</h3>
+  <div class="row g-2 mb-3">
+    <div class="col-auto"><input type="date" id="dateFrom" class="form-control"></div>
+    <div class="col-auto"><input type="date" id="dateTo" class="form-control"></div>
+    <div class="col-auto">
+      <button type="button" id="generateBtn" class="btn btn-primary">GENERATE</button>
+      <button type="button" id="printBtn" class="btn btn-secondary">PRINT</button>
+    </div>
+  </div>
+  <div class="row text-center mb-3">
+    <div class="col"><small>Transactions</small><h5 id="sumTransactions">0</h5></div>
+    <div class="col"><small>Total Sales</small><h5 id="sumTotalSales">₱0.00</h5></div>
+    <div class="col"><small>Returns</small><h5 id="sumReturns">₱0.00</h5></div>
+    <div class="col"><small>Net Sales</small><h5 id="sumNetSales">₱0.00</h5></div>
+    <div class="col"><small>Posted to AR</small><h5 id="sumPostedAR">₱0.00</h5></div>
+    <div class="col"><small>Collected</small><h5 id="sumCollected">₱0.00</h5></div>
+    <div class="col"><small>Outstanding</small><h5 id="sumOutstanding">₱0.00</h5></div>
+  </div>
+  <div id="main-div"></div>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module" src="../../../js_functional/session.js"></script>
+  <script type="module" src="../../../js_functional/sales_report.js"></script>
+</body>
+</html>

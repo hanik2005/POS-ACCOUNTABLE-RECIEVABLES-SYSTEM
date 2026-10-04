@@ -1,0 +1,8 @@
+5. Sales / POS with Accounts Receivable
+Required Demonstration
+Perform an actual POS Transaction
+Record the customer/account involved in the transaction
+Push/Post the POS transaction to Accounts Receivable
+Generate Sales Report
+Expected Flow:
+POS Transaction → Post to AR → Accounts Receivable Record → Sales Report

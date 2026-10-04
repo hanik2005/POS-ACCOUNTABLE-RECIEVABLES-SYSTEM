@@ -1,0 +1,169 @@
+import { viewPOSTerminal } from "./module/pos_terminal/view.js";
+import { updatePOSTerminal } from "./module/pos_terminal/update.js";
+import { deletePOSTerminal } from "./module/pos_terminal/delete.js";
+import { paginate, createPagination } from "./module/pagination.js";
+
+const baseAPI = "http://localhost/POS_AR_SYSTEM/api";
+
+sessionStorage.setItem("baseAPI", baseAPI);
+
+let posTerminals = [];
+let currentPage = 1;
+
+document.addEventListener("DOMContentLoaded", () => {
+  displayPOSTerminals();
+
+  document.getElementById("submitBtn").addEventListener("click", () => {
+    insertPOSTerminal();
+  });
+
+  document
+    .getElementById("searchTerminal")
+    .addEventListener("input", function () {
+      const searchValue = this.value.toLowerCase();
+
+      const filtered = posTerminals.filter(
+        (terminal) =>
+          terminal.terminal_name.toLowerCase().includes(searchValue) ||
+          terminal.status.toLowerCase().includes(searchValue),
+      );
+
+      currentPage = 1;
+
+      displayPOSTerminalsTable(filtered);
+    });
+});
+
+const displayPOSTerminals = async () => {
+  const response = await axios.get(`${baseAPI}/pos_terminals.php`, {
+    params: {
+      operation: "getAllPOSTerminals",
+    },
+  });
+
+  if (response.status == 200) {
+    console.log(response.data);
+
+    posTerminals = response.data;
+
+    displayPOSTerminalsTable(response.data);
+  } else {
+    alert("ERROR");
+  }
+};
+
+const displayPOSTerminalsTable = (posTerminals) => {
+  const main = document.getElementById("main-div");
+
+  main.innerHTML = "";
+
+  const { rows, current } = paginate(posTerminals, currentPage);
+
+  currentPage = current;
+
+  const table = document.createElement("table");
+
+  table.classList.add("table", "table-hover", "table-striped", "table-sm");
+
+  const tHead = document.createElement("thead");
+
+  tHead.innerHTML = `
+    <tr>
+      <th>Terminal Name</th>
+      <th>Status</th>
+      <th>Action</th>
+    </tr>
+  `;
+
+  table.appendChild(tHead);
+
+  const tBody = document.createElement("tbody");
+
+  rows.forEach((terminal) => {
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>${terminal.terminal_name}</td>
+      <td>${terminal.status}</td>
+      <td>
+        <button type="button" class="btn btn-primary btn-sm btn-view">
+          VIEW
+        </button>
+
+        <button type="button" class="btn btn-success btn-sm btn-update">
+          UPDATE
+        </button>
+
+        <button type="button" class="btn btn-danger btn-sm btn-delete">
+          DEACTIVATE
+        </button>
+      </td>
+    `;
+
+    tBody.appendChild(tr);
+
+    tr.querySelector(".btn-view").addEventListener("click", () => {
+      viewPOSTerminal(terminal.terminal_id);
+    });
+
+    tr.querySelector(".btn-update").addEventListener("click", () => {
+      updatePOSTerminal(terminal.terminal_id, displayPOSTerminals);
+    });
+
+    tr.querySelector(".btn-delete").addEventListener("click", () => {
+      deletePOSTerminal(terminal.terminal_id, displayPOSTerminals);
+    });
+  });
+
+  table.appendChild(tBody);
+
+  main.appendChild(table);
+
+  main.appendChild(
+    createPagination(posTerminals.length, currentPage, (page) => {
+      currentPage = page;
+
+      displayPOSTerminalsTable(posTerminals);
+    }),
+  );
+};
+
+const insertPOSTerminal = async () => {
+  const jsonData = {
+    terminalName: document.getElementById("terminalNameInput").value,
+
+    status: "ACTIVE",
+  };
+
+  const formData = new FormData();
+
+  formData.append("operation", "insertPOSTerminal");
+
+  formData.append("json", JSON.stringify(jsonData));
+
+  const response = await axios({
+    url: `${baseAPI}/pos_terminals.php`,
+
+    method: "POST",
+
+    data: formData,
+  });
+
+  console.log(response.data);
+
+  if (response.data == 1) {
+    displayPOSTerminals();
+
+    const modalElement = document.getElementById("terminalModal");
+
+    const modal = bootstrap.Modal.getInstance(modalElement);
+
+    if (modal) {
+      modal.hide();
+    }
+
+    alert("POS Terminal successfully saved!");
+  } else {
+    alert("ERROR");
+  }
+};

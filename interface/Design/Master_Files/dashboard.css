@@ -1,0 +1,89 @@
+body {
+  background-color: #f5f6fa;
+}
+
+.navbar {
+  min-height: 60px;
+}
+
+.navbar-brand {
+  font-weight: 600;
+}
+
+.navbar-nav .nav-link {
+  color: rgba(255, 255, 255, 0.85);
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-left: 3px;
+}
+
+.navbar-nav .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
+}
+
+.navbar-nav .nav-link.active {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.content {
+  padding: 30px;
+}
+
+.page-title {
+  font-weight: 600;
+}
+
+.page-subtitle {
+  color: #6c757d;
+}
+
+.dashboard-card {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: 0.2s;
+  height: 100%;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-label {
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.card-number {
+  font-size: 30px;
+  font-weight: 600;
+  margin: 5px 0 15px 0;
+}
+
+.card-link {
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.section-card {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.management-btn {
+  padding: 12px;
+}
+
+@media (max-width: 991px) {
+  .navbar-nav {
+    padding-top: 10px;
+  }
+
+  .navbar-nav .nav-link {
+    margin-bottom: 3px;
+  }
+}

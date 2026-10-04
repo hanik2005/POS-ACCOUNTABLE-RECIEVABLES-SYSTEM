@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sales Report</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="container py-4">
+  <div id="app-header"></div>
+  <h3>Sales Report</h3>
+  <div class="row g-2 mb-3">
+    <div class="col-auto"><input type="date" id="dateFrom" class="form-control"></div>
+    <div class="col-auto"><input type="date" id="dateTo" class="form-control"></div>
+    <div class="col-auto">
+      <button type="button" id="generateBtn" class="btn btn-primary">GENERATE</button>
+      <button type="button" id="printBtn" class="btn btn-secondary">PRINT</button>
+    </div>
+  </div>
+  <div class="row text-center mb-3">
+    <div class="col"><small>Transactions</small><h5 id="sumTransactions">0</h5></div>
+    <div class="col"><small>Total Sales</small><h5 id="sumTotalSales">₱0.00</h5></div>
+    <div class="col"><small>Returns</small><h5 id="sumReturns">₱0.00</h5></div>
+    <div class="col"><small>Net Sales</small><h5 id="sumNetSales">₱0.00</h5></div>
+    <div class="col"><small>Posted to AR</small><h5 id="sumPostedAR">₱0.00</h5></div>
+    <div class="col"><small>Collected</small><h5 id="sumCollected">₱0.00</h5></div>
+    <div class="col"><small>Outstanding</small><h5 id="sumOutstanding">₱0.00</h5></div>
+  </div>
+  <div id="main-div"></div>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script type="module" src="../../js_functional/session.js"></script>
+  <script type="module" src="../../js_functional/sales_report.js"></script>
+</body>
+</html>
