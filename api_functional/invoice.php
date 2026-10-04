@@ -10,7 +10,7 @@ class Invoice
   {
     include "../api/connection-pdo.php";
 
-    $sql = "SELECT i.*, s.sales_date, s.customer_id, c.customer_name,
+   $sql = "SELECT i.*, s.sales_date, s.customer_id, c.customer_name,
         IFNULL(pd.total_paid, 0) AS total_paid,
         IFNULL(r.total_returned, 0) AS total_returned,
         GREATEST(0, i.amount_due - IFNULL(pd.total_paid, 0) - IFNULL(r.total_returned, 0)) AS balance
@@ -28,6 +28,8 @@ class Invoice
           WHERE status = 'APPROVED'
           GROUP BY sales_id
         ) r ON i.sales_id = r.sales_id
+        WHERE i.status IN ('UNPAID', 'PARTIAL')
+        HAVING balance > 0
         ORDER BY i.invoice_id DESC";
     $stmt = $conn->prepare($sql);
     $stmt->execute();

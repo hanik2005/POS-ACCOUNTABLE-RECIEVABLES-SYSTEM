@@ -22,14 +22,11 @@ class Session
     $_SESSION['role_id'] = $user['role_id'];
     $_SESSION['role_name'] = $user['role_name'];
   }
-
-  //get the user id of the logged-in user, null if nobody is logged in
   function getUserId()
   {
     return isset($_SESSION['user_id']) ? $_SESSION['user_id'] : null;
   }
 
-  //get the logged-in user, the pages use this to check if there is a session
   function getSession()
   {
     if (!isset($_SESSION['user_id'])) {
@@ -83,12 +80,6 @@ if (basename($_SERVER['SCRIPT_FILENAME']) == basename(__FILE__)) {
       break;
     case "logout":
       echo $session->logout();
-      break;
-    default:
-      echo json_encode([
-        "success" => false,
-        "message" => "Invalid operation"
-      ]);
       break;
   }
 }

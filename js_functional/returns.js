@@ -264,7 +264,6 @@ const displayReturnsTable = (returns) => {
                 <th>Amount</th>
                 <th>Refund</th>
                 <th>Status</th>
-                <th>Action</th>
             </tr>
         </thead>
     `;
@@ -282,29 +281,9 @@ const displayReturnsTable = (returns) => {
             <td>₱${parseFloat(ret.total_amount).toFixed(2)}</td>
             <td>${ret.refund_amount > 0 ? `₱${parseFloat(ret.refund_amount).toFixed(2)}` : ""}</td>
             <td>${ret.status}</td>
-            <td>
-                ${
-                  ret.status == "PENDING"
-                    ? `<button type="button" class="btn btn-success btn-sm btn-approve">APPROVE</button>
-                       <button type="button" class="btn btn-danger btn-sm btn-reject">REJECT</button>`
-                    : ""
-                }
-            </td>
         `;
 
     tBody.appendChild(tr);
-
-    const approveBtn = tr.querySelector(".btn-approve");
-
-    if (approveBtn) {
-      approveBtn.addEventListener("click", () => {
-        updateReturn(ret.return_id, "approveReturn");
-      });
-
-      tr.querySelector(".btn-reject").addEventListener("click", () => {
-        updateReturn(ret.return_id, "rejectReturn");
-      });
-    }
   });
 
   table.appendChild(tBody);
@@ -318,33 +297,4 @@ const displayReturnsTable = (returns) => {
       displayReturnsTable(returns);
     }),
   );
-};
-
-const updateReturn = async (returnId, operation) => {
-  const jsonData = { returnId: returnId };
-
-  const formData = new FormData();
-  formData.append("operation", operation);
-  formData.append("json", JSON.stringify(jsonData));
-
-  const response = await axios({
-    url: `${baseAPI}/returns.php`,
-    method: "POST",
-    data: formData,
-  });
-
-  if (response.data == 1) {
-    const returns = await displayReturns();
-    const ret = returns.find((ret) => ret.return_id == returnId);
-
-    if (operation == "approveReturn" && ret && ret.refund_amount > 0) {
-      alert(`Return has been approved! Refund ₱${parseFloat(ret.refund_amount).toFixed(2)} to the customer.`);
-    } else {
-      alert(operation == "approveReturn" ? "Return has been approved!" : "Return has been rejected!");
-    }
-
-    loadItems(selectedSalesId);
-  } else {
-    alert("ERROR!");
-  }
 };

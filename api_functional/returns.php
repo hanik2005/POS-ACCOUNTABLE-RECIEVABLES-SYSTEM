@@ -3,6 +3,10 @@ header('Content-Type: application/json');
 header("Access-Control-Allow-Origin: *");
 
 date_default_timezone_set('Asia/Manila');
+
+//session.php starts the session
+include "../api/session.php";
+
 class SalesReturn
 {
   function getReturnableItems($json)
@@ -88,6 +92,17 @@ class SalesReturn
 
     $json = json_decode($json, true);
 
+    $session = new Session();
+    $userId = $session->getUserId();
+
+    //only the admin and accounting can approve or reject a return
+    $stmt = $conn->prepare("SELECT r.role_name FROM users u INNER JOIN roles r ON u.role_id = r.role_id WHERE u.user_id = :userId");
+    $stmt->bindParam(":userId", $userId);
+    $stmt->execute();
+    if (!in_array(strtoupper((string) $stmt->fetchColumn()), ['ADMIN', 'ACCOUNTING'])) {
+      return json_encode(3);
+    }
+
     $paid = "IFNULL((SELECT SUM(amount_applied) FROM payments_dtl
         WHERE invoice_id = i.invoice_id), 0)";
     $returned = "IFNULL((SELECT SUM(total_amount) FROM sales_return_hdr
@@ -140,6 +155,17 @@ class SalesReturn
     include "../api/connection-pdo.php";
 
     $json = json_decode($json, true);
+
+    $session = new Session();
+    $userId = $session->getUserId();
+
+    //only the admin and accounting can approve or reject a return
+    $stmt = $conn->prepare("SELECT r.role_name FROM users u INNER JOIN roles r ON u.role_id = r.role_id WHERE u.user_id = :userId");
+    $stmt->bindParam(":userId", $userId);
+    $stmt->execute();
+    if (!in_array(strtoupper((string) $stmt->fetchColumn()), ['ADMIN', 'ACCOUNTING'])) {
+      return json_encode(3);
+    }
 
     $sql = "UPDATE sales_return_hdr SET status = 'REJECTED' WHERE retrun_id = :returnId";
     $stmt = $conn->prepare($sql);

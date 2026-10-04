@@ -103,6 +103,7 @@ class Shift
   }
 
   //1 = closed, 2 = a float adjust request is not decided yet
+  //the closing cash counted by the cashier is the float left, the next shift of the terminal starts with it
   function closeShift($json)
   {
     include "../api/connection-pdo.php";
@@ -156,7 +157,6 @@ class Shift
 
       $returnValue = 0;
       if ($stmt->rowCount() > 0) {
-        //the closing cash is the float left in the terminal, the next shift starts with it
         $sql = "UPDATE tbl_pos_terminal t
             INNER JOIN shifts sh ON sh.terminal_id = t.terminal_id
             SET t.float_start = :closingCash
@@ -326,7 +326,6 @@ class Shift
       }
     }
 
-    //expected cash is saved when the shift is closed, an open shift shows it so far
     $sql = "SELECT sh.shift_id, sh.opened_at, sh.closed_at, sh.status,
         sh.float_start, sh.closing_cash, IFNULL(sc.schedule_name, 'Full Time') AS schedule_name,
         u.full_name AS cashier, t.terminal_name,

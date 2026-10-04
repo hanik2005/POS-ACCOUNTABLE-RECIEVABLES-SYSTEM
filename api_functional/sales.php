@@ -4,7 +4,6 @@ header("Access-Control-Allow-Origin: *");
 
 date_default_timezone_set('Asia/Manila');
 
-//session.php starts the session
 include "../api/session.php";
 
 class Sales
@@ -13,7 +12,6 @@ class Sales
   {
     include "../api/connection-pdo.php";
 
-    //customers with their credit terms, every customer has days due
     $sql = "SELECT c.customer_id, c.customer_name, c.credit_limit, g.days_name
         FROM customers c
         INNER JOIN group_days g ON c.group_days_id = g.id
@@ -23,7 +21,6 @@ class Sales
     $stmt->execute();
     $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    //active products
     $sql = "SELECT product_id, barcode, product_name, unit_price
         FROM products
         WHERE status = 'ACTIVE'
@@ -32,7 +29,6 @@ class Sales
     $stmt->execute();
     $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    //active payment methods (the customer can pay right away)
     $sql = "SELECT payment_method_id, method_name
         FROM payment_methods
         WHERE status = 'ACTIVE'
@@ -48,23 +44,18 @@ class Sales
     ]);
   }
 
-  //status: HOLD (customer will come back) or COMPLETED (checkout, goes directly to Accounts Receivable)
-  //header.payment: the customer pays right away, the invoice is paid and the change comes from the cash drawer
   function insertSale($json)
   {
     include "../api/connection-pdo.php";
 
     $json = json_decode($json, true);
 
-    //get header and details data separately
     $header = $json['header'];
     $details = $json['details'];
 
-    //the cashier is the logged-in user (from the session)
     $session = new Session();
     $userId = $session->getUserId();
 
-    //a held sale may not have a customer yet, a completed sale must have one
     $customerId = !empty($header['customerId']) ? $header['customerId'] : null;
     $recallId = !empty($header['recallId']) ? $header['recallId'] : null;
     $salesDate = date('Y-m-d');
@@ -72,7 +63,6 @@ class Sales
     try {
       $conn->beginTransaction();
 
-      //the open shift of the cashier tells the shift and the terminal of the sale
       $sql = "SELECT shift_id, terminal_id
           FROM shifts
           WHERE user_id = :userId AND status = 'OPEN'
@@ -85,7 +75,6 @@ class Sales
       $shiftId = $shift ? $shift['shift_id'] : null;
       $terminalId = $shift ? $shift['terminal_id'] : null;
 
-      //save the header
       $sql = "INSERT INTO sales_hdr(customer_id, terminal_id, shift_id, sales_date, total_amount, created_by, status)
           VALUES(:customerId, :terminalId, :shiftId, :salesDate, :amount, :userId, :status)";
       $stmt = $conn->prepare($sql);
@@ -97,11 +86,8 @@ class Sales
       $stmt->bindParam(":userId", $userId);
       $stmt->bindParam(":status", $header['status']);
       $stmt->execute();
-      //get the newly inserted record's Auto-Increment value
       $newId = $conn->lastInsertId();
 
-      //iterate thru the details array and save each record
-      //which now includes the header id
       $sqlDtl = "INSERT INTO sales_dtl(sales_id, product_id, quantity, unit_price, line_total)
           VALUES(:salesId, :productId, :qty, :price, :amount)";
       $stmtDtl = $conn->prepare($sqlDtl);
@@ -114,9 +100,7 @@ class Sales
         $stmtDtl->execute();
       }
 
-      //a completed sale goes directly to Accounts Receivable
       if ($header['status'] == 'COMPLETED') {
-        //due date = sales date + the days due of the customer
         $sql = "SELECT g.days_due
             FROM customers c
             INNER JOIN group_days g ON c.group_days_id = g.id
@@ -126,21 +110,34 @@ class Sales
         $stmt->execute();
         $daysDue = $stmt->fetchColumn();
 
-        //no customer or no days due: the sale cannot be completed
         if ($daysDue === false) {
           throw new Exception("The customer has no days due.");
         }
 
         $dueDate = date('Y-m-d', strtotime($salesDate . " +" . (int) $daysDue . " days"));
 
-        //invoice number
         $stmt = $conn->prepare("SELECT IFNULL(MAX(invoice_id), 0) + 1 FROM invoice");
         $stmt->execute();
         $invoiceNumber = sprintf("INV-%s-%04d", date('Y'), $stmt->fetchColumn());
 
-        //the customer pays right away: the invoice is created already paid
         $payment = !empty($header['payment']) ? $header['payment'] : null;
-        $invoiceStatus = $payment ? 'PAID' : 'UNPAID';
+        $total = round((float) $header['amount'], 2);
+        $amountApplied = 0;
+
+        if ($payment) {
+          $amountApplied = round(min((float) $payment['amountApplied'], $total), 2);
+
+          if ($amountApplied <= 0) {
+            throw new Exception("The payment amount is invalid.");
+          }
+        }
+
+        $invoiceStatus = 'UNPAID';
+        if ($payment && $amountApplied >= $total) {
+          $invoiceStatus = 'PAID';
+        } else if ($payment) {
+          $invoiceStatus = 'PARTIAL';
+        }
 
         $sql = "INSERT INTO invoice(sales_id, invoice_number, due_date, amount_due, status)
             VALUES(:salesId, :invoiceNumber, :dueDate, :amountDue, :invoiceStatus)";
@@ -163,13 +160,11 @@ class Sales
             throw new Exception("Invalid payment method.");
           }
 
-          //only cash can be more than the total, the difference is the change from the cash drawer
-          $total = round((float) $header['amount'], 2);
-          $amountTendered = strtoupper($methodName) == 'CASH' ? round((float) $payment['amountTendered'], 2) : $total;
-          $changeAmount = round($amountTendered - $total, 2);
+          $amountTendered = strtoupper($methodName) == 'CASH' ? round((float) $payment['amountTendered'], 2) : $amountApplied;
+          $changeAmount = round($amountTendered - $amountApplied, 2);
 
           if ($changeAmount < 0) {
-            throw new Exception("The payment is less than the total.");
+            throw new Exception("The payment is less than the amount applied.");
           }
 
           $reference = !empty($payment['referenceNumber']) ? $payment['referenceNumber'] : null;
@@ -188,7 +183,7 @@ class Sales
           $stmt->bindParam(":methodId", $payment['paymentMethodId']);
           $stmt->bindParam(":shiftId", $shiftId);
           $stmt->bindParam(":paymentDate", $salesDate);
-          $stmt->bindParam(":amount", $total);
+          $stmt->bindParam(":amount", $amountApplied);
           $stmt->bindParam(":amountTendered", $amountTendered);
           $stmt->bindParam(":changeAmount", $changeAmount);
           $stmt->bindParam(":reference", $reference);
@@ -201,12 +196,11 @@ class Sales
           $stmt = $conn->prepare($sql);
           $stmt->bindParam(":paymentId", $paymentId);
           $stmt->bindParam(":invoiceId", $invoiceId);
-          $stmt->bindParam(":amountApplied", $total);
+          $stmt->bindParam(":amountApplied", $amountApplied);
           $stmt->execute();
         }
       }
 
-      //a recalled held sale is replaced by the new sale
       if ($recallId) {
         $sql = "DELETE d FROM sales_dtl d
             INNER JOIN sales_hdr h ON d.sales_id = h.sales_id
@@ -221,7 +215,6 @@ class Sales
         $stmt->execute();
       }
 
-      //commit changes, return the new sales id
       $conn->commit();
       $returnValue = (int) $newId;
     } catch (Exception $e) {
@@ -231,7 +224,6 @@ class Sales
     return json_encode($returnValue);
   }
 
-  //held sales of the logged-in cashier
   function getHeldSales()
   {
     include "../api/connection-pdo.php";
@@ -253,7 +245,6 @@ class Sales
     return json_encode($rs);
   }
 
-  //the lines of a held sale
   function getHeldSale($json)
   {
     include "../api/connection-pdo.php";
@@ -290,7 +281,6 @@ class Sales
     return json_encode($returnValue);
   }
 
-  //completed sales with their invoice (used by the sales return page)
   function getAllSales()
   {
     include "../api/connection-pdo.php";
@@ -309,7 +299,6 @@ class Sales
   }
 }
 
-//submitted by the client - operation and json
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
   $operation = $_GET['operation'];
   $json = isset($_GET['json']) ? $_GET['json'] : "";

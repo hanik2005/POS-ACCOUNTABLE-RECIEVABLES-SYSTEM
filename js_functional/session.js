@@ -15,6 +15,7 @@ const pages = [
   { file: "pos.html", title: "POS", roles: ["ADMIN", "CASHIER"], menu: true },
   { file: "invoice.html", title: "Accounts Receivable", roles: ["ADMIN", "CASHIER", "ACCOUNTING"], menu: true },
   { file: "returns.html", title: "Sales Return", roles: ["ADMIN", "CASHIER", "ACCOUNTING"], menu: true },
+  { file: "returns_approval.html", title: "Return Approval", roles: ["ADMIN", "ACCOUNTING"], menu: true },
   { file: "sales_report.html", title: "Sales Report", roles: ["ADMIN", "ACCOUNTING"], menu: true },
   { file: "cashier_report.html", title: "Cashier Report", roles: ["ADMIN", "ACCOUNTING", "CASHIER"], menu: true },
   { file: "float_requests.html", title: "Float Requests", roles: ["ADMIN", "ACCOUNTING"], menu: true },
