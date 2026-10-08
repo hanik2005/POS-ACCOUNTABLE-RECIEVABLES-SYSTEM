@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 04, 2026 at 06:00 AM
+-- Generation Time: Oct 09, 2026 at 12:30 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -108,7 +108,17 @@ INSERT INTO `invoice` (`invoice_id`, `sales_id`, `invoice_number`, `due_date`, `
 (21, 29, 'INV-2026-0021', '2026-10-19', 135.00, 'PAID'),
 (22, 30, 'INV-2026-0022', '2027-01-12', 175.00, 'UNPAID'),
 (23, 31, 'INV-2026-0023', '2026-10-19', 505.00, 'PAID'),
-(24, 32, 'INV-2026-0024', '2026-11-03', 505.00, 'UNPAID');
+(24, 32, 'INV-2026-0024', '2026-11-03', 505.00, 'PAID'),
+(25, 33, 'INV-2026-0025', '2026-10-19', 245.00, 'PARTIAL'),
+(27, 35, 'INV-2026-0026', '2027-01-12', 109.97, 'UNPAID'),
+(29, 37, 'INV-2026-0028', '2027-01-12', 205.00, 'UNPAID'),
+(30, 38, 'INV-2026-0030', '2026-10-19', 1174.97, 'PARTIAL'),
+(31, 39, 'INV-2026-0031', '2026-11-03', 244.97, 'UNPAID'),
+(32, 40, 'INV-2026-0032', '2027-01-12', 244.97, 'UNPAID'),
+(33, 41, 'INV-2026-0033', '2026-10-19', 394.97, 'UNPAID'),
+(34, 42, 'INV-2026-0034', '2026-11-03', 184.97, 'UNPAID'),
+(35, 43, 'INV-2026-0035', '2027-01-12', 505.00, 'PARTIAL'),
+(36, 44, 'INV-2026-0036', '2027-01-12', 184.97, 'UNPAID');
 
 -- --------------------------------------------------------
 
@@ -131,7 +141,12 @@ INSERT INTO `payments_dtl` (`payment_detail_id`, `payment_id`, `invoice_id`, `am
 (5, 6, 19, 9.97),
 (6, 7, 20, 195.00),
 (7, 8, 21, 135.00),
-(8, 9, 23, 505.00);
+(8, 9, 23, 505.00),
+(9, 10, 24, 505.00),
+(10, 11, 25, 100.00),
+(11, 12, 29, 100.00),
+(12, 13, 30, 500.00),
+(13, 14, 35, 400.00);
 
 -- --------------------------------------------------------
 
@@ -161,7 +176,12 @@ INSERT INTO `payments_hdr` (`payment_id`, `payment_number`, `customer_id`, `paym
 (6, 'PAY-2026-0001', 5, 1, 9, '2026-10-04', 9.97, 500.00, 490.03, NULL, 'Paid at POS'),
 (7, 'PAY-2026-0007', 7, 3, 9, '2026-10-04', 195.00, 195.00, 0.00, NULL, 'Paid at POS'),
 (8, 'PAY-2026-0008', 2, 1, 10, '2026-10-04', 135.00, 500.00, 365.00, NULL, 'Paid at POS'),
-(9, 'PAY-2026-0009', 5, 1, 11, '2026-10-04', 505.00, 1000.00, 495.00, NULL, 'Paid at POS');
+(9, 'PAY-2026-0009', 5, 1, 11, '2026-10-04', 505.00, 1000.00, 495.00, NULL, 'Paid at POS'),
+(10, 'PAY-2026-0010', 1, 1, NULL, '2026-10-04', 505.00, 505.00, 0.00, NULL, 'goods'),
+(11, 'PAY-2026-0011', 2, 1, 12, '2026-10-04', 100.00, 100.00, 0.00, NULL, NULL),
+(12, 'PAY-2026-0012', 7, 1, 13, '2026-10-04', 100.00, 100.00, 0.00, NULL, 'Paid at POS'),
+(13, 'PAY-2026-0013', 2, 1, 13, '2026-10-04', 500.00, 500.00, 0.00, NULL, 'Paid at POS'),
+(14, 'PAY-2026-0014', 7, 1, 10, '2026-10-04', 400.00, 400.00, 0.00, NULL, 'Paid at POS');
 
 -- --------------------------------------------------------
 
@@ -321,7 +341,42 @@ INSERT INTO `sales_dtl` (`sales_detail_id`, `sales_id`, `product_id`, `quantity`
 (71, 31, 5, 1, 300.00, 300.00),
 (72, 32, 2, 2, 75.00, 150.00),
 (73, 32, 5, 1, 300.00, 300.00),
-(74, 32, 3, 1, 55.00, 55.00);
+(74, 32, 3, 1, 55.00, 55.00),
+(75, 33, 2, 1, 75.00, 75.00),
+(76, 33, 8, 1, 60.00, 60.00),
+(77, 33, 3, 2, 55.00, 110.00),
+(80, 35, 4, 1, 9.97, 9.97),
+(81, 35, 7, 1, 100.00, 100.00),
+(85, 37, 2, 2, 75.00, 150.00),
+(86, 37, 3, 1, 55.00, 55.00),
+(87, 38, 2, 2, 75.00, 150.00),
+(88, 38, 4, 1, 9.97, 9.97),
+(89, 38, 8, 1, 60.00, 60.00),
+(90, 38, 5, 3, 300.00, 900.00),
+(91, 38, 3, 1, 55.00, 55.00),
+(92, 39, 4, 1, 9.97, 9.97),
+(93, 39, 8, 1, 60.00, 60.00),
+(94, 39, 2, 1, 75.00, 75.00),
+(95, 39, 7, 1, 100.00, 100.00),
+(96, 40, 4, 1, 9.97, 9.97),
+(97, 40, 8, 1, 60.00, 60.00),
+(98, 40, 2, 1, 75.00, 75.00),
+(99, 40, 7, 1, 100.00, 100.00),
+(100, 41, 4, 1, 9.97, 9.97),
+(101, 41, 8, 1, 60.00, 60.00),
+(102, 41, 7, 1, 100.00, 100.00),
+(103, 41, 2, 3, 75.00, 225.00),
+(104, 42, 2, 1, 75.00, 75.00),
+(105, 42, 4, 1, 9.97, 9.97),
+(106, 42, 7, 1, 100.00, 100.00),
+(107, 43, 2, 3, 75.00, 225.00),
+(108, 43, 7, 1, 100.00, 100.00),
+(109, 43, 3, 2, 55.00, 110.00),
+(110, 43, 9, 1, 50.00, 50.00),
+(111, 43, 1, 1, 20.00, 20.00),
+(112, 44, 2, 1, 75.00, 75.00),
+(113, 44, 4, 1, 9.97, 9.97),
+(114, 44, 7, 1, 100.00, 100.00);
 
 -- --------------------------------------------------------
 
@@ -358,7 +413,17 @@ INSERT INTO `sales_hdr` (`sales_id`, `customer_id`, `return_id`, `terminal_id`, 
 (29, 2, NULL, 4, 10, '2026-10-04', 135.00, 6, 'COMPLETED'),
 (30, 7, NULL, 3, 11, '2026-10-04', 175.00, 2, 'COMPLETED'),
 (31, 5, NULL, 3, 11, '2026-10-04', 505.00, 2, 'COMPLETED'),
-(32, 1, NULL, 3, 11, '2026-10-04', 505.00, 2, 'COMPLETED');
+(32, 1, NULL, 3, 11, '2026-10-04', 505.00, 2, 'COMPLETED'),
+(33, 2, NULL, 3, 12, '2026-10-04', 245.00, 2, 'COMPLETED'),
+(35, 7, NULL, 3, 13, '2026-10-04', 109.97, 2, 'COMPLETED'),
+(37, 7, NULL, 3, 13, '2026-10-04', 205.00, 2, 'COMPLETED'),
+(38, 2, NULL, 3, 13, '2026-10-04', 1174.97, 2, 'COMPLETED'),
+(39, 1, NULL, 3, 13, '2026-10-04', 244.97, 2, 'COMPLETED'),
+(40, 7, NULL, 3, 13, '2026-10-04', 244.97, 2, 'COMPLETED'),
+(41, 5, NULL, 3, 13, '2026-10-04', 394.97, 2, 'COMPLETED'),
+(42, 6, NULL, 3, 13, '2026-10-04', 184.97, 2, 'COMPLETED'),
+(43, 7, NULL, 4, 10, '2026-10-04', 505.00, 6, 'COMPLETED'),
+(44, 7, NULL, 4, 10, '2026-10-04', 184.97, 6, 'COMPLETED');
 
 -- --------------------------------------------------------
 
@@ -380,7 +445,8 @@ CREATE TABLE `sales_return_dtl` (
 --
 
 INSERT INTO `sales_return_dtl` (`return_detail_id`, `return_id`, `product_id`, `quantity`, `unit_price`, `subtotal`) VALUES
-(4, 4, 5, 1, 300.00, 300.00);
+(4, 4, 5, 1, 300.00, 300.00),
+(5, 5, 7, 1, 100.00, 100.00);
 
 -- --------------------------------------------------------
 
@@ -403,7 +469,8 @@ CREATE TABLE `sales_return_hdr` (
 --
 
 INSERT INTO `sales_return_hdr` (`retrun_id`, `customer_id`, `sales_id`, `return_date`, `return_reason`, `total_amount`, `status`) VALUES
-(4, 6, 25, '2026-10-04', 'dsdaaddad', 300.00, 'APPROVED');
+(4, 6, 25, '2026-10-04', 'dsdaaddad', 300.00, 'APPROVED'),
+(5, 7, 30, '2026-10-04', 'Damage', 100.00, 'PENDING');
 
 -- --------------------------------------------------------
 
@@ -436,7 +503,9 @@ INSERT INTO `shifts` (`shift_id`, `user_id`, `terminal_id`, `schedule_id`, `open
 (9, 2, 3, 4, '2026-10-03 21:20:58', '2026-10-04 11:52:48', 5000.00, 2800.00, 3009.97, 'CLOSED'),
 (10, 6, 4, 4, '2026-10-04 02:43:07', NULL, 5000.00, NULL, NULL, 'OPEN'),
 (11, 2, 3, 4, '2026-10-04 11:54:06', '2026-10-04 11:57:56', 2800.00, 1800.00, 2305.00, 'CLOSED'),
-(12, 2, 3, 4, '2026-10-04 11:58:00', NULL, 1800.00, NULL, NULL, 'OPEN');
+(12, 2, 3, 4, '2026-10-04 11:58:00', '2026-10-04 18:01:46', 1800.00, 1800.00, 1900.00, 'CLOSED'),
+(13, 2, 3, 4, '2026-10-04 18:03:22', '2026-10-05 20:21:52', 1800.00, 1800.00, 2400.00, 'CLOSED'),
+(14, 2, 3, 4, '2026-10-05 20:22:05', NULL, 1800.00, NULL, NULL, 'OPEN');
 
 -- --------------------------------------------------------
 
@@ -515,7 +584,8 @@ INSERT INTO `tbl_pos_terminal` (`terminal_id`, `terminal_name`, `float_start`, `
 (4, 'CASHIER COUNTER 2', 5000.00, 'ACTIVE'),
 (5, 'CASHIER COUNTER 3', 5000.00, 'ACTIVE'),
 (6, 'CASHIER COUNTER 4', 5000.00, 'ACTIVE'),
-(7, 'CASHIER COUNTER 5', 5000.00, 'ACTIVE');
+(7, 'CASHIER COUNTER 5', 5000.00, 'ACTIVE'),
+(8, 'ACOUNTANT COUNTER 1', 5000.00, 'ACTIVE');
 
 -- --------------------------------------------------------
 
@@ -535,7 +605,6 @@ CREATE TABLE `terminal_assignment` (
 --
 
 INSERT INTO `terminal_assignment` (`ter_ass_id`, `user_id`, `terminal_id`, `schedule_id`) VALUES
-(2, 4, 2, 4),
 (4, 6, 4, 4),
 (7, 2, 3, 4);
 
@@ -838,19 +907,19 @@ ALTER TABLE `group_days`
 -- AUTO_INCREMENT for table `invoice`
 --
 ALTER TABLE `invoice`
-  MODIFY `invoice_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
+  MODIFY `invoice_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=37;
 
 --
 -- AUTO_INCREMENT for table `payments_dtl`
 --
 ALTER TABLE `payments_dtl`
-  MODIFY `payment_detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `payment_detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `payments_hdr`
 --
 ALTER TABLE `payments_hdr`
-  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `payment_methods`
@@ -880,31 +949,31 @@ ALTER TABLE `roles`
 -- AUTO_INCREMENT for table `sales_dtl`
 --
 ALTER TABLE `sales_dtl`
-  MODIFY `sales_detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=75;
+  MODIFY `sales_detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=115;
 
 --
 -- AUTO_INCREMENT for table `sales_hdr`
 --
 ALTER TABLE `sales_hdr`
-  MODIFY `sales_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
+  MODIFY `sales_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=45;
 
 --
 -- AUTO_INCREMENT for table `sales_return_dtl`
 --
 ALTER TABLE `sales_return_dtl`
-  MODIFY `return_detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `return_detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `sales_return_hdr`
 --
 ALTER TABLE `sales_return_hdr`
-  MODIFY `retrun_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `retrun_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `shifts`
 --
 ALTER TABLE `shifts`
-  MODIFY `shift_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
+  MODIFY `shift_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `shift_cash_movement`
@@ -922,7 +991,7 @@ ALTER TABLE `shift_schedule`
 -- AUTO_INCREMENT for table `tbl_pos_terminal`
 --
 ALTER TABLE `tbl_pos_terminal`
-  MODIFY `terminal_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
+  MODIFY `terminal_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `terminal_assignment`
