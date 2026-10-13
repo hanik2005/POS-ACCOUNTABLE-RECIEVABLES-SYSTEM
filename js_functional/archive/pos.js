@@ -237,7 +237,6 @@ const openCloseShiftDialog = async () => {
 
   const report = response.data[0];
   const gross = parseFloat(report.gross_sales);
-  const returns = parseFloat(report.returns_amount);
 
   openDialog(
     "Close shift",
@@ -248,8 +247,7 @@ const openCloseShiftDialog = async () => {
         <tr><td>Opened</td><td>${formatTime(report.opened_at)}</td></tr>
         <tr><td>Transactions</td><td>${report.transactions}</td></tr>
         <tr><td>Sales</td><td>${formatCurrency(gross)}</td></tr>
-        <tr><td>Returns</td><td>${formatCurrency(returns)}</td></tr>
-        <tr class="expected"><td>Net sales</td><td>${formatCurrency(gross - returns)}</td></tr>
+        <tr class="expected"><td>Net sales</td><td>${formatCurrency(gross)}</td></tr>
         <tr><td>Float start</td><td>${formatCurrency(parseFloat(report.float_start))}</td></tr>
         <tr><td>Float adjust</td><td>${formatCurrency(parseFloat(report.float_adjust))}</td></tr>
         <tr><td>Change given</td><td>${formatCurrency(parseFloat(report.change_given))}</td></tr>

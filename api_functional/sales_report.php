@@ -9,12 +9,9 @@ class SalesReport
     include "../api/connection-pdo.php";
 
     $json = json_decode($json, true);
-
-    //completed sales only, every one of them has a customer and an invoice
     $sql = "SELECT s.sales_id, s.sales_date, s.total_amount, s.status,
         c.customer_name, t.terminal_name, u.full_name AS cashier, i.invoice_number,
-        IFNULL(pd.total_paid, 0) AS total_paid,
-        IFNULL(r.total_returned, 0) AS total_returned
+        IFNULL(pd.total_paid, 0) AS total_paid
         FROM sales_hdr s
         INNER JOIN customers c ON s.customer_id = c.customer_id
         INNER JOIN invoice i ON s.sales_id = i.sales_id
@@ -25,12 +22,6 @@ class SalesReport
           FROM payments_dtl
           GROUP BY invoice_id
         ) pd ON i.invoice_id = pd.invoice_id
-        LEFT JOIN (
-          SELECT sales_id, SUM(total_amount) AS total_returned
-          FROM sales_return_hdr
-          WHERE status = 'APPROVED'
-          GROUP BY sales_id
-        ) r ON s.sales_id = r.sales_id
         WHERE s.status = 'COMPLETED' AND s.sales_date BETWEEN :dateFrom AND :dateTo
         ORDER BY s.sales_date DESC, s.sales_id DESC";
     $stmt = $conn->prepare($sql);
@@ -42,8 +33,6 @@ class SalesReport
     return json_encode($rs);
   }
 }
-
-//submitted by the client - operation and json
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
   $operation = $_GET['operation'];
   $json = isset($_GET['json']) ? $_GET['json'] : "";

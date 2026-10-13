@@ -69,21 +69,18 @@ const displaySalesReport = async () => {
 
 const displaySummary = (sales) => {
   let totalSales = 0;
-  let returns = 0;
   let collected = 0;
   let outstanding = 0;
 
   sales.forEach((sale) => {
     totalSales += parseFloat(sale.total_amount);
-    returns += parseFloat(sale.total_returned);
     collected += parseFloat(sale.total_paid);
-    outstanding += Math.max(0, parseFloat(sale.total_amount) - parseFloat(sale.total_returned) - parseFloat(sale.total_paid));
+    outstanding += Math.max(0, parseFloat(sale.total_amount) - parseFloat(sale.total_paid));
   });
 
   document.getElementById("sumTransactions").innerText = sales.length;
   document.getElementById("sumTotalSales").innerText = `₱${totalSales.toFixed(2)}`;
-  document.getElementById("sumReturns").innerText = `₱${returns.toFixed(2)}`;
-  document.getElementById("sumNetSales").innerText = `₱${(totalSales - returns).toFixed(2)}`;
+  document.getElementById("sumNetSales").innerText = `₱${totalSales.toFixed(2)}`;
   document.getElementById("sumPostedAR").innerText = `₱${totalSales.toFixed(2)}`;
   document.getElementById("sumCollected").innerText = `₱${collected.toFixed(2)}`;
   document.getElementById("sumOutstanding").innerText = `₱${outstanding.toFixed(2)}`;
@@ -111,7 +108,6 @@ const displaySalesReportTable = (sales) => {
             <th>Terminal</th>
             <th>Cashier</th>
             <th>Total</th>
-            <th>Returned</th>
             <th>Invoice No.</th>
             <th>Paid</th>
             <th>Balance</th>
@@ -125,7 +121,7 @@ const displaySalesReportTable = (sales) => {
   const visible = printing ? sales : rows;
 
   visible.forEach((sale) => {
-    const balance = Math.max(0, parseFloat(sale.total_amount) - parseFloat(sale.total_returned) - parseFloat(sale.total_paid));
+    const balance = Math.max(0, parseFloat(sale.total_amount) - parseFloat(sale.total_paid));
 
     const tr = document.createElement("tr");
 
@@ -135,7 +131,6 @@ const displaySalesReportTable = (sales) => {
             <td>${sale.terminal_name || ""}</td>
             <td>${sale.cashier || ""}</td>
             <td>₱${parseFloat(sale.total_amount).toFixed(2)}</td>
-            <td>₱${parseFloat(sale.total_returned).toFixed(2)}</td>
             <td>${sale.invoice_number}</td>
             <td>₱${parseFloat(sale.total_paid).toFixed(2)}</td>
             <td>₱${balance.toFixed(2)}</td>

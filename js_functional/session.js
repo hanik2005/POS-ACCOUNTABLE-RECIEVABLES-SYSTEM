@@ -12,11 +12,10 @@ const pages = [
   { file: "units.html", title: "Units", roles: ["ADMIN"] },
   { file: "product_categories.html", title: "Product Categories", roles: ["ADMIN"] },
   { file: "users.html", title: "Users", roles: ["ADMIN"] },
-  { file: "pos.html", title: "POS", roles: ["ADMIN", "CASHIER"], menu: true },
-  { file: "invoice.html", title: "Accounts Receivable", roles: ["ADMIN", "CASHIER", "ACCOUNTING"], menu: true },
-  { file: "returns.html", title: "Sales Return", roles: ["ADMIN", "CASHIER", "ACCOUNTING"], menu: true },
-  { file: "returns_approval.html", title: "Return Approval", roles: ["ADMIN", "ACCOUNTING"], menu: true },
+  { file: "pos.html", title: "POS", roles: ["CASHIER"], menu: true },
+  { file: "invoice.html", title: "Accounts Receivable", roles: ["CASHIER", "ACCOUNTING"], menu: true },
   { file: "sales_report.html", title: "Sales Report", roles: ["ADMIN", "ACCOUNTING"], menu: true },
+  { file: "credit_limit_report.html", title: "Credit Limit Report", roles: ["ADMIN"], menu: true },
   { file: "cashier_report.html", title: "Cashier Report", roles: ["ADMIN", "ACCOUNTING", "CASHIER"], menu: true },
   { file: "float_requests.html", title: "Float Requests", roles: ["ADMIN", "ACCOUNTING"], menu: true },
   { file: "terminal_assignment.html", title: "Terminal Assignment", roles: ["ADMIN"], menu: true },
@@ -48,6 +47,11 @@ const checkSession = async () => {
 
 const isAuthorized = (user) => {
   const page = pages.find((page) => page.file == currentPage);
+  const isAdminFunctionalPage = window.location.pathname.toLowerCase().includes("/interface/admin/functional/");
+
+  if (isAdminFunctionalPage && user.role_name.toUpperCase() != "ADMIN") {
+    return false;
+  }
 
   if (!page) {
     return true;

@@ -4,7 +4,6 @@ header("Access-Control-Allow-Origin: *");
 
 class TerminalAssignment
 {
-  //the assignments (a cashier can have a terminal for each schedule), and the cashiers, terminals and schedules to choose from
   function getAssignments()
   {
     include "../api/connection-pdo.php";
@@ -36,9 +35,8 @@ class TerminalAssignment
     $stmt->execute();
     $terminals = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    $sql = "SELECT schedule_id, schedule_name, start_time, end_time
+    $sql = "SELECT schedule_id, schedule_name, start_time, end_time, status
         FROM shift_schedule
-        WHERE status = 'ACTIVE'
         ORDER BY start_time, end_time";
     $stmt = $conn->prepare($sql);
     $stmt->execute();
@@ -52,35 +50,68 @@ class TerminalAssignment
     ]);
   }
 
-  //1 = saved, 2 = the terminal already has a cashier in this time, 3 = the cashier already has a terminal in this time
   function saveAssignment($json)
   {
     include "../api/connection-pdo.php";
 
     $json = json_decode($json, true);
+    $userId = $json['userId'];
+    $terminalId = $json['terminalId'];
+    $scheduleId = $json['scheduleId'];
+    $assignmentId = empty($json['assignmentId']) ? null : $json['assignmentId'];
+    $overlap = "s_old.start_time < s_new.end_time AND s_new.start_time < s_old.end_time";
+    $excludeCurrent = $assignmentId ? " AND a.ter_ass_id <> :assignmentId" : "";
 
     try {
+      $sql = "SELECT COUNT(*)
+          FROM terminal_assignment a
+          INNER JOIN shift_schedule s_old ON a.schedule_id = s_old.schedule_id
+          INNER JOIN shift_schedule s_new ON s_new.schedule_id = :scheduleId
+          WHERE a.terminal_id = :terminalId AND {$overlap}{$excludeCurrent}";
+      $stmt = $conn->prepare($sql);
+      $stmt->bindParam(":scheduleId", $scheduleId);
+      $stmt->bindParam(":terminalId", $terminalId);
+      if ($assignmentId) $stmt->bindParam(":assignmentId", $assignmentId);
+      $stmt->execute();
+      if ($stmt->fetchColumn() > 0) {
+        return json_encode(2);
+      }
+
+      $sql = "SELECT COUNT(*)
+          FROM terminal_assignment a
+          INNER JOIN shift_schedule s_old ON a.schedule_id = s_old.schedule_id
+          INNER JOIN shift_schedule s_new ON s_new.schedule_id = :scheduleId
+          WHERE a.user_id = :userId AND {$overlap}{$excludeCurrent}";
+      $stmt = $conn->prepare($sql);
+      $stmt->bindParam(":scheduleId", $scheduleId);
+      $stmt->bindParam(":userId", $userId);
+      if ($assignmentId) $stmt->bindParam(":assignmentId", $assignmentId);
+      $stmt->execute();
+      if ($stmt->fetchColumn() > 0) {
+        return json_encode(3);
+      }
+
       if (empty($json['assignmentId'])) {
         $sql = "INSERT INTO terminal_assignment(user_id, terminal_id, schedule_id)
             VALUES(:userId, :terminalId, :scheduleId)";
         $stmt = $conn->prepare($sql);
-        $stmt->bindParam(":userId", $json['userId']);
-        $stmt->bindParam(":terminalId", $json['terminalId']);
-        $stmt->bindParam(":scheduleId", $json['scheduleId']);
+        $stmt->bindParam(":userId", $userId);
+        $stmt->bindParam(":terminalId", $terminalId);
+        $stmt->bindParam(":scheduleId", $scheduleId);
       } else {
         $sql = "UPDATE terminal_assignment
             SET terminal_id = :terminalId, schedule_id = :scheduleId
-            WHERE ter_ass_id = :assignmentId";
+            WHERE ter_ass_id = :assignmentId AND user_id = :userId";
         $stmt = $conn->prepare($sql);
-        $stmt->bindParam(":terminalId", $json['terminalId']);
-        $stmt->bindParam(":scheduleId", $json['scheduleId']);
-        $stmt->bindParam(":assignmentId", $json['assignmentId']);
+        $stmt->bindParam(":terminalId", $terminalId);
+        $stmt->bindParam(":scheduleId", $scheduleId);
+        $stmt->bindParam(":assignmentId", $assignmentId);
+        $stmt->bindParam(":userId", $userId);
       }
       $stmt->execute();
 
       $returnValue = 1;
     } catch (Exception $e) {
-      //the triggers of the table stop the assignments that overlap in time
       $returnValue = 0;
       if (strpos($e->getMessage(), "terminal already") !== false) {
         $returnValue = 2;
@@ -110,13 +141,15 @@ class TerminalAssignment
   }
 }
 
-//submitted by the client - operation and json
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-  $operation = $_GET['operation'];
+  $operation = $_GET['operation'] ?? '';
   $json = isset($_GET['json']) ? $_GET['json'] : "";
 } else if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-  $operation = $_POST['operation'];
+  $operation = $_POST['operation'] ?? '';
   $json = isset($_POST['json']) ? $_POST['json'] : "";
+} else {
+  $operation = '';
+  $json = '';
 }
 
 $terminalAssignment = new TerminalAssignment();

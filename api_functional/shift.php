@@ -16,8 +16,6 @@ class Shift
     $userId = $session->getUserId();
     $cashier = isset($_SESSION['full_name']) ? $_SESSION['full_name'] : "";
     $now = date('H:i:s');
-
-    //a cashier can have a terminal for each schedule, the one of the current time comes first
     $sql = "SELECT t.terminal_id, t.terminal_name, t.float_start, a.schedule_id, s.schedule_name
         FROM terminal_assignment a
         INNER JOIN tbl_pos_terminal t ON a.terminal_id = t.terminal_id
@@ -32,7 +30,6 @@ class Shift
     $stmt->execute();
     $terminal = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    //float left = float start + approved float adjusts - the change given to the customers
     $sql = "SELECT sh.shift_id, sh.opened_at, sh.schedule_id, sh.float_start,
         sh.float_start
           + IFNULL((SELECT SUM(m.amount) FROM shift_cash_movement m
@@ -67,7 +64,6 @@ class Shift
     $now = date('H:i:s');
 
     try {
-      //the terminal and the schedule of the current time, the shift starts with the float start of the terminal
       $sql = "SELECT a.terminal_id, a.schedule_id, t.float_start
           FROM terminal_assignment a
           INNER JOIN tbl_pos_terminal t ON a.terminal_id = t.terminal_id
@@ -101,9 +97,6 @@ class Shift
     }
     return json_encode($returnValue);
   }
-
-  //1 = closed, 2 = a float adjust request is not decided yet
-  //the closing cash counted by the cashier is the float left, the next shift of the terminal starts with it
   function closeShift($json)
   {
     include "../api/connection-pdo.php";
@@ -112,8 +105,6 @@ class Shift
 
     $closedAt = date('Y-m-d H:i:s');
     $closingCash = isset($json['closingCash']) ? $json['closingCash'] : null;
-
-    //the cashier counts the drawer when closing the shift
     if ($closingCash === null || $closingCash === "" || $closingCash < 0) {
       return json_encode(0);
     }
@@ -331,7 +322,6 @@ class Shift
         u.full_name AS cashier, t.terminal_name,
         COUNT(CASE WHEN s.status = 'COMPLETED' THEN 1 END) AS transactions,
         IFNULL(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.total_amount END), 0) AS gross_sales,
-        IFNULL(SUM(CASE WHEN s.status = 'COMPLETED' THEN r.total_returned END), 0) AS returns_amount,
         IFNULL(m.float_adjust, 0) AS float_adjust,
         IFNULL(m.cash_drop, 0) AS cash_drop,
         IFNULL(pay.cash_received, 0) AS cash_received,
@@ -342,12 +332,6 @@ class Shift
         INNER JOIN tbl_pos_terminal t ON sh.terminal_id = t.terminal_id
         LEFT JOIN shift_schedule sc ON sh.schedule_id = sc.schedule_id
         LEFT JOIN sales_hdr s ON s.shift_id = sh.shift_id
-        LEFT JOIN (
-          SELECT sales_id, SUM(total_amount) AS total_returned
-          FROM sales_return_hdr
-          WHERE status = 'APPROVED'
-          GROUP BY sales_id
-        ) r ON s.sales_id = r.sales_id
         LEFT JOIN (
           SELECT shift_id,
             SUM(CASE WHEN movement_type = 'FLOAT_ADJUST' AND status = 'APPROVED' THEN amount END) AS float_adjust,
@@ -395,17 +379,10 @@ class Shift
 
     $sql = "SELECT u.full_name AS cashier, t.terminal_name,
         COUNT(CASE WHEN s.status = 'COMPLETED' THEN 1 END) AS transactions,
-        IFNULL(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.total_amount END), 0) AS gross_sales,
-        IFNULL(SUM(CASE WHEN s.status = 'COMPLETED' THEN r.total_returned END), 0) AS returns_amount
+        IFNULL(SUM(CASE WHEN s.status = 'COMPLETED' THEN s.total_amount END), 0) AS gross_sales
         FROM sales_hdr s
         INNER JOIN users u ON s.created_by = u.user_id
         LEFT JOIN tbl_pos_terminal t ON s.terminal_id = t.terminal_id
-        LEFT JOIN (
-          SELECT sales_id, SUM(total_amount) AS total_returned
-          FROM sales_return_hdr
-          WHERE status = 'APPROVED'
-          GROUP BY sales_id
-        ) r ON s.sales_id = r.sales_id
         $where
         GROUP BY u.user_id, u.full_name, t.terminal_id, t.terminal_name
         ORDER BY u.full_name";

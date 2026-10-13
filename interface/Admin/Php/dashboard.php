@@ -470,14 +470,7 @@ $roleName =
             </div>
 
 
-            <a href="#">
-
-                Sales / POS
-
-            </a>
-
-
-            <a href="#">
+            <a href="../functional/invoice.html">
 
                 Accounts Receivable
 
@@ -494,18 +487,25 @@ $roleName =
             </div>
 
 
-            <a href="#">
+            <a href="../functional/sales_report.html">
 
                 Sales Reports
 
             </a>
 
 
-            <a href="#">
+            <a href="../functional/invoice.html">
 
                 AR Reports
 
             </a>
+
+            <a href="../../Accounting/cashier_report.html">
+
+                Cashier Reports
+
+            </a>
+
 
 
         </div>

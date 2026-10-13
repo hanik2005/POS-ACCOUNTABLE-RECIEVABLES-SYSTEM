@@ -14,7 +14,7 @@
   <body>
     <nav class="navbar navbar-dark bg-primary">
       <div class="container-fluid">
-        <a class="navbar-brand" href="dashboard.html">POS &amp; AR Management System</a>
+        <a class="navbar-brand" href="dashboard.html">POS &amp; AR INC</a>
 
         <button
           class="navbar-toggler"
@@ -87,22 +87,21 @@
             </li>
             <li class="nav-item">
               <a class="nav-link" href="functional/invoice.html">
-                Invoice(FUNCTIONAL)
+                Accounts Receivable
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="functional/pos.html">
-                POS(FUNCTIONAL)
-              </a>
+              <a class="nav-link" href="functional/cashier_report.html">Cashier Report</a>
             </li>
-            <li class="nav-item">
-              <a class="nav-link" href="functional/returns.html">
-                Sales Return(FUNCTIONAL)
-              </a>
-            </li>
+            <li class="nav-item"><a class="nav-link" href="functional/float_requests.html">Float Requests</a></li>
             <li class="nav-item">
               <a class="nav-link" href="functional/sales_report.html">
-                Sales Report(FUNCTIONAL)
+                Sales Report
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="functional/credit_limit_report.html">
+                Credit Limit Report
               </a>
             </li>
           </ul>
@@ -231,6 +230,36 @@
             </div>
           </div>
         </div>
+
+        <section class="mb-4" aria-labelledby="admin-reports-title">
+          <div class="mb-3">
+            <div class="dashboard-section-title">Reports</div>
+            <h5 id="admin-reports-title" class="mt-2 mb-0">Business activity</h5>
+          </div>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="report-card">
+                <h6>Sales Report</h6>
+                <p>Review completed sales, collections and outstanding receivables by date.</p>
+                <a href="functional/sales_report.html" class="btn btn-outline-primary btn-sm">Open Sales Report</a>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="report-card">
+                <h6>Cashier Report</h6>
+                <p>Review shift totals, daily sales, cash movement and closing differences.</p>
+                <a href="functional/cashier_report.html" class="btn btn-outline-primary btn-sm">Open Cashier Report</a>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="report-card">
+                <h6>Customer Credit Limit</h6>
+                <p>Review each customer's credit limit, current receivables and available credit.</p>
+                <a href="functional/credit_limit_report.html" class="btn btn-outline-primary btn-sm">Open Credit Limit Report</a>
+              </div>
+            </div>
+          </div>
+        </section>
 
         <div class="card section-card">
           <div class="card-body">

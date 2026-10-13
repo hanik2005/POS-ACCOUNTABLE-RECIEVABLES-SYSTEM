@@ -23,7 +23,6 @@ class Payment
     return json_encode($rs);
   }
 
-  //1 = saved, 2 = amount is more than the balance
   function savePayment($json)
   {
     include "../api/connection-pdo.php";
@@ -33,24 +32,16 @@ class Payment
     $header = $json['header'];
     $details = $json['details'];
 
-    //payment date, empty reference and remarks are saved as null
-    $paymentDate = date('Y-m-d');
     $reference = !empty($header['referenceNumber']) ? $header['referenceNumber'] : null;
     $remarks = !empty($header['remarks']) ? $header['remarks'] : null;
 
     $session = new Session();
     $userId = $session->getUserId();
 
-    //paid and returned amounts of an invoice
     $paid = "IFNULL((SELECT SUM(amount_applied) FROM payments_dtl
         WHERE invoice_id = i.invoice_id), 0)";
-    $returned = "IFNULL((SELECT SUM(total_amount) FROM sales_return_hdr
-        WHERE sales_id = i.sales_id AND status = 'APPROVED'), 0)";
-
     try {
       $conn->beginTransaction();
-
-      //a cashier with an open shift receives the payment in that shift
       $stmt = $conn->prepare("SELECT shift_id FROM shifts WHERE user_id = :userId AND status = 'OPEN' ORDER BY shift_id DESC LIMIT 1");
       $stmt->bindParam(":userId", $userId);
       $stmt->execute();
@@ -78,7 +69,7 @@ class Payment
 
       $newId = $conn->lastInsertId();
 
-      $sqlBalance = "SELECT GREATEST(0, i.amount_due - $paid - $returned)
+      $sqlBalance = "SELECT GREATEST(0, i.amount_due - $paid)
           FROM invoice i
           WHERE i.invoice_id = :invoiceId";
       $stmtBalance = $conn->prepare($sqlBalance);
@@ -88,8 +79,8 @@ class Payment
       $stmtDtl = $conn->prepare($sqlDtl);
       $sqlStatus = "UPDATE invoice i
           SET i.status = CASE
-            WHEN i.amount_due - $paid - $returned <= 0 THEN 'PAID'
-            WHEN $paid + $returned > 0 THEN 'PARTIAL'
+            WHEN i.amount_due - $paid <= 0 THEN 'PAID'
+            WHEN $paid > 0 THEN 'PARTIAL'
             ELSE 'UNPAID'
           END
           WHERE i.invoice_id = :invoiceId";
@@ -109,7 +100,6 @@ class Payment
         $stmtStatus->bindParam(":invoiceId", $row['invoiceId']);
         $stmtStatus->execute();
       }
-      //commit changes
       $conn->commit();
       $returnValue = 1;
     } catch (Exception $e) {

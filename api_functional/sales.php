@@ -12,9 +12,23 @@ class Sales
   {
     include "../api/connection-pdo.php";
 
-    $sql = "SELECT c.customer_id, c.customer_name, c.credit_limit, g.days_name
+    $sql = "SELECT c.customer_id, c.customer_name, c.credit_limit, g.days_name,
+        IFNULL(ar.outstanding_balance, 0) AS outstanding_balance,
+        GREATEST(c.credit_limit - IFNULL(ar.outstanding_balance, 0), 0) AS available_credit
         FROM customers c
         INNER JOIN group_days g ON c.group_days_id = g.id
+        LEFT JOIN (
+          SELECT s.customer_id, SUM(GREATEST(i.amount_due - IFNULL(pd.total_paid, 0), 0)) AS outstanding_balance
+          FROM sales_hdr s
+          INNER JOIN invoice i ON i.sales_id = s.sales_id
+          LEFT JOIN (
+            SELECT invoice_id, SUM(amount_applied) AS total_paid
+            FROM payments_dtl
+            GROUP BY invoice_id
+          ) pd ON pd.invoice_id = i.invoice_id
+          WHERE s.status = 'COMPLETED'
+          GROUP BY s.customer_id
+        ) ar ON ar.customer_id = c.customer_id
         WHERE c.status = 'ACTIVE'
         ORDER BY c.customer_name";
     $stmt = $conn->prepare($sql);
@@ -62,6 +76,48 @@ class Sales
 
     try {
       $conn->beginTransaction();
+
+      if ($header['status'] == 'COMPLETED') {
+        if ($customerId === null) {
+          throw new Exception("A customer is required to complete a sale.");
+        }
+
+        $stmt = $conn->prepare("SELECT credit_limit FROM customers WHERE customer_id = :customerId FOR UPDATE");
+        $stmt->bindParam(":customerId", $customerId);
+        $stmt->execute();
+        $creditLimit = $stmt->fetchColumn();
+
+        if ($creditLimit === false) {
+          throw new Exception("The selected customer was not found.");
+        }
+
+        $stmt = $conn->prepare("SELECT IFNULL(SUM(GREATEST(i.amount_due - IFNULL(pd.total_paid, 0), 0)), 0)
+            FROM sales_hdr s
+            INNER JOIN invoice i ON i.sales_id = s.sales_id
+            LEFT JOIN (
+              SELECT invoice_id, SUM(amount_applied) AS total_paid
+              FROM payments_dtl
+              GROUP BY invoice_id
+            ) pd ON pd.invoice_id = i.invoice_id
+            WHERE s.customer_id = :customerId AND s.status = 'COMPLETED'");
+        $stmt->bindParam(":customerId", $customerId);
+        $stmt->execute();
+        $outstandingBalance = (float) $stmt->fetchColumn();
+        $creditLimit = round((float) $creditLimit, 2);
+        $saleTotal = round((float) $header['amount'], 2);
+        $payment = !empty($header['payment']) ? $header['payment'] : null;
+        $amountApplied = $payment ? round(min((float) $payment['amountApplied'], $saleTotal), 2) : 0;
+        $newReceivable = max($saleTotal - $amountApplied, 0);
+
+        if (round($outstandingBalance + $newReceivable, 2) > $creditLimit) {
+          $availableCredit = max($creditLimit - $outstandingBalance, 0);
+          $conn->rollBack();
+          return json_encode([
+            "success" => false,
+            "message" => "Credit limit reached. The customer has " . number_format($availableCredit, 2) . " available credit. Pay at least " . number_format(max($saleTotal - $availableCredit, 0), 2) . " now or cancel the sale."
+          ]);
+        }
+      }
 
       $sql = "SELECT shift_id, terminal_id
           FROM shifts

@@ -7,6 +7,19 @@ import { openCustomerDialog } from "./customer.js";
 import { refreshShift } from "./shift.js";
 import { prepareInvoice, openPrintDialog } from "./invoice.js";
 
+const showCreditLimitDialog = (message) => {
+  openDialog("Credit limit reached", `<p class="dialog-text">${message}</p>`, "Enter = pay now · Esc = return to sale", (e) => {
+    if (e.key == "Enter") {
+      e.preventDefault();
+      closeDialog();
+      openPayDialog();
+    } else if (e.key == "Escape") {
+      e.preventDefault();
+      closeDialog();
+    }
+  });
+};
+
 export const startCheckout = () => {
   if (state.details.length == 0) {
     return;
@@ -23,12 +36,17 @@ export const startCheckout = () => {
 export const openCheckoutDialog = () => {
   const customer = state.customer;
   const terms = state.customers.find((item) => item.customer_id == customer.customerId);
+  const creditLimit = terms ? toCents(terms.credit_limit) : 0;
+  const outstandingBalance = terms ? toCents(terms.outstanding_balance) : 0;
+  const availableCredit = Math.max(creditLimit - outstandingBalance, 0);
 
   openDialog(
     "Checkout - Accounts Receivable",
     `<div class="pay-total">${formatCurrency(getTotalSales())}</div>
      <div class="side-row"><span>Customer</span><span>${customer.customerName}</span></div>
      <div class="side-row"><span>Terms</span><span>${terms ? terms.days_name : "-"}</span></div>
+     <div class="side-row"><span>Outstanding / limit</span><span>${formatCurrency(outstandingBalance / 100)} / ${formatCurrency(creditLimit / 100)}</span></div>
+     <div class="side-row"><span>Available credit</span><span>${formatCurrency(availableCredit / 100)}</span></div>
      <div class="side-row"><span>Items</span><span>${getTotalQty()}</span></div>`,
     "Enter = charge to Accounts Receivable · F9 = pay now · Esc = back",
     (e) => {
@@ -37,6 +55,12 @@ export const openCheckoutDialog = () => {
         closeDialog();
       } else if (e.key == "Enter") {
         e.preventDefault();
+
+        if (toCents(getTotalSales()) > availableCredit) {
+          showCreditLimitDialog(`This sale exceeds the customer's available credit of ${formatCurrency(availableCredit / 100)}. Pay the required amount now or cancel the sale.`);
+          return;
+        }
+
         closeDialog();
         saveSale("COMPLETED");
       } else if (e.key == "F9") {
@@ -136,6 +160,16 @@ export const openPayDialog = () => {
         }
 
         const applied = Math.min(toCents(received), toCents(total)) / 100;
+        const customer = state.customers.find((item) => item.customer_id == state.customer.customerId);
+        const availableCredit = Math.max(
+          toCents(customer ? customer.credit_limit : 0) - toCents(customer ? customer.outstanding_balance : 0),
+          0,
+        );
+
+        if (toCents(total) - toCents(applied) > availableCredit) {
+          document.getElementById("pay-message").innerText = `Pay at least ${formatCurrency((toCents(total) - availableCredit) / 100)} to stay within the customer's credit limit.`;
+          return;
+        }
 
         closeDialog();
         saveSale("COMPLETED", {
@@ -180,11 +214,19 @@ export const saveSale = async (status, payment) => {
     data: formData,
   });
 
-  if (response.data > 0) {
+  if (response.data && response.data.success === false) {
+    showCreditLimitDialog(response.data.message);
+  } else if ((typeof response.data == "number" ? response.data : parseInt(response.data, 10)) > 0) {
     const total = getTotalSales();
     const text = `${state.customer ? state.customer.customerName : ""} - ${formatCurrency(total)}`;
     const change = payment ? Math.max(toCents(payment.amountTendered) - toCents(total), 0) / 100 : 0;
     const balance = payment ? Math.max(toCents(total) - toCents(payment.amountApplied), 0) / 100 : total;
+    const customerTerms = state.customers.find((item) => item.customer_id == state.customer?.customerId);
+
+    if (customerTerms) {
+      customerTerms.outstanding_balance = Number(customerTerms.outstanding_balance) + balance;
+      customerTerms.available_credit = Math.max(Number(customerTerms.credit_limit) - customerTerms.outstanding_balance, 0);
+    }
 
     resetSale();
 

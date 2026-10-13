@@ -74,7 +74,6 @@ const displayInvoicesTable = (invoices) => {
             <th>Due Date</th>
             <th>Amount Due</th>
             <th>Paid</th>
-            <th>Returned</th>
             <th>Balance</th>
             <th>Status</th>
             <th>Action</th>
@@ -108,7 +107,6 @@ const displayInvoicesTable = (invoices) => {
             <td>${invoice.due_date}</td>
             <td>₱${parseFloat(invoice.amount_due).toFixed(2)}</td>
             <td>₱${parseFloat(invoice.total_paid).toFixed(2)}</td>
-            <td>₱${parseFloat(invoice.total_returned).toFixed(2)}</td>
             <td>₱${balance.toFixed(2)}</td>
             <td>${invoice.status}${isOverdue ? " (OVERDUE)" : ""}</td>
             <td>${balance > 0 ? `<button type="button" class="btn btn-success btn-sm btn-pay">PAY</button>` : ""}</td>

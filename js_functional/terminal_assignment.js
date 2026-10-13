@@ -34,6 +34,7 @@ const displayAssignmentsTable = (data) => {
   const terminalOptions = terminals.map((terminal) => `<option value="${terminal.terminal_id}">${terminal.terminal_name}</option>`).join("");
 
   const scheduleOptions = schedules
+    .filter((schedule) => schedule.status == "ACTIVE")
     .map((schedule) => `<option value="${schedule.schedule_id}">${schedule.schedule_name} (${schedule.start_time.slice(0, 5)} - ${schedule.end_time.slice(0, 5)})</option>`)
     .join("");
 
@@ -66,7 +67,7 @@ const displayAssignmentsTable = (data) => {
     `;
 
   form.querySelector(".btn-add").addEventListener("click", () => {
-    saveAssignment("", form.querySelector(".new-cashier").value, form.querySelector(".new-terminal").value, form.querySelector(".new-schedule").value);
+    saveAssignment("", form.querySelector(".new-cashier").value, form.querySelector(".new-terminal").value, form.querySelector(".new-schedule").value, data);
   });
 
   main.appendChild(form);
@@ -124,7 +125,7 @@ const displayAssignmentsTable = (data) => {
     scheduleSelect.value = assignment.schedule_id;
 
     tr.querySelector(".btn-save").addEventListener("click", () => {
-      saveAssignment(assignment.ter_ass_id, assignment.user_id, terminalSelect.value, scheduleSelect.value);
+      saveAssignment(assignment.ter_ass_id, assignment.user_id, terminalSelect.value, scheduleSelect.value, data);
     });
 
     tr.querySelector(".btn-remove").addEventListener("click", () => {
@@ -145,9 +146,31 @@ const displayAssignmentsTable = (data) => {
   );
 };
 
-const saveAssignment = async (assignmentId, userId, terminalId, scheduleId) => {
-  if (userId == "" || terminalId == "" || scheduleId == "") {
+const saveAssignment = async (assignmentId, userId, terminalId, scheduleId, data) => {
+  if (![userId, terminalId, scheduleId].every((id) => Number.isInteger(Number(id)) && Number(id) > 0)) {
     alert("Please select a cashier, a terminal and a schedule.");
+    return;
+  }
+
+  const cashier = data.cashiers.find((item) => item.user_id == userId);
+  const terminal = data.terminals.find((item) => item.terminal_id == terminalId);
+  const schedule = data.schedules.find((item) => item.schedule_id == scheduleId);
+  if (!cashier || !terminal || !schedule) {
+    alert("Select an active cashier, terminal and schedule.");
+    return;
+  }
+
+  const conflicts = data.assignments.filter((assignment) => {
+    return assignment.ter_ass_id != assignmentId && schedulesOverlap(schedule, data.schedules.find((item) => item.schedule_id == assignment.schedule_id));
+  });
+
+  if (conflicts.some((assignment) => assignment.terminal_id == terminalId)) {
+    alert("This terminal is already assigned to another cashier during an overlapping schedule.");
+    return;
+  }
+
+  if (conflicts.some((assignment) => assignment.user_id == userId)) {
+    alert("This cashier is already assigned to another terminal during an overlapping schedule.");
     return;
   }
 
@@ -168,12 +191,25 @@ const saveAssignment = async (assignmentId, userId, terminalId, scheduleId) => {
 
     displayAssignments();
   } else if (response.data == 2) {
-    alert("ERROR! This terminal already has a cashier in this time.");
+    alert("This terminal is already assigned to another cashier during an overlapping schedule.");
   } else if (response.data == 3) {
-    alert("ERROR! This cashier already has a terminal in this time.");
+    alert("This cashier is already assigned to another terminal during an overlapping schedule.");
   } else {
     alert("ERROR!");
   }
+};
+
+const schedulesOverlap = (first, second) => {
+  if (!second) {
+    return false;
+  }
+
+  const firstStart = first.start_time.slice(0, 8);
+  const firstEnd = first.end_time.slice(0, 8);
+  const secondStart = second.start_time.slice(0, 8);
+  const secondEnd = second.end_time.slice(0, 8);
+
+  return firstStart < secondEnd && secondStart < firstEnd;
 };
 
 const removeAssignment = async (assignmentId) => {
