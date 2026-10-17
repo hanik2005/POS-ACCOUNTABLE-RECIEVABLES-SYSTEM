@@ -2,8 +2,8 @@ import { viewPaymentMethod } from "./module/payment_method/view.js";
 import { updatePaymentMethod } from "./module/payment_method/update.js";
 import { deletePaymentMethod } from "./module/payment_method/delete.js";
 import { paginate, createPagination } from "./module/pagination.js";
+import { baseAPI } from "./config.js";
 
-const baseAPI = "http://localhost/POS_AR_SYSTEM/api";
 
 sessionStorage.setItem("baseAPI", baseAPI);
 
@@ -48,7 +48,7 @@ const displayPaymentMethods = async () => {
 
     displayPaymentMethodsTable(response.data);
   } else {
-    alert("ERROR");
+    Swal.fire("ERROR");
   }
 };
 
@@ -164,8 +164,8 @@ const insertPaymentMethod = async () => {
       modal.hide();
     }
 
-    alert("Payment Method successfully saved!");
+    Swal.fire("Payment Method successfully saved!");
   } else {
-    alert("ERROR");
+    Swal.fire("ERROR");
   }
 };

@@ -1,7 +1,6 @@
 import { paginate, createPagination } from "../js/module/pagination.js";
+import { functionalAPI as baseAPI, sessionAPI } from "../js/config.js";
 
-const baseAPI = "http://localhost/POS_AR_SYSTEM/api_functional";
-const sessionAPI = "http://localhost/POS_AR_SYSTEM/api/session.php";
 const posPage = "pos.html";
 
 sessionStorage.setItem("baseAPI", baseAPI);
@@ -116,7 +115,7 @@ const displayShiftReport = async () => {
 
     displayShiftTable(shiftReports);
   } else {
-    alert("Error!");
+    Swal.fire("Error!");
   }
 };
 
@@ -218,7 +217,7 @@ const displayDailyReport = async () => {
 
     displayDailyTable(dailyReports);
   } else {
-    alert("Error!");
+    Swal.fire("Error!");
   }
 };
 

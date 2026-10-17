@@ -53,11 +53,11 @@ const deactivateUnit = async (unitId) => {
 
     if (response.data == 1) {
 
-      alert("Unit successfully deactivated!");
+      Swal.fire("Unit successfully deactivated!");
 
     } else {
 
-      alert("ERROR: Unit was not deactivated.");
+      Swal.fire("ERROR: Unit was not deactivated.");
 
     }
 
@@ -68,7 +68,7 @@ const deactivateUnit = async (unitId) => {
 
     console.error(error);
 
-    alert("Unable to deactivate unit.");
+    Swal.fire("Unable to deactivate unit.");
 
   }
 

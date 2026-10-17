@@ -166,7 +166,7 @@ export const closeShift = async (closingCash) => {
       window.location.reload();
     });
   } else if (response.data == 2) {
-    openMessageDialog("Float request pending", "Wait for the accountant to approve or reject the float adjust request first.");
+    openMessageDialog("Cash request pending", "Wait for the supervisor to approve or reject all cash drawer requests first.");
   } else {
     openMessageDialog("ERROR", "The shift was not closed.");
   }

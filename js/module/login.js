@@ -1,6 +1,6 @@
-export const login = async (userData) => {
+import { baseAPI, baseUrl } from "../config.js";
 
-    const baseUrl = sessionStorage.getItem("baseAPI");
+export const login = async (userData) => {
 
     console.log(userData);
 
@@ -11,31 +11,34 @@ export const login = async (userData) => {
 
     try {
 
-        const response = await axios.post(`${baseUrl}/login.php`,formData,{
+        const response = await axios.post(`${baseAPI}/login.php`,formData,{
           withCredentials: true
         });
         console.log(response.data);
 
         if (response.data.success) {
-            alert("Successfully logged in!");
+            await Swal.fire("Successfully logged in!");
             if (response.data.user.role_id == 1) {
                 window.location.href =
-                    "http://localhost/POS_AR_SYSTEM/interface/Admin/dashboard.html";
+                    `${baseUrl}/interface/Admin/dashboard.html`;
             } else if (response.data.user.role_id == 2) {
                 window.location.href =
-                    "http://localhost/POS_AR_SYSTEM/interface/Cashier/pos.html";
+                    `${baseUrl}/interface/Cashier/pos.html`;
             }else if (response.data.user.role_id == 3) {
                 window.location.href =
-                    "http://localhost/POS_AR_SYSTEM/interface/Accounting/invoice.html";
+                    `${baseUrl}/interface/Accounting/invoice.html`;
+            } else if (response.data.user.role_name.toUpperCase() == "SUPERVISOR") {
+                window.location.href =
+                    `${baseUrl}/interface/Supervisor/approvals.html`;
             }  
         } else {
-            alert(
+            Swal.fire(
                 response.data.message ||
                 "Invalid username or password!"
             );
         }
     } catch (error) {
         console.error(error);
-        alert("Unable to connect to the server.");
+        Swal.fire("Unable to connect to the server.");
     }
 };

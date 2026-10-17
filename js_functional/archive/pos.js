@@ -90,7 +90,7 @@ const loadPosOptions = async () => {
     customers = response.data.customers;
     paymentMethods = response.data.paymentMethods;
   } else {
-    alert("Error!");
+    Swal.fire("Error!");
   }
 };
 

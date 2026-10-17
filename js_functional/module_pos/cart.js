@@ -6,10 +6,15 @@ export const parseEntry = () => {
   const match = value.match(/^(\d+)\s*\*\s*(.*)$/);
 
   if (match) {
-    return { qty: parseInt(match[1]) || 1, text: match[2].trim() };
+    const qty = parseInt(match[1], 10);
+
+    return { qty: qty > 0 ? qty : 0, text: match[2].trim() };
   }
 
-  return { qty: 1, text: value };
+  const qtyInput = document.getElementById("entry-qty");
+  const qty = qtyInput ? Number(qtyInput.value) : 1;
+
+  return { qty: Number.isInteger(qty) && qty > 0 ? qty : 0, text: value };
 };
 
 export const displaySuggestions = () => {
@@ -132,6 +137,12 @@ export const addToCart = (product, qty) => {
 export const addEntry = () => {
   const { qty, text } = parseEntry();
 
+  if (qty < 1) {
+    showStatus("Enter a whole quantity greater than zero.");
+    document.getElementById("entry-qty").focus();
+    return;
+  }
+
   let product = state.products.find((product) => product.barcode == text);
 
   if (!product) {
@@ -146,6 +157,7 @@ export const addEntry = () => {
   addToCart(product, qty);
 
   entry().value = "";
+  document.getElementById("entry-qty").value = "1";
   state.suggestIndex = 0;
   displaySuggestions();
   showStatus("");
@@ -189,9 +201,11 @@ export const voidLine = () => {
 export const resetSale = () => {
   state.details = [];
   state.customer = null;
+  state.saleType = null;
   state.recallId = null;
   state.selected = -1;
 
+  document.getElementById("entry-qty").value = "1";
   document.getElementById("last-item").innerText = "-";
 
   displayCart();

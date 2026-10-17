@@ -2,8 +2,8 @@ import { viewRole } from "./module/role/view.js";
 import { updateRole } from "./module/role/update.js";
 import { deleteRole } from "./module/role/delete.js";
 import { paginate, createPagination } from "./module/pagination.js";
+import { baseAPI } from "./config.js";
 
-const baseAPI = "http://localhost/POS_AR_SYSTEM/api";
 
 sessionStorage.setItem("baseAPI", baseAPI);
 
@@ -47,7 +47,7 @@ const displayRoles = async () => {
 
     displayRolesTable(response.data);
   } else {
-    alert("ERROR");
+    Swal.fire("ERROR");
   }
 };
 
@@ -157,7 +157,7 @@ const insertRole = async () => {
   if (response.data == 1) {
     displayRoles();
 
-    alert("Role successfully saved!");
+    Swal.fire("Role successfully saved!");
 
     const modal = bootstrap.Modal.getInstance(
       document.getElementById("roleModal"),
@@ -165,6 +165,6 @@ const insertRole = async () => {
 
     modal.hide();
   } else {
-    alert("ERROR");
+    Swal.fire("ERROR");
   }
 };

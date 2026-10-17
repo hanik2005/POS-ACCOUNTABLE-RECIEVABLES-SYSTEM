@@ -1,6 +1,5 @@
 <?php
-header('Content-Type: application/json');
-header("Access-Control-Allow-Origin: *");
+require_once __DIR__ . "/../api/config-cors.php";
 
 date_default_timezone_set('Asia/Manila');
 
@@ -15,12 +14,13 @@ class InvoicePrint
     $json = json_decode($json, true);
 
     $sql = "SELECT s.sales_id, s.sales_date, s.total_amount,
-        c.customer_name, c.address, g.days_name,
+        COALESCE(c.customer_name, 'Walk-in customer') AS customer_name, c.address,
+        COALESCE(g.days_name, 'Paid at sale') AS days_name,
         u.full_name AS cashier, t.terminal_name,
         i.invoice_id, i.invoice_number, i.due_date, i.amount_due
         FROM sales_hdr s
-        INNER JOIN customers c ON s.customer_id = c.customer_id
-        INNER JOIN group_days g ON c.group_days_id = g.id
+        LEFT JOIN customers c ON s.customer_id = c.customer_id
+        LEFT JOIN group_days g ON c.group_days_id = g.id
         INNER JOIN invoice i ON s.sales_id = i.sales_id
         LEFT JOIN users u ON s.created_by = u.user_id
         LEFT JOIN tbl_pos_terminal t ON s.terminal_id = t.terminal_id

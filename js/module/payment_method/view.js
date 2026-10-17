@@ -16,7 +16,7 @@ export const viewPaymentMethod = async (paymentMethodId) => {
   const payment = response.data[0];
 
   if (!payment) {
-    alert("Payment Method not found.");
+    Swal.fire("Payment Method not found.");
 
     return;
   }

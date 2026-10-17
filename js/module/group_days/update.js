@@ -18,7 +18,7 @@ export const updateGroupDays = async (groupDaysId, refreshFunc) => {
   const group = response.data[0];
 
   if (!group) {
-    alert("Group Days not found.");
+    Swal.fire("Group Days not found.");
 
     return;
   }
@@ -190,11 +190,11 @@ const saveUpdateGroupDays = async (groupDaysId) => {
       modal.hide();
     }
 
-    alert("Group Days successfully updated!");
+    Swal.fire("Group Days successfully updated!");
 
     return true;
   } else {
-    alert("ERROR");
+    Swal.fire("ERROR");
 
     return false;
   }

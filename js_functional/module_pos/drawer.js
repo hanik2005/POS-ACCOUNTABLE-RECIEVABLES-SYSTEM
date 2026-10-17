@@ -108,9 +108,9 @@ export const saveMovement = async (type, amount, reason) => {
   });
 
   if (response.data == 1 && type.movementType == "FLOAT_ADJUST") {
-    openMessageDialog("Float adjust requested", `${type.sign > 0 ? "Add" : "Remove"} ${formatCurrency(amount)}. Waiting for the accountant to approve.`);
+    openMessageDialog("Float adjustment requested", `${type.sign > 0 ? "Add" : "Remove"} ${formatCurrency(amount)}. Waiting for a supervisor to approve and handle the drawer.`);
   } else if (response.data == 1) {
-    openMessageDialog("Cash dropped", formatCurrency(amount));
+    openMessageDialog("Cash drop requested", `${formatCurrency(amount)}. A supervisor must approve the request and handle the cash drawer.`);
   } else {
     openMessageDialog("ERROR", "The cash movement was not saved.");
   }

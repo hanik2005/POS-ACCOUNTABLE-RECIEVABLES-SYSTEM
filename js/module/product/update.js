@@ -287,18 +287,18 @@ const saveUpdateProduct = async (productId) => {
     console.log(response.data);
 
     if (response.data == 1) {
-      alert("Product successfully updated!");
+      Swal.fire("Product successfully updated!");
 
       return true;
     } else {
-      alert("ERROR: Product was not updated.");
+      Swal.fire("ERROR: Product was not updated.");
 
       return false;
     }
   } catch (error) {
     console.error(error);
 
-    alert("Unable to update product.");
+    Swal.fire("Unable to update product.");
 
     return false;
   }

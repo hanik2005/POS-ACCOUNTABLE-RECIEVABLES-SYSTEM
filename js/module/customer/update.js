@@ -228,7 +228,7 @@ const saveUpdateCustomer = async (customerId) => {
     console.log(response.data);
 
     if (response.data == 1) {
-      alert("Customer successfully updated!");
+      Swal.fire("Customer successfully updated!");
 
       const modalElement = document.getElementById("blank-modal");
 
@@ -240,14 +240,14 @@ const saveUpdateCustomer = async (customerId) => {
 
       return true;
     } else {
-      alert("ERROR: Customer was not updated.");
+      Swal.fire("ERROR: Customer was not updated.");
 
       return false;
     }
   } catch (error) {
     console.error(error);
 
-    alert("Unable to update customer.");
+    Swal.fire("Unable to update customer.");
 
     return false;
   }

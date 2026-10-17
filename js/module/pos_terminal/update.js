@@ -16,7 +16,7 @@ export const updatePOSTerminal = async (terminalId, refreshFunc) => {
   const terminal = response.data[0];
 
   if (!terminal) {
-    alert("POS Terminal not found.");
+    Swal.fire("POS Terminal not found.");
 
     return;
   }
@@ -162,11 +162,11 @@ const saveUpdatePOSTerminal = async (terminalId) => {
       modal.hide();
     }
 
-    alert("POS Terminal successfully updated!");
+    Swal.fire("POS Terminal successfully updated!");
 
     return true;
   } else {
-    alert("ERROR");
+    Swal.fire("ERROR");
 
     return false;
   }

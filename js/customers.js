@@ -2,8 +2,8 @@ import { viewCustomer } from "./module/customer/view.js";
 import { updateCustomer } from "./module/customer/update.js";
 import { deleteCustomer } from "./module/customer/delete.js";
 import { paginate, createPagination } from "./module/pagination.js";
+import { baseAPI } from "./config.js";
 
-const baseAPI = "http://localhost/POS_AR_SYSTEM/api";
 
 sessionStorage.setItem("baseAPI", baseAPI);
 
@@ -52,7 +52,7 @@ const displayCustomers = async () => {
 
     displayCustomersTable(response.data);
   } else {
-    alert("ERROR");
+    Swal.fire("ERROR");
   }
 };
 
@@ -186,9 +186,9 @@ const insertCustomer = async () => {
       modal.hide();
     }
 
-    alert("Customer successfully saved!");
+    Swal.fire("Customer successfully saved!");
   } else {
-    alert("ERROR");
+    Swal.fire("ERROR");
   }
 };
 

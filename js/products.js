@@ -2,8 +2,8 @@ import { viewProduct } from "./module/product/view.js";
 import { updateProduct } from "./module/product/update.js";
 import { deleteProduct } from "./module/product/delete.js";
 import { paginate, createPagination } from "./module/pagination.js";
+import { baseAPI } from "./config.js";
 
-const baseAPI = "http://localhost/POS_AR_SYSTEM/api";
 
 sessionStorage.setItem("baseAPI", baseAPI);
 
@@ -53,7 +53,7 @@ const displayProducts = async () => {
 
     displayProductsTable(response.data);
   } else {
-    alert("ERROR");
+    Swal.fire("ERROR");
   }
 };
 
@@ -184,14 +184,14 @@ const insertProduct = async () => {
 
       document.getElementById("productForm").reset();
 
-      alert("Product successfully saved!");
+      Swal.fire("Product successfully saved!");
     } else {
-      alert("ERROR: Product was not saved.");
+      Swal.fire("ERROR: Product was not saved.");
     }
   } catch (error) {
     console.error(error);
 
-    alert("ERROR: Unable to save product.");
+    Swal.fire("ERROR: Unable to save product.");
   }
 };
 

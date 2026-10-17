@@ -11,6 +11,6 @@ export const loadPosOptions = async () => {
     state.customers = response.data.customers;
     state.paymentMethods = response.data.paymentMethods;
   } else {
-    alert("Error!");
+    Swal.fire("Error!");
   }
 };

@@ -53,11 +53,11 @@ const deactivateInventory = async (inventoryId) => {
 
     if (response.data == 1) {
 
-      alert("Inventory successfully deactivated!");
+      Swal.fire("Inventory successfully deactivated!");
 
     } else {
 
-      alert("ERROR: Inventory was not deactivated.");
+      Swal.fire("ERROR: Inventory was not deactivated.");
 
     }
 
@@ -68,7 +68,7 @@ const deactivateInventory = async (inventoryId) => {
 
     console.error(error);
 
-    alert("Unable to deactivate inventory.");
+    Swal.fire("Unable to deactivate inventory.");
 
   }
 

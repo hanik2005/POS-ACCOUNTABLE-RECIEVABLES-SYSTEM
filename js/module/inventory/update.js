@@ -150,7 +150,7 @@ export const updateInventory = async (inventoryId, refreshFunc) => {
 
     console.error(error);
 
-    alert("Unable to load inventory.");
+    Swal.fire("Unable to load inventory.");
 
   }
 
@@ -204,7 +204,7 @@ const loadUpdateProducts = async (selectedProductId) => {
 
     console.error(error);
 
-    alert("Unable to load products.");
+    Swal.fire("Unable to load products.");
 
   }
 
@@ -253,11 +253,11 @@ const saveUpdateInventory = async (inventoryId) => {
 
     if (response.data == 1) {
 
-      alert("Inventory successfully updated!");
+      Swal.fire("Inventory successfully updated!");
 
     } else {
 
-      alert("ERROR: Inventory was not updated.");
+      Swal.fire("ERROR: Inventory was not updated.");
 
     }
 
@@ -265,7 +265,7 @@ const saveUpdateInventory = async (inventoryId) => {
 
     console.error(error);
 
-    alert("Unable to update inventory.");
+    Swal.fire("Unable to update inventory.");
 
   }
 

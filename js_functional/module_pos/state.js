@@ -6,6 +6,7 @@ export const state = {
   paymentMethods: [],
   details: [],
   customer: null,
+  saleType: null,
   recallId: null,
   terminal: null,
   shift: null,

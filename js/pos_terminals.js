@@ -2,8 +2,8 @@ import { viewPOSTerminal } from "./module/pos_terminal/view.js";
 import { updatePOSTerminal } from "./module/pos_terminal/update.js";
 import { deletePOSTerminal } from "./module/pos_terminal/delete.js";
 import { paginate, createPagination } from "./module/pagination.js";
+import { baseAPI } from "./config.js";
 
-const baseAPI = "http://localhost/POS_AR_SYSTEM/api";
 
 sessionStorage.setItem("baseAPI", baseAPI);
 
@@ -56,7 +56,7 @@ const displayPOSTerminals = async () => {
 
     displayPOSTerminalsTable(response.data);
   } else {
-    alert("ERROR");
+    Swal.fire("ERROR");
   }
 };
 
@@ -142,7 +142,7 @@ const insertPOSTerminal = async () => {
   const floatStart = parseFloat(document.getElementById("floatStartInput").value);
 
   if (!(floatStart >= 0)) {
-    alert("Please enter a valid float start.");
+    Swal.fire("Please enter a valid float start.");
     return;
   }
 
@@ -181,8 +181,8 @@ const insertPOSTerminal = async () => {
       modal.hide();
     }
 
-    alert("POS Terminal successfully saved!");
+    Swal.fire("POS Terminal successfully saved!");
   } else {
-    alert("ERROR");
+    Swal.fire("ERROR");
   }
 };

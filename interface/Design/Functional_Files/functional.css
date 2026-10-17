@@ -52,6 +52,43 @@
 
     .alert-danger { background-color: #4a1f29; color: #ffd9de; border-color: #6b2e3b; }
 
+    .table-responsive { max-width: 100%; overscroll-behavior-x: contain; }
+    .navbar { gap: 8px; }
+    .navbar-toggler { border-color: #2c3a52; }
+    .navbar-toggler:focus { box-shadow: 0 0 0 .2rem rgba(53, 224, 138, .2); }
+
+    @media (max-width: 991.98px) {
+        .navbar.navbar-expand-lg { align-items: center; }
+        .navbar.navbar-expand-lg .navbar-collapse { flex-basis: 100%; }
+        .navbar.navbar-expand-lg .navbar-nav { padding-top: 8px; }
+        .navbar.navbar-expand-lg .nav-link { padding: 9px 10px; }
+    }
+
+    @media (max-width: 767.98px) {
+        body.container,
+        body.container-fluid { padding-left: 14px !important; padding-right: 14px !important; }
+        .card-body { padding: 1rem; }
+        .table-responsive { margin-left: -2px; margin-right: -2px; }
+        .table-responsive table { min-width: 680px; }
+        #main-div { max-width: 100%; overflow-x: auto; }
+        #main-div table { min-width: 680px; }
+        .row.g-2 > .col-auto { flex: 1 1 150px; }
+        .row.g-2 > .col-auto .btn { margin: 2px 0; }
+        .modal-dialog { margin: .5rem auto; }
+        .modal-content { max-height: calc(100dvh - 1rem); overflow-y: auto; }
+        .pagination { flex-wrap: wrap; gap: 3px; }
+    }
+
+    @media (max-width: 575.98px) {
+        .navbar { padding-left: 12px !important; padding-right: 12px !important; }
+        .navbar-brand { font-size: 1.05rem; }
+        .navbar .nav-link { font-size: .95rem; }
+        .navbar .btn-outline-light { margin-top: 8px; }
+        h2 { font-size: 1.55rem; }
+        h3 { font-size: 1.3rem; }
+        .btn { white-space: normal; }
+    }
+
     @media print {
         body { background: #fff; color: #000; }
         h2, h3, h5, #totalReceivable { color: #000; }

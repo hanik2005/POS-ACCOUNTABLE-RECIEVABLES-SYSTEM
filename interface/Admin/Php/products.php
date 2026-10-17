@@ -3,13 +3,13 @@
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
-    header("Location: http://localhost/POS_AR_SYSTEM/index.html");
+    header("Location: http://10.75.140.143/pos_ar_system/index.html");
     exit;
 }
 
 // Optional: Admin-only protection
 if ((int)($_SESSION['role_id'] ?? 0) !== 1) {
-    header("Location: http://localhost/POS_AR_SYSTEM/interface/User/dashboard.php");
+    header("Location: http://10.75.140.143/pos_ar_system/interface/User/dashboard.php");
     exit;
 }
 
@@ -90,6 +90,7 @@ $roleName = $_SESSION['role_name'] ?? '';
 
     </style>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 
@@ -638,11 +639,11 @@ document.getElementById("button-logout").addEventListener("click", async (event)
         if (response.data.success) {
 
             window.location.href =
-                "http://localhost/POS_AR_SYSTEM/index.html";
+                "http://10.75.140.143/pos_ar_system/index.html";
 
         } else {
 
-            alert("Logout failed.");
+            Swal.fire("Logout failed.");
 
         }
 
@@ -650,7 +651,7 @@ document.getElementById("button-logout").addEventListener("click", async (event)
 
         console.error(error);
 
-        alert("Unable to logout.");
+        Swal.fire("Unable to logout.");
 
     }
 

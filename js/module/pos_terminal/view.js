@@ -16,7 +16,7 @@ export const viewPOSTerminal = async (terminalId) => {
   const terminal = response.data[0];
 
   if (!terminal) {
-    alert("POS Terminal not found.");
+    Swal.fire("POS Terminal not found.");
 
     return;
   }

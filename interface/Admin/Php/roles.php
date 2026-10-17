@@ -55,6 +55,7 @@ if (!isset($_SESSION['user_id'])) {
             font-weight: 600;
         }
     </style>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body>

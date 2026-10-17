@@ -1,6 +1,6 @@
 import { paginate, createPagination } from "../js/module/pagination.js";
+import { functionalAPI as baseAPI } from "../js/config.js";
 
-const baseAPI = "http://localhost/POS_AR_SYSTEM/api_functional";
 
 sessionStorage.setItem("baseAPI", baseAPI);
 
@@ -63,7 +63,7 @@ const displaySalesReport = async () => {
 
     displaySalesReportTable(reportSales);
   } else {
-    alert("ERROR");
+    Swal.fire("ERROR");
   }
 };
 

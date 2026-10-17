@@ -165,7 +165,7 @@ const saveUpdateRole = async (roleId) => {
   console.log(response.data);
 
   if (response.data == 1) {
-    alert("Role successfully updated!");
+    Swal.fire("Role successfully updated!");
 
     const modal = bootstrap.Modal.getInstance(
       document.getElementById("blank-modal"),
@@ -176,7 +176,7 @@ const saveUpdateRole = async (roleId) => {
     return true;
   }
 
-  alert("ERROR");
+  Swal.fire("ERROR");
 
   return false;
 };

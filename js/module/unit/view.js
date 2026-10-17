@@ -78,7 +78,7 @@ export const viewUnit = async (unitId) => {
 
     console.error(error);
 
-    alert("Unable to load unit details.");
+    Swal.fire("Unable to load unit details.");
 
   }
 

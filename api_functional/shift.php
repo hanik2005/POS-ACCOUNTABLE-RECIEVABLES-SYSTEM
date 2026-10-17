@@ -1,6 +1,5 @@
 <?php
-header('Content-Type: application/json');
-header("Access-Control-Allow-Origin: *");
+require_once __DIR__ . "/../api/config-cors.php";
 
 date_default_timezone_set('Asia/Manila');
 
@@ -168,8 +167,7 @@ class Shift
     return json_encode($returnValue);
   }
 
-  //FLOAT_ADJUST: positive = add float, negative = remove float, it is a request that the accountant decides
-  //CASH_DROP: cash taken out of the drawer by the cashier, no approval
+  //Both float adjustments and cash drops are requests that a supervisor decides.
   function saveCashMovement($json)
   {
     include "../api/connection-pdo.php";
@@ -182,7 +180,7 @@ class Shift
     $movementType = !empty($json['movementType']) ? $json['movementType'] : "";
     $amount = isset($json['amount']) ? (float) $json['amount'] : 0;
     $reason = !empty($json['reason']) ? $json['reason'] : null;
-    $status = $movementType == 'FLOAT_ADJUST' ? 'PENDING' : 'APPROVED';
+    $status = 'PENDING';
 
     try {
       if (!in_array($movementType, ['FLOAT_ADJUST', 'CASH_DROP']) || $amount == 0 || ($movementType == 'CASH_DROP' && $amount < 0)) {
@@ -236,19 +234,25 @@ class Shift
     return json_encode($rs);
   }
 
-  //the float adjust requests of all the cashiers, the pending ones first (admin and accounting page)
+  //Cash drawer requests from all cashiers, with pending requests first.
   function getFloatRequests()
   {
     include "../api/connection-pdo.php";
 
-    $sql = "SELECT m.movement_id, m.amount, m.reason, m.status, m.created_at, m.approved_at,
+    $roleName = isset($_SESSION['role_name']) ? strtoupper($_SESSION['role_name']) : "";
+
+    if ($roleName != 'SUPERVISOR') {
+      return json_encode([]);
+    }
+
+    $sql = "SELECT m.movement_id, m.movement_type, m.amount, m.reason, m.status, m.created_at, m.approved_at,
         u.full_name AS cashier, t.terminal_name, a.full_name AS approver_name
         FROM shift_cash_movement m
         INNER JOIN shifts sh ON m.shift_id = sh.shift_id
         INNER JOIN users u ON sh.user_id = u.user_id
         INNER JOIN tbl_pos_terminal t ON sh.terminal_id = t.terminal_id
         LEFT JOIN users a ON m.approved_by = a.user_id
-        WHERE m.movement_type = 'FLOAT_ADJUST'
+        WHERE m.movement_type IN ('FLOAT_ADJUST', 'CASH_DROP')
         ORDER BY (m.status = 'PENDING') DESC, m.movement_id DESC";
     $stmt = $conn->prepare($sql);
     $stmt->execute();
@@ -257,7 +261,7 @@ class Shift
     return json_encode($rs);
   }
 
-  //status: APPROVED or REJECTED, 1 = saved, 3 = the user is not admin or accounting
+  //status: APPROVED or REJECTED, 1 = saved, 3 = the user is not a supervisor
   function updateFloatRequest($json)
   {
     include "../api/connection-pdo.php";
@@ -272,19 +276,22 @@ class Shift
     $sql = "SELECT r.role_name
         FROM users u
         INNER JOIN roles r ON u.role_id = r.role_id
-        WHERE u.user_id = :userId";
+        WHERE u.user_id = :userId AND u.status = 'ACTIVE' AND r.status = 'ACTIVE'";
     $stmt = $conn->prepare($sql);
     $stmt->bindParam(":userId", $userId);
     $stmt->execute();
     $roleName = strtoupper((string) $stmt->fetchColumn());
 
-    if (!in_array($roleName, ['ADMIN', 'ACCOUNTING'])) {
+    if ($roleName != 'SUPERVISOR') {
       return json_encode(3);
     }
 
     $sql = "UPDATE shift_cash_movement
         SET status = :status, approved_by = :userId, approved_at = :decidedAt
-        WHERE movement_id = :movementId AND movement_type = 'FLOAT_ADJUST' AND status = 'PENDING'";
+        WHERE movement_id = :movementId
+          AND movement_type IN ('FLOAT_ADJUST', 'CASH_DROP')
+          AND status = 'PENDING'
+          AND shift_id IN (SELECT shift_id FROM shifts WHERE status = 'OPEN')";
     $stmt = $conn->prepare($sql);
     $stmt->bindParam(":status", $status);
     $stmt->bindParam(":userId", $userId);

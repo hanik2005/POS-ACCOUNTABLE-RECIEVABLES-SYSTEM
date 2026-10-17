@@ -1,7 +1,7 @@
 import { login } from "./module/login.js";
+import { baseAPI } from "./config.js";
 
-const baseApiUrl = "http://localhost/pos_ar_system/api";
-sessionStorage.setItem("baseAPI", baseApiUrl);
+sessionStorage.setItem("baseAPI", baseAPI);
 
 document.addEventListener("DOMContentLoaded", ()=>{
  const loginBtn = document.getElementById("button-login");
@@ -17,5 +17,3 @@ document.addEventListener("DOMContentLoaded", ()=>{
  });
     
 })
-
-

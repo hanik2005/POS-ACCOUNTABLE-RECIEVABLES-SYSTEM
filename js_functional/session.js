@@ -1,5 +1,4 @@
-const baseUrl = "http://localhost/POS_AR_SYSTEM";
-const baseAPI = `${baseUrl}/api`;
+import { baseUrl, baseAPI } from "../js/config.js";
 
 const pages = [
   { file: "dashboard.html", title: "Dashboard", roles: ["ADMIN"] },
@@ -13,11 +12,13 @@ const pages = [
   { file: "product_categories.html", title: "Product Categories", roles: ["ADMIN"] },
   { file: "users.html", title: "Users", roles: ["ADMIN"] },
   { file: "pos.html", title: "POS", roles: ["CASHIER"], menu: true },
-  { file: "invoice.html", title: "Accounts Receivable", roles: ["CASHIER", "ACCOUNTING"], menu: true },
+  { file: "invoice.html", title: "Accounts Receivable", roles: ["ACCOUNTING"], menu: true },
   { file: "sales_report.html", title: "Sales Report", roles: ["ADMIN", "ACCOUNTING"], menu: true },
   { file: "credit_limit_report.html", title: "Credit Limit Report", roles: ["ADMIN"], menu: true },
   { file: "cashier_report.html", title: "Cashier Report", roles: ["ADMIN", "ACCOUNTING", "CASHIER"], menu: true },
-  { file: "float_requests.html", title: "Float Requests", roles: ["ADMIN", "ACCOUNTING"], menu: true },
+  { file: "approvals.html", title: "Supervisor Home", roles: ["SUPERVISOR"], menu: true },
+  { file: "cash_drawer_requests.html", title: "Cash Drawer Requests", roles: ["SUPERVISOR"], menu: true },
+  { file: "paid_sale_void_requests.html", title: "Paid Sale Void Requests", roles: ["SUPERVISOR"], menu: true },
   { file: "terminal_assignment.html", title: "Terminal Assignment", roles: ["ADMIN"], menu: true },
 ];
 
@@ -47,9 +48,19 @@ const checkSession = async () => {
 
 const isAuthorized = (user) => {
   const page = pages.find((page) => page.file == currentPage);
-  const isAdminFunctionalPage = window.location.pathname.toLowerCase().includes("/interface/admin/functional/");
+  const pagePath = window.location.pathname.toLowerCase();
+  const isAdminFunctionalPage = pagePath.includes("/interface/admin/functional/");
+  const isSupervisorPage = pagePath.includes("/interface/supervisor/");
 
   if (isAdminFunctionalPage && user.role_name.toUpperCase() != "ADMIN") {
+    return false;
+  }
+
+  if (isSupervisorPage && user.role_name.toUpperCase() != "SUPERVISOR") {
+    return false;
+  }
+
+  if (page && page.roles.includes("SUPERVISOR") && !isSupervisorPage) {
     return false;
   }
 
@@ -90,7 +101,8 @@ const displayHeader = (user) => {
       }
     });
 
-    navbar.insertAdjacentHTML("beforeend", userBlockHtml);
+    const navbarContent = navbar.querySelector(".navbar-collapse") || navbar;
+    navbarContent.insertAdjacentHTML("beforeend", userBlockHtml);
   } else {
     const links = pages
       .filter((page) => page.menu && page.roles.includes(role))
@@ -104,10 +116,15 @@ const displayHeader = (user) => {
       .join("");
 
     document.getElementById("app-header").innerHTML = `
-        <nav class="navbar navbar-expand navbar-dark bg-dark mb-3 px-3 rounded">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-3 px-3 rounded">
           <span class="navbar-brand">POS &amp; AR</span>
-          <ul class="navbar-nav me-auto">${links}</ul>
-          ${userBlockHtml}
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#appNavbarContent" aria-controls="appNavbarContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="appNavbarContent">
+            <ul class="navbar-nav me-auto">${links}</ul>
+            ${userBlockHtml}
+          </div>
         </nav>
       `;
   }
@@ -146,7 +163,7 @@ const logout = async () => {
   if (response.data.success) {
     window.location.href = `${baseUrl}/index.html`;
   } else {
-    alert("ERROR!");
+    Swal.fire("ERROR!");
   }
 };
 

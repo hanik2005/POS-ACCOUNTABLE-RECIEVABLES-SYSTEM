@@ -2,8 +2,8 @@ import { viewUnit } from "./module/unit/view.js";
 import { updateUnit } from "./module/unit/update.js";
 import { deleteUnit } from "./module/unit/delete.js";
 import { paginate, createPagination } from "./module/pagination.js";
+import { baseAPI } from "./config.js";
 
-const baseAPI = "http://localhost/POS_AR_SYSTEM/api";
 
 sessionStorage.setItem("baseAPI", baseAPI);
 
@@ -47,12 +47,12 @@ const displayUnits = async () => {
 
       displayUnitsTable(response.data);
     } else {
-      alert("ERROR");
+      Swal.fire("ERROR");
     }
   } catch (error) {
     console.error(error);
 
-    alert("Unable to load units.");
+    Swal.fire("Unable to load units.");
   }
 };
 
@@ -140,7 +140,7 @@ const insertUnit = async () => {
   const status = "ACTIVE";
 
   if (unitName.trim() === "") {
-    alert("Please enter a unit name.");
+    Swal.fire("Please enter a unit name.");
 
     return;
   }
@@ -179,13 +179,13 @@ const insertUnit = async () => {
         modal.hide();
       }
 
-      alert("Unit successfully saved!");
+      Swal.fire("Unit successfully saved!");
     } else {
-      alert("ERROR");
+      Swal.fire("ERROR");
     }
   } catch (error) {
     console.error(error);
 
-    alert("Unable to save unit.");
+    Swal.fire("Unable to save unit.");
   }
 };

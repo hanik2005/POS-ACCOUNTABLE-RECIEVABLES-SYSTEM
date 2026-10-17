@@ -2,8 +2,8 @@ import { viewProductCategory } from "./module/product_category/view.js";
 import { updateProductCategory } from "./module/product_category/update.js";
 import { deleteProductCategory } from "./module/product_category/delete.js";
 import { paginate, createPagination } from "./module/pagination.js";
+import { baseAPI } from "./config.js";
 
-const baseAPI = "http://localhost/POS_AR_SYSTEM/api";
 
 sessionStorage.setItem("baseAPI", baseAPI);
 
@@ -52,7 +52,7 @@ const displayProductCategories = async () => {
 
       displayProductCategoriesTable(response.data);
     } else {
-      alert("ERROR");
+      Swal.fire("ERROR");
     }
   } catch (error) {
     console.error(error);
@@ -151,7 +151,7 @@ const insertProductCategory = async () => {
   const description = document.getElementById("descriptionInput").value.trim();
 
   if (categoryName === "") {
-    alert("Please enter a category name.");
+    Swal.fire("Please enter a category name.");
 
     return;
   }
@@ -182,7 +182,7 @@ const insertProductCategory = async () => {
     console.log(response.data);
 
     if (response.data == 1) {
-      alert("Product category successfully added.");
+      Swal.fire("Product category successfully added.");
 
       displayProductCategories();
 
@@ -200,11 +200,11 @@ const insertProductCategory = async () => {
         form.reset();
       }
     } else {
-      alert("Failed to add product category.");
+      Swal.fire("Failed to add product category.");
     }
   } catch (error) {
     console.error(error);
 
-    alert("An error occurred while adding the product category.");
+    Swal.fire("An error occurred while adding the product category.");
   }
 };

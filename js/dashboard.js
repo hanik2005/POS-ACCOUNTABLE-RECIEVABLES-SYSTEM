@@ -1,4 +1,4 @@
-const baseAPI = "http://localhost/POS_AR_SYSTEM/api";
+import { baseAPI } from "./config.js";
 
 sessionStorage.setItem("baseAPI", baseAPI);
 

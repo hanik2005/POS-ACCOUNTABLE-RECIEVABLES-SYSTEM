@@ -16,7 +16,7 @@ export const viewGroupDays = async (groupDaysId) => {
   const group = response.data[0];
 
   if (!group) {
-    alert("Group Days not found.");
+    Swal.fire("Group Days not found.");
 
     return;
   }

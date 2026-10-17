@@ -2,8 +2,8 @@ import { viewUser } from "./module/user/view.js";
 import { updateUser } from "./module/user/update.js";
 import { deleteUser } from "./module/user/delete.js";
 import { paginate, createPagination } from "./module/pagination.js";
+import { baseAPI } from "./config.js";
 
-const baseAPI = "http://localhost/POS_AR_SYSTEM/api";
 
 sessionStorage.setItem("baseAPI", baseAPI);
 
@@ -49,7 +49,7 @@ const displayUsers = async () => {
 
     displayUsersTable(response.data);
   } else {
-    alert("ERROR");
+    Swal.fire("ERROR");
   }
 };
 
@@ -187,7 +187,7 @@ const insertUser = async () => {
   if (response.data == 1) {
     displayUsers();
 
-    alert("User successfully saved!");
+    Swal.fire("User successfully saved!");
 
     const modal = bootstrap.Modal.getInstance(
       document.getElementById("userModal"),
@@ -195,6 +195,6 @@ const insertUser = async () => {
 
     modal.hide();
   } else {
-    alert("ERROR");
+    Swal.fire("ERROR");
   }
 };

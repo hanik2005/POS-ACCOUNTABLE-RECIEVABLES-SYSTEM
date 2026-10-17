@@ -21,7 +21,6 @@
             <li class="nav-item"><a class="nav-link" href="sales_report.html">Sales Report</a></li>
             <li class="nav-item"><a class="nav-link" href="credit_limit_report.html">Credit Limit Report</a></li>
             <li class="nav-item"><a class="nav-link" href="cashier_report.html">Cashier Report</a></li>
-            <li class="nav-item"><a class="nav-link" href="float_requests.html">Float Requests</a></li>
         </ul>
       </div>
     </div>
@@ -33,16 +32,24 @@
         <div class="receivable-total"><span>Total Receivable</span><strong id="totalReceivable">?0.00</strong></div>
       </div>
       <div class="card"><div class="card-body">
-        <input type="text" id="searchInvoice" class="form-control mb-3" placeholder="Search invoice, customer or status">
+        <input type="text" id="searchInvoice" class="form-control mb-3" placeholder="Search customer or invoice">
         <div id="main-div"></div>
       </div></div>
+      <div class="modal fade" id="customerInvoicesModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg"><div class="modal-content">
+          <div class="modal-header"><h5 class="modal-title" id="customer-invoice-title">Customer AR invoices</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+          <div class="modal-body table-responsive"><table class="table table-sm table-striped"><thead><tr><th>Invoice</th><th>Sales date</th><th>Due date</th><th>Balance</th><th>Status</th><th></th></tr></thead><tbody id="customer-invoice-rows"></tbody></table></div>
+        </div></div>
+      </div>
       <div class="modal fade" id="paymentModal" tabindex="-1">
         <div class="modal-dialog"><div class="modal-content">
           <div class="modal-header"><h5 class="modal-title">Receive Payment</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
           <div class="modal-body">
             <p class="mb-1"><b id="payment-invoice"></b></p><p>Balance: <b id="payment-balance"></b></p>
-            <input type="number" step="0.01" min="0.01" id="payment-amount" class="form-control mb-2" placeholder="Amount">
+            <label for="payment-amount" class="form-label">Amount tendered</label>
+            <input type="number" step="0.01" min="0.01" id="payment-amount" class="form-control mb-2" placeholder="Amount tendered">
             <select id="payment-method" class="form-select mb-2"></select>
+            <p id="payment-allocation" class="small text-muted mb-2"></p>
             <input type="text" id="payment-reference" class="form-control mb-2" placeholder="Reference number (optional)">
             <input type="text" id="payment-remarks" class="form-control" placeholder="Remarks (optional)">
           </div>
@@ -53,6 +60,7 @@
   </main>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script type="module" src="../../../js_functional/session.js"></script>
   <script type="module" src="../../../js_functional/invoice.js"></script>
 </body>

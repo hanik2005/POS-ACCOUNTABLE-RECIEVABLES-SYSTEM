@@ -1,4 +1,4 @@
-import { baseUrl, sessionAPI, cashierReportPage, invoicePage } from "./config.js";
+import { baseUrl, sessionAPI, cashierReportPage } from "./config.js";
 import { state } from "./state.js";
 import { openMessageDialog } from "./dialog.js";
 
@@ -30,8 +30,4 @@ export const logout = async () => {
 
 export const openCashierReport = () => {
   window.location.href = cashierReportPage;
-};
-
-export const openAccountsReceivable = () => {
-  window.location.href = invoicePage;
 };

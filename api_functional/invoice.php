@@ -1,14 +1,19 @@
 <?php
-header('Content-Type: application/json');
-header("Access-Control-Allow-Origin: *");
+require_once __DIR__ . "/../api/config-cors.php";
 
 date_default_timezone_set('Asia/Manila');
+
+include "../api/session.php";
 
 class Invoice
 {
   function getAllInvoices()
   {
     include "../api/connection-pdo.php";
+
+    if (strtoupper($_SESSION['role_name'] ?? '') != 'ACCOUNTING') {
+      return json_encode([]);
+    }
 
    $sql = "SELECT i.*, s.sales_date, s.customer_id, c.customer_name,
         IFNULL(pd.total_paid, 0) AS total_paid,

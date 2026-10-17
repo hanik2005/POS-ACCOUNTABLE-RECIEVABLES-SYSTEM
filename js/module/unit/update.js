@@ -123,7 +123,7 @@ export const updateUnit = async (unitId, refreshFunc) => {
 
     console.error(error);
 
-    alert("Unable to load unit.");
+    Swal.fire("Unable to load unit.");
 
   }
 
@@ -147,7 +147,7 @@ const saveUpdateUnit = async (unitId) => {
 
   if (jsonData.unitName.trim() === "") {
 
-    alert("Unit name is required.");
+    Swal.fire("Unit name is required.");
     return;
 
   }
@@ -178,11 +178,11 @@ const saveUpdateUnit = async (unitId) => {
 
     if (response.data == 1) {
 
-      alert("Unit successfully updated!");
+      Swal.fire("Unit successfully updated!");
 
     } else {
 
-      alert("ERROR: Unit was not updated.");
+      Swal.fire("ERROR: Unit was not updated.");
 
     }
 
@@ -190,7 +190,7 @@ const saveUpdateUnit = async (unitId) => {
 
     console.error(error);
 
-    alert("Unable to update unit.");
+    Swal.fire("Unable to update unit.");
 
   }
 

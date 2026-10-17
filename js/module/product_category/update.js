@@ -128,7 +128,7 @@ export const updateProductCategory = async (categoryId, refreshFunc) => {
 
     console.error(error);
 
-    alert("Unable to load product category.");
+    Swal.fire("Unable to load product category.");
 
   }
 
@@ -152,7 +152,7 @@ const saveUpdateProductCategory = async (categoryId) => {
 
   if (jsonData.categoryName.trim() === "") {
 
-    alert("Category name is required.");
+    Swal.fire("Category name is required.");
     return;
 
   }
@@ -183,11 +183,11 @@ const saveUpdateProductCategory = async (categoryId) => {
 
     if (response.data == 1) {
 
-      alert("Product category successfully updated!");
+      Swal.fire("Product category successfully updated!");
 
     } else {
 
-      alert("ERROR: Product category was not updated.");
+      Swal.fire("ERROR: Product category was not updated.");
 
     }
 
@@ -195,7 +195,7 @@ const saveUpdateProductCategory = async (categoryId) => {
 
     console.error(error);
 
-    alert("Unable to update product category.");
+    Swal.fire("Unable to update product category.");
 
   }
 

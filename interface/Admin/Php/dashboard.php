@@ -6,7 +6,7 @@ session_start();
 if (!isset($_SESSION['user_id'])) {
 
     header(
-        "Location: http://localhost/POS_AR_SYSTEM/index.html"
+        "Location: http://10.75.140.143/pos_ar_system/index.html"
     );
 
     exit;
@@ -303,6 +303,7 @@ $roleName =
 
     </style>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 

@@ -16,7 +16,7 @@ export const updatePaymentMethod = async (paymentMethodId, refreshFunc) => {
   const payment = response.data[0];
 
   if (!payment) {
-    alert("Payment Method not found.");
+    Swal.fire("Payment Method not found.");
 
     return;
   }
@@ -169,11 +169,11 @@ const saveUpdatePaymentMethod = async (paymentMethodId) => {
       modal.hide();
     }
 
-    alert("Payment Method successfully updated!");
+    Swal.fire("Payment Method successfully updated!");
 
     return true;
   } else {
-    alert("ERROR");
+    Swal.fire("ERROR");
 
     return false;
   }

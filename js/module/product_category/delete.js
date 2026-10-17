@@ -53,11 +53,11 @@ const deactivateProductCategory = async (categoryId) => {
 
     if (response.data == 1) {
 
-      alert("Product category successfully deactivated!");
+      Swal.fire("Product category successfully deactivated!");
 
     } else {
 
-      alert("ERROR: Product category was not deactivated.");
+      Swal.fire("ERROR: Product category was not deactivated.");
 
     }
 
@@ -68,7 +68,7 @@ const deactivateProductCategory = async (categoryId) => {
 
     console.error(error);
 
-    alert("Unable to deactivate product category.");
+    Swal.fire("Unable to deactivate product category.");
 
   }
 

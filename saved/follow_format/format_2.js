@@ -48,7 +48,7 @@ const getGreetingsFromAPI = async(nameInput, ageInput) =>{
     if(response.status == 200){
         console.log(response.data);
     }else{
-        alert("error");
+        Swal.fire("error");
     }
 
     
@@ -79,7 +79,7 @@ const getGreetingsFromAPI2 = async(nameInput, ageInput) =>{
         console.log(student.language);
         console.log(student.level);
     }else{
-        alert("error");
+        Swal.fire("error");
     }
 
     
@@ -99,7 +99,7 @@ const displayStudents = async() =>{
         console.log(response.data);
         displayStudentsTable(response.data);
     }else{
-        alert("error");
+        Swal.fire("error");
     }
 }
 
@@ -148,7 +148,7 @@ const displayStudentsTable = (students)=>{
         })
         tr.querySelector(".btn-delete").addEventListener("click", ()=>{
                 deleteModal(student.stud_id, displayStudents);
-                //alert("DELETE");
+                //Swal.fire("DELETE");
                     //viewModal(student.stud_id);
         })
     });
@@ -174,7 +174,7 @@ const displayCourses = async()=>{
             select.appendChild(op);
         });
     }else{
-        alert("error");
+        Swal.fire("error");
     }
 
     
@@ -204,8 +204,8 @@ const insertStudent = async()=>{
     console.log(response.data);
     if(response.data == 1){
         displayStudents();
-        alert("student successfully save");
+        Swal.fire("student successfully save");
     }else{
-        alert("ERROR");
+        Swal.fire("ERROR");
     }
 }

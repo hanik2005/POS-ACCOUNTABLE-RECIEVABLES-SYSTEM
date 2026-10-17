@@ -7,6 +7,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="../Design/Functional_Files/functional.css">
   <link rel="stylesheet" href="../Design/Functional_Files/pos.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
   <div class="pos-bar">
@@ -16,7 +17,9 @@
     <div><span class="lbl">FLOAT</span><span id="bar-float">-</span></div>
     <div><span class="lbl">CUSTOMER</span><span id="bar-customer">-</span></div>
     <div class="bar-actions">
-      <span class="bar-btn" id="btn-invoice"><kbd>F1</kbd> Accounts Receivable</span>
+      <button type="button" class="bar-btn" id="btn-void-paid-sale" title="Select a completed sale and request supervisor approval">
+        <kbd>F5</kbd> Void Paid Sale
+      </button>
       <span class="bar-btn" id="btn-drawer"><kbd>F7</kbd> Cash Drawer</span>
       <span class="bar-btn" id="btn-report"><kbd>F6</kbd> Cashier Report</span>
       <span class="bar-btn" id="btn-logout"><kbd>F3</kbd> Logout</span>
@@ -26,7 +29,11 @@
   <div class="pos-main">
     <div class="pos-left">
       <div class="entry-wrap">
-        <input type="text" id="entry" autocomplete="off" placeholder="Scan barcode or type product name   (3*barcode = quantity)">
+        <div class="entry-row">
+          <label class="entry-qty-label" for="entry-qty">QTY</label>
+          <input type="number" id="entry-qty" min="1" step="1" value="1" aria-label="Product quantity" title="Quantity">
+          <input type="text" id="entry" autocomplete="off" placeholder="Scan barcode or type product name   (3*barcode = quantity)">
+        </div>
         <div id="suggest" class="suggest"></div>
         <div id="entry-message" class="entry-message"></div>
       </div>
@@ -55,6 +62,7 @@
       <div class="side-label">KEYS</div>
       <div class="key-list">
         <div><kbd>Enter</kbd> add item / on empty = checkout</div>
+        <div>Set Qty, then scan or type the product</div>
         <div><kbd>↑</kbd> <kbd>↓</kbd> select line</div>
         <div><kbd>+</kbd> <kbd>-</kbd> change quantity</div>
         <div><kbd>Del</kbd> void selected line</div>
@@ -64,9 +72,9 @@
   </div>
 
   <div class="keybar">
-    <span><kbd>F1</kbd> Accounts Receivable</span>
     <span><kbd>F2</kbd> Customer</span>
     <span><kbd>F4</kbd> Hold</span>
+    <span><kbd>F5</kbd> Void Paid Sale</span>
     <span><kbd>F7</kbd> Cash Drawer</span>
     <span><kbd>F8</kbd> Recall</span>
     <span><kbd>F9</kbd> Checkout</span>

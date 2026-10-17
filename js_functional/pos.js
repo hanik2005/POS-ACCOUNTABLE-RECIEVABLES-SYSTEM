@@ -8,7 +8,8 @@ import { displayCart, displayCustomer, addEntry, clearEntry, moveSuggestion, onE
 import { openCustomerDialog } from "./module_pos/customer.js";
 import { startCheckout } from "./module_pos/checkout.js";
 import { holdSale, openRecallDialog, openVoidSaleDialog } from "./module_pos/hold.js";
-import { leavePage, logout, openCashierReport, openAccountsReceivable } from "./module_pos/navigation.js";
+import { openPaidVoidDialog } from "./module_pos/voids.js";
+import { leavePage, logout, openCashierReport } from "./module_pos/navigation.js";
 
 const onPageLoad = async () => {
   displayCart();
@@ -24,12 +25,6 @@ document.addEventListener("keydown", (e) => {
     return;
   }
 
-  if (e.key == "F1") {
-    e.preventDefault();
-    leavePage(openAccountsReceivable);
-    return;
-  }
-
   if (e.key == "F3") {
     e.preventDefault();
     leavePage(logout);
@@ -39,6 +34,12 @@ document.addEventListener("keydown", (e) => {
   if (e.key == "F6") {
     e.preventDefault();
     leavePage(openCashierReport);
+    return;
+  }
+
+  if (e.key == "F5") {
+    e.preventDefault();
+    openPaidVoidDialog();
     return;
   }
 
@@ -87,6 +88,10 @@ document.addEventListener("keydown", (e) => {
       break;
     case "ArrowDown":
     case "ArrowUp":
+      if (document.activeElement.id == "entry-qty") {
+        return;
+      }
+
       e.preventDefault();
 
       if (state.suggestions.length > 0) {
@@ -97,13 +102,18 @@ document.addEventListener("keydown", (e) => {
       break;
     case "+":
     case "-":
-      if (entry().value == "") {
+      if (entry().value == "" && document.activeElement.id != "entry-qty") {
         e.preventDefault();
         changeQty(e.key == "+" ? 1 : -1);
       }
       break;
     case "Enter":
       e.preventDefault();
+
+      if (document.activeElement.id == "entry-qty") {
+        entry().focus();
+        return;
+      }
 
       if (entry().value.trim() == "") {
         startCheckout();
@@ -117,10 +127,6 @@ document.addEventListener("keydown", (e) => {
 document.addEventListener("DOMContentLoaded", () => {
   entry().addEventListener("input", onEntryInput);
 
-  document.getElementById("btn-invoice").addEventListener("click", () => {
-    leavePage(openAccountsReceivable);
-  });
-
   document.getElementById("btn-drawer").addEventListener("click", () => {
     openDrawerDialog();
   });
@@ -133,8 +139,12 @@ document.addEventListener("DOMContentLoaded", () => {
     leavePage(openCashierReport);
   });
 
-  document.addEventListener("click", () => {
-    if (!state.dialog) {
+  document.getElementById("btn-void-paid-sale").addEventListener("click", () => {
+    openPaidVoidDialog();
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!state.dialog && e.target.id != "entry-qty") {
       entry().focus();
     }
   });

@@ -223,7 +223,7 @@ const saveUpdateUser = async (userId) => {
   console.log(response.data);
 
   if (response.data == 1) {
-    alert("User successfully updated!");
+    Swal.fire("User successfully updated!");
 
     const modal = bootstrap.Modal.getInstance(
       document.getElementById("blank-modal"),
@@ -234,7 +234,7 @@ const saveUpdateUser = async (userId) => {
     return true;
   }
 
-  alert("ERROR");
+  Swal.fire("ERROR");
 
   return false;
 };

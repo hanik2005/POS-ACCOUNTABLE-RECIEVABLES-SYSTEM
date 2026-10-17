@@ -1,6 +1,6 @@
 import { paginate, createPagination } from "../js/module/pagination.js";
+import { functionalAPI as baseAPI } from "../js/config.js";
 
-const baseAPI = "http://localhost/POS_AR_SYSTEM/api_functional";
 
 sessionStorage.setItem("baseAPI", baseAPI);
 
@@ -18,7 +18,7 @@ const displayAssignments = async () => {
   if (response.status == 200) {
     displayAssignmentsTable(response.data);
   } else {
-    alert("Error!");
+    Swal.fire("Error!");
   }
 };
 
@@ -148,7 +148,7 @@ const displayAssignmentsTable = (data) => {
 
 const saveAssignment = async (assignmentId, userId, terminalId, scheduleId, data) => {
   if (![userId, terminalId, scheduleId].every((id) => Number.isInteger(Number(id)) && Number(id) > 0)) {
-    alert("Please select a cashier, a terminal and a schedule.");
+    Swal.fire("Please select a cashier, a terminal and a schedule.");
     return;
   }
 
@@ -156,7 +156,7 @@ const saveAssignment = async (assignmentId, userId, terminalId, scheduleId, data
   const terminal = data.terminals.find((item) => item.terminal_id == terminalId);
   const schedule = data.schedules.find((item) => item.schedule_id == scheduleId);
   if (!cashier || !terminal || !schedule) {
-    alert("Select an active cashier, terminal and schedule.");
+    Swal.fire("Select an active cashier, terminal and schedule.");
     return;
   }
 
@@ -165,12 +165,12 @@ const saveAssignment = async (assignmentId, userId, terminalId, scheduleId, data
   });
 
   if (conflicts.some((assignment) => assignment.terminal_id == terminalId)) {
-    alert("This terminal is already assigned to another cashier during an overlapping schedule.");
+    Swal.fire("This terminal is already assigned to another cashier during an overlapping schedule.");
     return;
   }
 
   if (conflicts.some((assignment) => assignment.user_id == userId)) {
-    alert("This cashier is already assigned to another terminal during an overlapping schedule.");
+    Swal.fire("This cashier is already assigned to another terminal during an overlapping schedule.");
     return;
   }
 
@@ -187,15 +187,15 @@ const saveAssignment = async (assignmentId, userId, terminalId, scheduleId, data
   });
 
   if (response.data == 1) {
-    alert("Terminal assignment has been successfully saved!");
+    Swal.fire("Terminal assignment has been successfully saved!");
 
     displayAssignments();
   } else if (response.data == 2) {
-    alert("This terminal is already assigned to another cashier during an overlapping schedule.");
+    Swal.fire("This terminal is already assigned to another cashier during an overlapping schedule.");
   } else if (response.data == 3) {
-    alert("This cashier is already assigned to another terminal during an overlapping schedule.");
+    Swal.fire("This cashier is already assigned to another terminal during an overlapping schedule.");
   } else {
-    alert("ERROR!");
+    Swal.fire("ERROR!");
   }
 };
 
@@ -226,10 +226,10 @@ const removeAssignment = async (assignmentId) => {
   });
 
   if (response.data == 1) {
-    alert("Terminal assignment has been successfully removed!");
+    Swal.fire("Terminal assignment has been successfully removed!");
 
     displayAssignments();
   } else {
-    alert("ERROR!");
+    Swal.fire("ERROR!");
   }
 };

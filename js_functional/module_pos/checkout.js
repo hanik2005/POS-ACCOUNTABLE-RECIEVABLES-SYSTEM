@@ -2,7 +2,7 @@ import { baseAPI } from "./config.js";
 import { state } from "./state.js";
 import { formatCurrency, toCents, isCashMethod, moveIndex } from "./utils.js";
 import { openDialog, closeDialog, openMessageDialog } from "./dialog.js";
-import { getTotalSales, getTotalQty, resetSale } from "./cart.js";
+import { getTotalSales, getTotalQty, resetSale, displayCustomer } from "./cart.js";
 import { openCustomerDialog } from "./customer.js";
 import { refreshShift } from "./shift.js";
 import { prepareInvoice, openPrintDialog } from "./invoice.js";
@@ -25,16 +25,77 @@ export const startCheckout = () => {
     return;
   }
 
-  if (!state.customer) {
-    openCustomerDialog(() => openCheckoutDialog());
-    return;
-  }
+  let index = state.customer ? 1 : 0;
+  const modes = ["Walk-in - pay directly", "Accounts Receivable - charge to customer"];
 
-  openCheckoutDialog();
+  const chooseMode = () => {
+    closeDialog();
+
+    if (index == 0) {
+      state.saleType = "WALK_IN";
+      state.customer = null;
+      displayCustomer();
+      openPayDialog();
+      return;
+    }
+
+    state.saleType = "AR";
+
+    if (!state.customer) {
+      openCustomerDialog(openCheckoutDialog);
+      return;
+    }
+
+    openCheckoutDialog();
+  };
+
+  const render = () => {
+    document.getElementById("dialog-list").innerHTML = modes.map((mode, i) => `
+      <button type="button" class="list-row ${i == index ? "active" : ""}" data-sale-mode="${i}">
+        <span>${mode}</span>
+      </button>
+    `).join("");
+  };
+
+  openDialog(
+    "Choose sale type",
+    `<p class="dialog-text">Choose how this sale will be invoiced.</p><div id="dialog-list"></div>`,
+    "Up/down = select | Enter = continue | Esc = cancel",
+    (e) => {
+      if (e.key == "Escape") {
+        e.preventDefault();
+        closeDialog();
+      } else if (e.key == "Enter") {
+        e.preventDefault();
+        chooseMode();
+      } else {
+        index = moveIndex(e, index, modes.length);
+        render();
+      }
+    },
+  );
+
+  document.getElementById("dialog-list").addEventListener("click", (e) => {
+    const button = e.target.closest("[data-sale-mode]");
+
+    if (button) {
+      index = parseInt(button.dataset.saleMode, 10);
+      chooseMode();
+    }
+  });
+
+  render();
 };
 
 export const openCheckoutDialog = () => {
   const customer = state.customer;
+
+  if (!customer) {
+    openCustomerDialog(openCheckoutDialog);
+    return;
+  }
+
+  state.saleType = "AR";
   const terms = state.customers.find((item) => item.customer_id == customer.customerId);
   const creditLimit = terms ? toCents(terms.credit_limit) : 0;
   const outstandingBalance = terms ? toCents(terms.outstanding_balance) : 0;
@@ -74,6 +135,12 @@ export const openCheckoutDialog = () => {
 
 export const openPayDialog = () => {
   const paymentMethods = state.paymentMethods;
+  const isWalkIn = state.saleType == "WALK_IN";
+
+  if (!isWalkIn && !state.customer) {
+    openMessageDialog("Pay now", "Select a customer for an Accounts Receivable sale.");
+    return;
+  }
 
   if (paymentMethods.length == 0) {
     openMessageDialog("Pay now", "There is no payment method. Please ask the admin to add one.");
@@ -101,15 +168,15 @@ export const openPayDialog = () => {
     const applied = Math.min(toCents(received), toCents(total)) / 100;
     const balance = (toCents(total) - toCents(applied)) / 100;
     const change = cash && toCents(received) > toCents(total) ? (toCents(received) - toCents(total)) / 100 : 0;
-    const floatLeft = parseFloat(state.shift.float_left);
+    const floatLeft = state.shift ? parseFloat(state.shift.float_left) : 0;
 
     document.getElementById("dialog-list").innerHTML = paymentMethods
       .map((method, i) => `<div class="list-row ${i == index ? "active" : ""}"><span>${method.method_name}</span></div>`)
       .join("");
 
     document.getElementById("dialog-input").placeholder = cash
-      ? "Amount received (less than total = partial)"
-      : "Amount to pay (blank = full, less = partial)";
+      ? isWalkIn ? "Cash received" : "Amount received (less than total = partial)"
+      : isWalkIn ? "Amount paid (blank = full total)" : "Amount to pay (blank = full, less = partial)";
     document.getElementById("pay-reference").classList.toggle("d-none", cash);
     document.getElementById("pay-balance").innerText = formatCurrency(balance);
     document.getElementById("pay-change").innerText = formatCurrency(change);
@@ -124,15 +191,15 @@ export const openPayDialog = () => {
   openDialog(
     "Pay now",
     `<div class="pay-total">${formatCurrency(total)}</div>
-     <div class="side-row"><span>Customer</span><span>${state.customer.customerName}</span></div>
+     <div class="side-row"><span>Customer</span><span>${isWalkIn ? "Walk-in customer" : state.customer.customerName}</span></div>
      <div id="dialog-list" class="mt-2"></div>
      <input id="dialog-input" type="number" step="0.01" min="0" class="pos-input mt-2" autocomplete="off">
      <input id="pay-reference" type="text" class="pos-input mt-2 d-none" placeholder="Reference number (optional)" autocomplete="off">
-     <div class="side-row"><span>Balance to Accounts Receivable</span><span id="pay-balance">${formatCurrency(total)}</span></div>
+     <div class="side-row"><span>${isWalkIn ? "Balance due" : "Balance to Accounts Receivable"}</span><span id="pay-balance">${formatCurrency(total)}</span></div>
      <div class="side-row"><span>Change</span><span id="pay-change">${formatCurrency(0)}</span></div>
      <div class="side-row"><span>Float left after change</span><span id="pay-float">${formatCurrency(0)}</span></div>
      <p class="dialog-text" id="pay-message"></p>`,
-    "↑↓ payment method · Enter = pay (partial allowed) · Esc = cancel",
+    isWalkIn ? "Arrow keys = payment method | Enter = pay in full | Esc = cancel" : "Arrow keys = payment method | Enter = pay (partial allowed) | Esc = cancel",
     (e) => {
       if (e.key == "Escape") {
         e.preventDefault();
@@ -154,19 +221,36 @@ export const openPayDialog = () => {
           return;
         }
 
+        if (isWalkIn && toCents(received) < toCents(total)) {
+          document.getElementById("pay-message").innerText = "Walk-in sales must be paid in full. Choose Accounts Receivable for partial or unpaid sales.";
+          return;
+        }
+
         if (!cash && toCents(received) > toCents(total)) {
           document.getElementById("pay-message").innerText = "A non-cash payment cannot be more than the total.";
           return;
         }
 
+        const change = cash && toCents(received) > toCents(total)
+          ? (toCents(received) - toCents(total)) / 100
+          : 0;
+        const floatLeft = state.shift ? parseFloat(state.shift.float_left) : 0;
+
+        if (change > floatLeft) {
+          document.getElementById("pay-message").innerText = "Not enough float for this change.";
+          return;
+        }
+
         const applied = Math.min(toCents(received), toCents(total)) / 100;
-        const customer = state.customers.find((item) => item.customer_id == state.customer.customerId);
+        const customer = isWalkIn
+          ? null
+          : state.customers.find((item) => item.customer_id == state.customer.customerId);
         const availableCredit = Math.max(
           toCents(customer ? customer.credit_limit : 0) - toCents(customer ? customer.outstanding_balance : 0),
           0,
         );
 
-        if (toCents(total) - toCents(applied) > availableCredit) {
+        if (!isWalkIn && toCents(total) - toCents(applied) > availableCredit) {
           document.getElementById("pay-message").innerText = `Pay at least ${formatCurrency((toCents(total) - availableCredit) / 100)} to stay within the customer's credit limit.`;
           return;
         }
@@ -195,7 +279,8 @@ export const saveSale = async (status, payment) => {
   }
 
   const header = {
-    customerId: state.customer ? state.customer.customerId : "",
+    customerId: state.saleType == "WALK_IN" ? null : state.customer ? state.customer.customerId : null,
+    saleType: state.saleType,
     status: status,
     recallId: state.recallId,
     amount: getTotalSales(),
@@ -218,7 +303,7 @@ export const saveSale = async (status, payment) => {
     showCreditLimitDialog(response.data.message);
   } else if ((typeof response.data == "number" ? response.data : parseInt(response.data, 10)) > 0) {
     const total = getTotalSales();
-    const text = `${state.customer ? state.customer.customerName : ""} - ${formatCurrency(total)}`;
+    const text = `${state.customer ? state.customer.customerName : "Walk-in customer"} - ${formatCurrency(total)}`;
     const change = payment ? Math.max(toCents(payment.amountTendered) - toCents(total), 0) / 100 : 0;
     const balance = payment ? Math.max(toCents(total) - toCents(payment.amountApplied), 0) / 100 : total;
     const customerTerms = state.customers.find((item) => item.customer_id == state.customer?.customerId);

@@ -3,12 +3,12 @@
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
-    header("Location: http://localhost/POS_AR_SYSTEM/index.html");
+    header("Location: http://10.75.140.143/pos_ar_system/index.html");
     exit;
 }
 
 if ((int)($_SESSION['role_id'] ?? 0) !== 1) {
-    header("Location: http://localhost/POS_AR_SYSTEM/interface/User/dashboard.php");
+    header("Location: http://10.75.140.143/pos_ar_system/interface/User/dashboard.php");
     exit;
 }
 
@@ -106,6 +106,7 @@ $roleName = $_SESSION['role_name'] ?? '';
 
     </style>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
 <body>

@@ -1,6 +1,5 @@
 <?php
-header('Content-Type: application/json');
-header("Access-Control-Allow-Origin: *");
+require_once __DIR__ . "/../api/config-cors.php";
 
 class SalesReport
 {
@@ -10,10 +9,11 @@ class SalesReport
 
     $json = json_decode($json, true);
     $sql = "SELECT s.sales_id, s.sales_date, s.total_amount, s.status,
-        c.customer_name, t.terminal_name, u.full_name AS cashier, i.invoice_number,
+        COALESCE(c.customer_name, 'Walk-in customer') AS customer_name,
+        t.terminal_name, u.full_name AS cashier, i.invoice_number,
         IFNULL(pd.total_paid, 0) AS total_paid
         FROM sales_hdr s
-        INNER JOIN customers c ON s.customer_id = c.customer_id
+        LEFT JOIN customers c ON s.customer_id = c.customer_id
         INNER JOIN invoice i ON s.sales_id = i.sales_id
         LEFT JOIN tbl_pos_terminal t ON s.terminal_id = t.terminal_id
         LEFT JOIN users u ON s.created_by = u.user_id

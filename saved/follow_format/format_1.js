@@ -24,9 +24,9 @@ const saveInvoice = async () => {
   });
 
   if (response.data == 1) {
-    alert("Invoice has been successfully saved!");
+    Swal.fire("Invoice has been successfully saved!");
   } else {
-    alert("ERROR!");
+    Swal.fire("ERROR!");
   }
 };
 
@@ -141,7 +141,7 @@ const getAllStudents = async () => {
   if (response.status == 200) {
     return response.data;
   } else {
-    alert("Error!");
+    Swal.fire("Error!");
   }
 };
 
@@ -153,7 +153,7 @@ const getAllProducts = async () => {
   if (response.status == 200) {
     return response.data;
   } else {
-    alert("Error!");
+    Swal.fire("Error!");
   }
 };
 

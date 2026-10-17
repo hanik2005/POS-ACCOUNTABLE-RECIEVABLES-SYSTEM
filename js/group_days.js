@@ -2,8 +2,8 @@ import { viewGroupDays } from "./module/group_days/view.js";
 import { updateGroupDays } from "./module/group_days/update.js";
 import { deleteGroupDays } from "./module/group_days/delete.js";
 import { paginate, createPagination } from "./module/pagination.js";
+import { baseAPI } from "./config.js";
 
-const baseAPI = "http://localhost/POS_AR_SYSTEM/api";
 
 sessionStorage.setItem("baseAPI", baseAPI);
 
@@ -49,7 +49,7 @@ const displayGroupDays = async () => {
 
     displayGroupDaysTable(response.data);
   } else {
-    alert("ERROR");
+    Swal.fire("ERROR");
   }
 };
 
@@ -167,8 +167,8 @@ const insertGroupDays = async () => {
       modal.hide();
     }
 
-    alert("Group Days successfully saved!");
+    Swal.fire("Group Days successfully saved!");
   } else {
-    alert("ERROR");
+    Swal.fire("ERROR");
   }
 };
