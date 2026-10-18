@@ -1,3 +1,5 @@
+import { formatCurrency } from "../number_format.js";
+
 const baseAPI = sessionStorage.getItem("baseAPI");
 
 export const viewCustomer = async (customerId) => {
@@ -59,7 +61,7 @@ export const viewCustomer = async (customerId) => {
                 <tr>
                     <th>Credit Limit</th>
                     <td>
-                        ₱${parseFloat(customer.credit_limit).toFixed(2)}
+                        ${formatCurrency(parseFloat(customer.credit_limit))}
                     </td>
                 </tr>
 

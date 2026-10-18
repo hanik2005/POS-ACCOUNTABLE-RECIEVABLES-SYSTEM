@@ -3726,6 +3726,8 @@ CREATE TABLE `shifts` (
   `closed_at` datetime DEFAULT NULL,
   `float_start` decimal(12,2) NOT NULL DEFAULT 0.00,
   `closing_cash` decimal(12,2) DEFAULT NULL,
+  `cashier_closing_cash` decimal(12,2) DEFAULT NULL,
+  `supervisor_user_id` int(11) DEFAULT NULL,
   `expected_cash` decimal(12,2) DEFAULT NULL,
   `status` varchar(20) NOT NULL DEFAULT 'OPEN'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -4357,7 +4359,8 @@ ALTER TABLE `shifts`
   ADD PRIMARY KEY (`shift_id`),
   ADD KEY `fk_shifts_user` (`user_id`),
   ADD KEY `fk_shifts_terminal` (`terminal_id`),
-  ADD KEY `fk_shifts_schedule` (`schedule_id`);
+  ADD KEY `fk_shifts_schedule` (`schedule_id`),
+  ADD KEY `fk_shifts_supervisor_user` (`supervisor_user_id`);
 
 --
 -- Indexes for table `shift_cash_movement`
@@ -4576,7 +4579,8 @@ ALTER TABLE `sales_hdr`
 ALTER TABLE `shifts`
   ADD CONSTRAINT `fk_shifts_schedule` FOREIGN KEY (`schedule_id`) REFERENCES `shift_schedule` (`schedule_id`),
   ADD CONSTRAINT `fk_shifts_terminal` FOREIGN KEY (`terminal_id`) REFERENCES `tbl_pos_terminal` (`terminal_id`),
-  ADD CONSTRAINT `fk_shifts_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
+  ADD CONSTRAINT `fk_shifts_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`),
+  ADD CONSTRAINT `fk_shifts_supervisor_user` FOREIGN KEY (`supervisor_user_id`) REFERENCES `users` (`user_id`);
 
 --
 -- Constraints for table `shift_cash_movement`
@@ -4618,6 +4622,34 @@ CREATE TABLE `sale_void_requests` (
   CONSTRAINT `fk_sale_void_sales` FOREIGN KEY (`sales_id`) REFERENCES `sales_hdr` (`sales_id`),
   CONSTRAINT `fk_sale_void_requested_by` FOREIGN KEY (`requested_by`) REFERENCES `users` (`user_id`),
   CONSTRAINT `fk_sale_void_decided_by` FOREIGN KEY (`decided_by`) REFERENCES `users` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Table structure for table `barcode_scanner_sessions`
+--
+CREATE TABLE `barcode_scanner_sessions` (
+  `scanner_session_id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `pairing_code` char(8) NOT NULL,
+  `status` varchar(10) NOT NULL DEFAULT 'ACTIVE',
+  `created_at` datetime NOT NULL,
+  `expires_at` datetime NOT NULL,
+  PRIMARY KEY (`scanner_session_id`),
+  KEY `idx_barcode_scanner_pairing` (`pairing_code`, `status`, `expires_at`),
+  KEY `idx_barcode_scanner_user` (`user_id`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Table structure for table `barcode_scanner_scans`
+--
+CREATE TABLE `barcode_scanner_scans` (
+  `scan_id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `scanner_session_id` int(11) NOT NULL,
+  `barcode` varchar(128) NOT NULL,
+  `created_at` datetime NOT NULL,
+  `consumed_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`scan_id`),
+  KEY `idx_barcode_scans_pending` (`scanner_session_id`, `consumed_at`, `scan_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 COMMIT;
 

@@ -94,6 +94,7 @@ $roleName = $_SESSION['role_name'] ?? '';
     </style>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="../../Design/Functional_Files/sweetalert-dark.css" rel="stylesheet">
 </head>
 
 

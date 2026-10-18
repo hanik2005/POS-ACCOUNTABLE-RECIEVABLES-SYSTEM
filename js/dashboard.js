@@ -1,4 +1,5 @@
 import { baseAPI } from "./config.js";
+import { formatNumber } from "./module/number_format.js";
 
 sessionStorage.setItem("baseAPI", baseAPI);
 
@@ -38,7 +39,7 @@ const loadProductCount = async () => {
 
     if (response.status == 200) {
       document.getElementById("product-count").textContent =
-        response.data.length;
+        formatNumber(response.data.length, 0);
     }
   } catch (error) {
     console.error("Product Count Error:", error);
@@ -55,7 +56,7 @@ const loadCustomerCount = async () => {
 
     if (response.status == 200) {
       document.getElementById("customer-count").textContent =
-        response.data.length;
+        formatNumber(response.data.length, 0);
     }
   } catch (error) {
     console.error("Customer Count Error:", error);
@@ -72,7 +73,7 @@ const loadGroupDaysCount = async () => {
 
     if (response.status == 200) {
       document.getElementById("group-days-count").textContent =
-        response.data.length;
+        formatNumber(response.data.length, 0);
     }
   } catch (error) {
     console.error("Group Days Count Error:", error);
@@ -89,7 +90,7 @@ const loadPaymentMethodCount = async () => {
 
     if (response.status == 200) {
       document.getElementById("payment-method-count").textContent =
-        response.data.length;
+        formatNumber(response.data.length, 0);
     }
   } catch (error) {
     console.error("Payment Method Count Error:", error);
@@ -106,7 +107,7 @@ const loadTerminalCount = async () => {
 
     if (response.status == 200) {
       document.getElementById("terminal-count").textContent =
-        response.data.length;
+        formatNumber(response.data.length, 0);
     }
   } catch (error) {
     console.error("Terminal Count Error:", error);
@@ -122,7 +123,7 @@ const loadRoleCount = async () => {
     });
 
     if (response.status == 200) {
-      document.getElementById("role-count").textContent = response.data.length;
+      document.getElementById("role-count").textContent = formatNumber(response.data.length, 0);
     }
   } catch (error) {
     console.error("Role Count Error:", error);
@@ -138,7 +139,7 @@ const loadUnitCount = async () => {
     });
 
     if (response.status == 200) {
-      document.getElementById("unit-count").textContent = response.data.length;
+      document.getElementById("unit-count").textContent = formatNumber(response.data.length, 0);
     }
   } catch (error) {
     console.error("Unit Count Error:", error);
@@ -155,7 +156,7 @@ const loadProductCategoryCount = async () => {
 
     if (response.status == 200) {
       document.getElementById("product-category-count").textContent =
-        response.data.length;
+        formatNumber(response.data.length, 0);
     }
   } catch (error) {
     console.error("Product Category Count Error:", error);
@@ -172,7 +173,7 @@ const loadInventoryCount = async () => {
 
     if (response.status == 200) {
       document.getElementById("inventory-count").textContent =
-        response.data.length;
+        formatNumber(response.data.length, 0);
     }
   } catch (error) {
     console.error("Inventory Count Error:", error);
@@ -188,7 +189,7 @@ const loadUserCount = async () => {
     });
 
     if (response.status == 200) {
-      document.getElementById("user-count").textContent = response.data.length;
+      document.getElementById("user-count").textContent = formatNumber(response.data.length, 0);
     }
   } catch (error) {
     console.error("User Count Error:", error);

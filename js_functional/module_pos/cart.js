@@ -1,25 +1,23 @@
 import { state } from "./state.js";
-import { entry, formatCurrency, showStatus } from "./utils.js";
+import { entry, formatCurrency, formatNumber, showStatus } from "./utils.js";
 
-export const parseEntry = () => {
-  const value = entry().value.trim();
-  const match = value.match(/^(\d+)\s*\*\s*(.*)$/);
+let editingQtyIndex = null;
 
-  if (match) {
-    const qty = parseInt(match[1], 10);
-
-    return { qty: qty > 0 ? qty : 0, text: match[2].trim() };
-  }
-
-  const qtyInput = document.getElementById("entry-qty");
-  const qty = qtyInput ? Number(qtyInput.value) : 1;
-
-  return { qty: Number.isInteger(qty) && qty > 0 ? qty : 0, text: value };
+const escapeHtml = (value) => {
+  return String(value || "").replace(/[&<>"']/g, (character) => {
+    return {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;",
+    }[character];
+  });
 };
 
 export const displaySuggestions = () => {
   const box = document.getElementById("suggest");
-  const search = parseEntry().text.toLowerCase();
+  const search = entry().value.trim().toLowerCase();
 
   if (search == "") {
     state.suggestions = [];
@@ -36,13 +34,19 @@ export const displaySuggestions = () => {
   box.innerHTML = state.suggestions
     .map(
       (product, i) => `
-        <div class="suggest-item ${i == state.suggestIndex ? "active" : ""}">
-          <span>${product.product_name}</span>
+        <button type="button" class="suggest-item ${i == state.suggestIndex ? "active" : ""}" data-product-index="${i}">
+          <span>${escapeHtml(product.product_name)}</span>
           <span>${formatCurrency(parseFloat(product.unit_price))}</span>
-        </div>
+        </button>
       `,
     )
     .join("");
+
+  box.querySelectorAll("button[data-product-index]").forEach((button) => {
+    button.addEventListener("click", () => {
+      addProduct(state.suggestions[parseInt(button.dataset.productIndex, 10)]);
+    });
+  });
 };
 
 export const onEntryInput = () => {
@@ -58,6 +62,10 @@ export const clearEntry = () => {
 };
 
 export const moveSuggestion = (step) => {
+  if (state.suggestions.length == 0) {
+    return;
+  }
+
   state.suggestIndex =
     step > 0 ? Math.min(state.suggestIndex + 1, state.suggestions.length - 1) : Math.max(state.suggestIndex - 1, 0);
 
@@ -85,12 +93,50 @@ export const displayCart = () => {
         <tr class="${i == state.selected ? "selected" : ""}">
           <td>${item.productName}</td>
           <td class="text-end">${formatCurrency(item.productPrice)}</td>
-          <td class="text-end">${item.qty}</td>
+          <td class="text-end">
+            ${editingQtyIndex == i
+              ? `<input type="number" class="cart-qty-input" data-index="${i}" value="${item.qty}" min="1" step="1" aria-label="Change quantity for ${escapeHtml(item.productName)}">`
+              : `<button type="button" class="cart-qty-edit" data-index="${i}" aria-label="Edit quantity for ${escapeHtml(item.productName)}" title="Click to edit quantity">${formatNumber(item.qty, 0)}</button>`}
+          </td>
           <td class="text-end">${formatCurrency(item.amount)}</td>
         </tr>
       `,
     )
     .join("");
+
+  tbody.querySelectorAll(".cart-qty-edit").forEach((button) => {
+    button.addEventListener("click", () => {
+      editingQtyIndex = parseInt(button.dataset.index, 10);
+      state.selected = editingQtyIndex;
+      displayCart();
+
+      const input = tbody.querySelector(".cart-qty-input");
+      input.focus();
+      input.select();
+    });
+  });
+
+  const qtyInput = tbody.querySelector(".cart-qty-input");
+
+  if (qtyInput) {
+    const index = parseInt(qtyInput.dataset.index, 10);
+
+    qtyInput.addEventListener("keydown", (event) => {
+      event.stopPropagation();
+
+      if (event.key == "Enter") {
+        event.preventDefault();
+        commitQtyEdit(index, true);
+      } else if (event.key == "Escape") {
+        event.preventDefault();
+        cancelQtyEdit(true);
+      }
+    });
+
+    qtyInput.addEventListener("blur", () => {
+      commitQtyEdit(index);
+    });
+  }
 
   const row = tbody.querySelector(".selected");
 
@@ -99,7 +145,43 @@ export const displayCart = () => {
   }
 
   document.getElementById("total").innerText = formatCurrency(getTotalSales());
-  document.getElementById("count").innerText = getTotalQty();
+  document.getElementById("count").innerText = formatNumber(getTotalQty(), 0);
+};
+
+const commitQtyEdit = (index, focusProduct = false) => {
+  if (editingQtyIndex != index) {
+    return;
+  }
+
+  const input = document.querySelector(`.cart-qty-input[data-index="${index}"]`);
+  const quantity = Number(input.value);
+
+  if (!Number.isInteger(quantity) || quantity < 1) {
+    editingQtyIndex = null;
+    displayCart();
+    showStatus("Enter a whole quantity greater than zero.");
+    return;
+  }
+
+  state.details[index].qty = quantity;
+  state.details[index].amount = state.details[index].productPrice * quantity;
+  state.selected = index;
+  editingQtyIndex = null;
+  displayCart();
+  showStatus("");
+
+  if (focusProduct) {
+    entry().focus();
+  }
+};
+
+const cancelQtyEdit = (focusProduct = false) => {
+  editingQtyIndex = null;
+  displayCart();
+
+  if (focusProduct) {
+    entry().focus();
+  }
 };
 
 export const displayCustomer = () => {
@@ -129,21 +211,32 @@ export const addToCart = (product, qty) => {
     state.selected = details.length - 1;
   }
 
-  document.getElementById("last-item").innerText = `${product.product_name}  x${qty}`;
+  document.getElementById("last-item").innerText = `${product.product_name}  x${formatNumber(qty, 0)}`;
 
   displayCart();
 };
 
-export const addEntry = () => {
-  const { qty, text } = parseEntry();
+const addProduct = (product) => {
+  addToCart(product, 1);
+  entry().value = "";
+  state.suggestIndex = 0;
+  showStatus("");
+  displaySuggestions();
+  entry().focus();
+};
 
-  if (qty < 1) {
-    showStatus("Enter a whole quantity greater than zero.");
-    document.getElementById("entry-qty").focus();
+export const addEntry = () => {
+  const text = entry().value.trim();
+
+  if (text == "") {
     return;
   }
 
-  let product = state.products.find((product) => product.barcode == text);
+  let product = state.products.find((item) => item.barcode == text);
+
+  if (!product) {
+    product = state.products.find((item) => item.product_name.toLowerCase() == text.toLowerCase());
+  }
 
   if (!product) {
     product = state.suggestions[state.suggestIndex];
@@ -154,13 +247,7 @@ export const addEntry = () => {
     return;
   }
 
-  addToCart(product, qty);
-
-  entry().value = "";
-  document.getElementById("entry-qty").value = "1";
-  state.suggestIndex = 0;
-  displaySuggestions();
-  showStatus("");
+  addProduct(product);
 };
 
 export const moveSelected = (step) => {
@@ -199,13 +286,13 @@ export const voidLine = () => {
 };
 
 export const resetSale = () => {
+  editingQtyIndex = null;
   state.details = [];
   state.customer = null;
   state.saleType = null;
   state.recallId = null;
   state.selected = -1;
 
-  document.getElementById("entry-qty").value = "1";
   document.getElementById("last-item").innerText = "-";
 
   displayCart();

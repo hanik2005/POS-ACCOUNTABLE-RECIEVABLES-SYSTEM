@@ -1,9 +1,6 @@
-export const formatCurrency = (amount) => {
-  return new Intl.NumberFormat("en-PH", {
-    style: "currency",
-    currency: "PHP",
-  }).format(amount);
-};
+import { formatCurrency, formatNumber } from "../../js/module/number_format.js";
+
+export { formatCurrency, formatNumber };
 
 export const formatTime = (dateTime) => {
   return new Date(dateTime.replace(" ", "T")).toLocaleString("en-PH", {

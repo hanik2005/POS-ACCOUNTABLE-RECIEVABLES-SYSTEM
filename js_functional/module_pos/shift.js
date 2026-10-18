@@ -1,14 +1,15 @@
 import { baseAPI } from "./config.js";
 import { state } from "./state.js";
-import { formatCurrency, formatTime, focusEntry, focusDialogInput } from "./utils.js";
+import { formatCurrency, formatNumber, formatTime, focusEntry, focusDialogInput } from "./utils.js";
 import { openDialog, closeDialog, openMessageDialog } from "./dialog.js";
 
 export const displayFloat = () => {
   const shift = state.shift;
-  const pending = shift ? parseInt(shift.pending_requests) : 0;
+  const pendingCount = shift ? parseInt(shift.pending_requests) || 0 : 0;
+  const pending = formatNumber(pendingCount, 0);
 
   document.getElementById("bar-float").innerText = shift
-    ? `${formatCurrency(parseFloat(shift.float_left))}${pending > 0 ? ` (${pending} pending)` : ""}`
+    ? `${formatCurrency(parseFloat(shift.float_left))}${pendingCount > 0 ? ` (${pending} pending)` : ""}`
     : "-";
 };
 
@@ -39,14 +40,7 @@ export const loadPosSession = async () => {
 
   displayFloat();
 
-  if (!terminal) {
-    openDialog(
-      "No terminal assigned",
-      `<p class="dialog-text">This cashier has no terminal. Please ask the admin to assign one.</p>`,
-      "",
-      () => {},
-    );
-  } else if (!shift) {
+  if (!shift) {
     openStartShiftDialog();
   } else {
     focusEntry();
@@ -55,22 +49,54 @@ export const loadPosSession = async () => {
 
 export const openStartShiftDialog = () => {
   const terminal = state.terminal;
+  const canStartShift = terminal && parseInt(terminal.can_start_shift) == 1;
+  let details = `<p class="dialog-text">This cashier has no active terminal assignment. Ask the admin to assign a terminal and schedule.</p>`;
+
+  if (terminal) {
+    const scheduleHours = `${terminal.start_time.slice(0, 5)}–${terminal.end_time.slice(0, 5)}`;
+    const scheduleMessage = canStartShift
+      ? "Check the cash drawer float before starting."
+      : `Your assigned ${terminal.schedule_name} schedule is ${scheduleHours}. You cannot start outside those hours. Ask the admin to assign a schedule that covers this shift.`;
+
+    details = `
+      <div class="pay-total">${formatCurrency(parseFloat(terminal.float_start))}</div>
+      <div class="side-row"><span>Terminal</span><span>${terminal.terminal_name}</span></div>
+      <div class="side-row"><span>Schedule</span><span>${terminal.schedule_name} (${scheduleHours})</span></div>
+      <p class="dialog-text mt-2">${scheduleMessage}</p>`;
+  }
 
   openDialog(
-    "Start shift",
-    `<div class="pay-total">${formatCurrency(parseFloat(terminal.float_start))}</div>
-     <div class="side-row"><span>Terminal</span><span>${terminal.terminal_name}</span></div>
-     <div class="side-row"><span>Schedule</span><span>${terminal.schedule_name}</span></div>
-     <p class="dialog-text">This is the float start (fund for change) of the terminal. Check that the cash drawer has it.</p>`,
-    "Enter = start shift",
+    terminal ? "Start shift" : "Shift unavailable",
+    `${details}
+     <div class="dialog-actions">
+       <button type="button" id="start-shift-button" class="pos-action-button" ${canStartShift ? "" : "disabled"}>Start Shift</button>
+       <button type="button" id="start-shift-logout" class="pos-action-button secondary">Log Out</button>
+     </div>`,
+    canStartShift ? "Enter = start shift · Choose Log Out to leave" : "Choose Log Out or ask the admin to update your assignment",
     (e) => {
       if (e.key == "Enter") {
         e.preventDefault();
-        closeDialog();
-        openShift();
+        if (canStartShift) {
+          closeDialog();
+          openShift();
+        }
       }
     },
   );
+
+  const startButton = document.getElementById("start-shift-button");
+
+  if (startButton && canStartShift) {
+    startButton.addEventListener("click", () => {
+      closeDialog();
+      openShift();
+    });
+  }
+
+  document.getElementById("start-shift-logout").addEventListener("click", () => {
+    closeDialog();
+    document.getElementById("btn-logout").click();
+  });
 };
 
 export const openShift = async () => {
@@ -86,12 +112,18 @@ export const openShift = async () => {
 
   if (response.data == 1) {
     await loadPosSession();
+  } else if (response.data == 2) {
+    openMessageDialog(
+      "Outside assigned schedule",
+      "Ask the admin to assign you to the current schedule before starting the shift.",
+      openStartShiftDialog,
+    );
   } else {
     openMessageDialog("ERROR", "The shift was not started.", openStartShiftDialog);
   }
 };
 
-export const openCloseShiftDialog = async () => {
+export const openCloseShiftDialog = async (afterClose) => {
   if (!state.shift) {
     openMessageDialog("Close shift", "There is no open shift yet.");
     return;
@@ -105,6 +137,12 @@ export const openCloseShiftDialog = async () => {
   });
 
   const report = response.data[0];
+
+  if (!report) {
+    openMessageDialog("Close shift", "The shift report could not be loaded.");
+    return;
+  }
+
   const gross = parseFloat(report.gross_sales);
 
   openDialog(
@@ -114,42 +152,83 @@ export const openCloseShiftDialog = async () => {
         <tr><td>Terminal</td><td>${report.terminal_name}</td></tr>
         <tr><td>Schedule</td><td>${report.schedule_name}</td></tr>
         <tr><td>Opened</td><td>${formatTime(report.opened_at)}</td></tr>
-        <tr><td>Transactions</td><td>${report.transactions}</td></tr>
+        <tr><td>Transactions</td><td>${formatNumber(report.transactions, 0)}</td></tr>
         <tr><td>Sales</td><td>${formatCurrency(gross)}</td></tr>
-        <tr class="expected"><td>Net sales</td><td>${formatCurrency(gross)}</td></tr>
         <tr><td>Float start</td><td>${formatCurrency(parseFloat(report.float_start))}</td></tr>
         <tr><td>Float adjust</td><td>${formatCurrency(parseFloat(report.float_adjust))}</td></tr>
+        <tr><td>Cash received</td><td>${formatCurrency(parseFloat(report.cash_received))}</td></tr>
         <tr><td>Change given</td><td>${formatCurrency(parseFloat(report.change_given))}</td></tr>
         <tr><td>Cash drop</td><td>${formatCurrency(parseFloat(report.cash_drop))}</td></tr>
+        <tr class="expected"><td>Expected cash</td><td>${formatCurrency(parseFloat(report.expected_cash))}</td></tr>
       </table>
-      <p class="dialog-text mt-2">Count the cash drawer after the cash drop. The closing cash is the float left for the next shift.</p>
-      <input id="dialog-input" type="number" step="0.01" min="0" class="pos-input" placeholder="Closing cash (float left)" autocomplete="off">`,
-    "Enter = close shift · Esc = cancel",
+      <p class="dialog-text mt-2">The cashier and supervisor must count the drawer separately. The supervisor count becomes the next shift float.</p>
+      <label class="dialog-label" for="dialog-input">Cashier counted cash</label>
+      <input id="dialog-input" type="number" step="0.01" min="0" class="pos-input" placeholder="Cashier count" autocomplete="off">
+      <label class="dialog-label" for="supervisor-closing-cash">Supervisor counted cash</label>
+      <input id="supervisor-closing-cash" type="number" step="0.01" min="0" class="pos-input" placeholder="Supervisor count" autocomplete="off">
+      <label class="dialog-label" for="supervisor-username">Supervisor username</label>
+      <input id="supervisor-username" type="text" class="pos-input" placeholder="Supervisor username" autocomplete="username">
+      <label class="dialog-label" for="supervisor-password">Supervisor password</label>
+      <input id="supervisor-password" type="password" class="pos-input" placeholder="Supervisor password" autocomplete="current-password">
+      <div class="dialog-actions">
+        <button type="button" id="confirm-close-shift" class="pos-action-button">Confirm Close Shift</button>
+        <button type="button" id="cancel-close-shift" class="pos-action-button secondary">Cancel</button>
+      </div>`,
+    "Enter = confirm close · Esc = cancel",
     (e) => {
       if (e.key == "Escape") {
         e.preventDefault();
         closeDialog();
       } else if (e.key == "Enter") {
         e.preventDefault();
-
-        const closingCash = parseFloat(document.getElementById("dialog-input").value);
-
-        if (closingCash >= 0) {
-          closeShift(closingCash);
-        } else {
-          focusDialogInput();
-        }
+        submitCloseShift(afterClose);
       }
     },
   );
 
   focusDialogInput();
+
+  document.getElementById("confirm-close-shift").addEventListener("click", () => {
+    submitCloseShift(afterClose);
+  });
+
+  document.getElementById("cancel-close-shift").addEventListener("click", () => {
+    closeDialog();
+  });
 };
 
-export const closeShift = async (closingCash) => {
+const submitCloseShift = (afterClose) => {
+  const cashierClosingCash = document.getElementById("dialog-input").value;
+  const supervisorClosingCash = document.getElementById("supervisor-closing-cash").value;
+  const supervisorUsername = document.getElementById("supervisor-username").value.trim();
+  const supervisorPassword = document.getElementById("supervisor-password").value;
+
+  if (
+    cashierClosingCash == "" || supervisorClosingCash == ""
+    || !Number.isFinite(Number(cashierClosingCash)) || !Number.isFinite(Number(supervisorClosingCash))
+    || Number(cashierClosingCash) < 0 || Number(supervisorClosingCash) < 0
+    || supervisorUsername == "" || supervisorPassword == ""
+  ) {
+    openMessageDialog(
+      "Complete the closing count",
+      "Enter both cash counts and the supervisor credentials.",
+      () => openCloseShiftDialog(afterClose),
+    );
+    return;
+  }
+
+  closeShift({
+    cashierClosingCash: Number(cashierClosingCash),
+    supervisorClosingCash: Number(supervisorClosingCash),
+    supervisorUsername: supervisorUsername,
+    supervisorPassword: supervisorPassword,
+  }, afterClose);
+};
+
+const closeShift = async (closingData, afterClose) => {
   closeDialog();
 
-  const jsonData = { shiftId: state.shift.shift_id, closingCash: closingCash };
+  const jsonData = { shiftId: state.shift.shift_id, ...closingData };
 
   const formData = new FormData();
   formData.append("operation", "closeShift");
@@ -162,12 +241,29 @@ export const closeShift = async (closingCash) => {
   });
 
   if (response.data == 1) {
-    openMessageDialog("Shift closed", `Float left for the next shift: ${formatCurrency(closingCash)}`, () => {
-      window.location.reload();
-    });
+    const after = afterClose || (() => window.location.reload());
+    state.shift = null;
+    displayFloat();
+    openMessageDialog(
+      "Shift closed",
+      `Cashier count: ${formatCurrency(closingData.cashierClosingCash)}. Supervisor count: ${formatCurrency(closingData.supervisorClosingCash)}.`,
+      after,
+    );
   } else if (response.data == 2) {
-    openMessageDialog("Cash request pending", "Wait for the supervisor to approve or reject all cash drawer requests first.");
+    openMessageDialog(
+      "Cash request pending",
+      "Wait for the supervisor to approve or reject all cash drawer requests first.",
+      () => openCloseShiftDialog(afterClose),
+    );
+  } else if (response.data == 3) {
+    openMessageDialog(
+      "Supervisor verification failed",
+      "Check that the username and password belong to an active supervisor.",
+      () => openCloseShiftDialog(afterClose),
+    );
+  } else if (response.data == 4) {
+    openMessageDialog("Shift unavailable", "This open shift does not belong to the logged-in cashier.");
   } else {
-    openMessageDialog("ERROR", "The shift was not closed.");
+    openMessageDialog("ERROR", "The shift was not closed.", () => openCloseShiftDialog(afterClose));
   }
 };

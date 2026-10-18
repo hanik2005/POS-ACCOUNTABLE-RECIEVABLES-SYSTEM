@@ -3,6 +3,7 @@ import { updateCustomer } from "./module/customer/update.js";
 import { deleteCustomer } from "./module/customer/delete.js";
 import { paginate, createPagination } from "./module/pagination.js";
 import { baseAPI } from "./config.js";
+import { formatCurrency } from "./module/number_format.js";
 
 
 sessionStorage.setItem("baseAPI", baseAPI);
@@ -96,7 +97,7 @@ const displayCustomersTable = (customers) => {
       <td>${customer.contact_number ?? ""}</td>
       <td>${customer.email ?? ""}</td>
       <td>${customer.address ?? ""}</td>
-      <td>₱${parseFloat(customer.credit_limit).toFixed(2)}</td>
+      <td>${formatCurrency(parseFloat(customer.credit_limit))}</td>
       <td>${customer.days_name ?? ""}</td>
       <td>${customer.status}</td>
       <td>

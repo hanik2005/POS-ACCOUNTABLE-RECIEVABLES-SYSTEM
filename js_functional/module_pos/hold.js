@@ -109,7 +109,7 @@ export const openVoidSaleDialog = () => {
 
   openDialog(
     "Void sale",
-    `<p class="dialog-text">Void this sale? ${getTotalQty()} item(s) - ${formatCurrency(getTotalSales())}</p>`,
+    `<p class="dialog-text">Void this current sale? ${getTotalQty()} item(s) - ${formatCurrency(getTotalSales())}</p>`,
     "Enter = Yes · Esc = No",
     async (e) => {
       if (e.key == "Escape") {

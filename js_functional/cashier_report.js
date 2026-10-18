@@ -1,5 +1,6 @@
 import { paginate, createPagination } from "../js/module/pagination.js";
 import { functionalAPI as baseAPI, sessionAPI } from "../js/config.js";
+import { formatCurrency, formatNumber } from "../js/module/number_format.js";
 
 const posPage = "pos.html";
 
@@ -11,13 +12,6 @@ let dailyPage = 1;
 let shiftReports = [];
 let dailyReports = [];
 let printing = false;
-
-const formatCurrency = (amount) => {
-  return new Intl.NumberFormat("en-PH", {
-    style: "currency",
-    currency: "PHP",
-  }).format(amount);
-};
 
 const formatDate = (date) => {
   const yyyy = date.getFullYear();
@@ -145,9 +139,13 @@ const displayShiftTable = (shifts) => {
                 <th class="text-end">Float Start</th>
                 <th class="text-end">Float Adjust</th>
                 <th class="text-end">Cash Received</th>
+                <th class="text-end">Change Given</th>
                 <th class="text-end">Cash Drop</th>
                 <th class="text-end">Expected Cash</th>
-                <th class="text-end">Closing Cash (Float Left)</th>
+                <th class="text-end">Cashier Count</th>
+                <th class="text-end">Supervisor Count</th>
+                <th>Supervisor</th>
+                <th class="text-end">Count Difference</th>
                 <th class="text-end">Over / Short</th>
             </tr>
         </thead>
@@ -161,6 +159,13 @@ const displayShiftTable = (shifts) => {
     const gross = parseFloat(shift.gross_sales);
     const closed = shift.closed_at && shift.closing_cash !== null;
     const difference = closed ? parseFloat(shift.closing_cash) - parseFloat(shift.expected_cash) : 0;
+    const cashierCount = shift.cashier_closing_cash !== null && shift.cashier_closing_cash !== ""
+      ? parseFloat(shift.cashier_closing_cash)
+      : shift.supervisor_user_id ? null : closed ? parseFloat(shift.closing_cash) : null;
+    const supervisorCount = shift.supervisor_user_id && closed ? parseFloat(shift.closing_cash) : null;
+    const countDifference = cashierCount !== null && supervisorCount !== null
+      ? supervisorCount - cashierCount
+      : null;
 
     const tr = document.createElement("tr");
 
@@ -170,14 +175,18 @@ const displayShiftTable = (shifts) => {
             <td>${shift.schedule_name}</td>
             <td>${formatTime(shift.opened_at)}</td>
             <td>${shift.closed_at ? formatTime(shift.closed_at) : "OPEN"}</td>
-            <td class="text-end">${shift.transactions}</td>
+            <td class="text-end">${formatNumber(shift.transactions, 0)}</td>
             <td class="text-end">${formatCurrency(gross)}</td>
             <td class="text-end">${formatCurrency(parseFloat(shift.float_start))}</td>
             <td class="text-end">${formatCurrency(parseFloat(shift.float_adjust))}</td>
             <td class="text-end">${formatCurrency(parseFloat(shift.cash_received))}</td>
+            <td class="text-end">${formatCurrency(parseFloat(shift.change_given))}</td>
             <td class="text-end">${formatCurrency(parseFloat(shift.cash_drop))}</td>
             <td class="text-end">${formatCurrency(parseFloat(shift.expected_cash))}</td>
-            <td class="text-end">${closed ? formatCurrency(parseFloat(shift.closing_cash)) : "-"}</td>
+            <td class="text-end">${cashierCount !== null ? formatCurrency(cashierCount) : "-"}</td>
+            <td class="text-end">${supervisorCount !== null ? formatCurrency(supervisorCount) : "-"}</td>
+            <td>${shift.supervisor_name || "-"}</td>
+            <td class="text-end ${countDifference < 0 ? "text-danger" : ""}">${countDifference !== null ? formatCurrency(countDifference) : "-"}</td>
             <td class="text-end ${difference < 0 ? "text-danger" : ""}">${closed ? formatCurrency(difference) : "-"}</td>
         `;
 
@@ -264,7 +273,7 @@ const displayDailyTable = (reports) => {
     tr.innerHTML = `
             <td>${row.cashier}</td>
             <td>${row.terminal_name || ""}</td>
-            <td class="text-end">${row.transactions}</td>
+            <td class="text-end">${formatNumber(row.transactions, 0)}</td>
             <td class="text-end">${formatCurrency(gross)}</td>
         `;
 
@@ -278,7 +287,7 @@ const displayDailyTable = (reports) => {
 
     tr.innerHTML = `
             <td colspan="2">TOTAL</td>
-            <td class="text-end">${total.transactions}</td>
+            <td class="text-end">${formatNumber(total.transactions, 0)}</td>
             <td class="text-end">${formatCurrency(total.gross)}</td>
         `;
 

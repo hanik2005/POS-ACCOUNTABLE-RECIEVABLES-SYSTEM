@@ -1,3 +1,5 @@
+import { formatNumber } from "../number_format.js";
+
 const baseAPI = sessionStorage.getItem("baseAPI");
 
 
@@ -37,12 +39,12 @@ export const viewInventory = async (inventoryId) => {
 
             <tr>
                 <td><strong>Quantity On Hand</strong></td>
-                <td>${inventory.quantity_on_hand}</td>
+                <td>${formatNumber(inventory.quantity_on_hand, 0)}</td>
             </tr>
 
             <tr>
                 <td><strong>Reorder Level</strong></td>
-                <td>${inventory.reorder_level}</td>
+                <td>${formatNumber(inventory.reorder_level, 0)}</td>
             </tr>
 
             <tr>

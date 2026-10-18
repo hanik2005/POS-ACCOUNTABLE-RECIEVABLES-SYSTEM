@@ -1,5 +1,6 @@
 import { paginate, createPagination } from "../js/module/pagination.js";
 import { functionalAPI as baseAPI } from "../js/config.js";
+import { formatCurrency, formatNumber } from "../js/module/number_format.js";
 
 
 sessionStorage.setItem("baseAPI", baseAPI);
@@ -78,12 +79,12 @@ const displaySummary = (sales) => {
     outstanding += Math.max(0, parseFloat(sale.total_amount) - parseFloat(sale.total_paid));
   });
 
-  document.getElementById("sumTransactions").innerText = sales.length;
-  document.getElementById("sumTotalSales").innerText = `₱${totalSales.toFixed(2)}`;
-  document.getElementById("sumNetSales").innerText = `₱${totalSales.toFixed(2)}`;
-  document.getElementById("sumPostedAR").innerText = `₱${totalSales.toFixed(2)}`;
-  document.getElementById("sumCollected").innerText = `₱${collected.toFixed(2)}`;
-  document.getElementById("sumOutstanding").innerText = `₱${outstanding.toFixed(2)}`;
+  document.getElementById("sumTransactions").innerText = formatNumber(sales.length, 0);
+  document.getElementById("sumTotalSales").innerText = formatCurrency(totalSales);
+  document.getElementById("sumNetSales").innerText = formatCurrency(totalSales);
+  document.getElementById("sumPostedAR").innerText = formatCurrency(totalSales);
+  document.getElementById("sumCollected").innerText = formatCurrency(collected);
+  document.getElementById("sumOutstanding").innerText = formatCurrency(outstanding);
 };
 
 const displaySalesReportTable = (sales) => {
@@ -130,10 +131,10 @@ const displaySalesReportTable = (sales) => {
             <td>${sale.customer_name}</td>
             <td>${sale.terminal_name || ""}</td>
             <td>${sale.cashier || ""}</td>
-            <td>₱${parseFloat(sale.total_amount).toFixed(2)}</td>
+            <td>${formatCurrency(parseFloat(sale.total_amount))}</td>
             <td>${sale.invoice_number}</td>
-            <td>₱${parseFloat(sale.total_paid).toFixed(2)}</td>
-            <td>₱${balance.toFixed(2)}</td>
+            <td>${formatCurrency(parseFloat(sale.total_paid))}</td>
+            <td>${formatCurrency(balance)}</td>
         `;
 
     tBody.appendChild(tr);

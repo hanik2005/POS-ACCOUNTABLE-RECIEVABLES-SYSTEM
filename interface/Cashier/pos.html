@@ -20,6 +20,9 @@
       <button type="button" class="bar-btn" id="btn-void-paid-sale" title="Select a completed sale and request supervisor approval">
         <kbd>F5</kbd> Void Paid Sale
       </button>
+      <button type="button" class="bar-btn" id="btn-phone-scanner" title="Pair a phone barcode scanner">
+        Phone Scanner
+      </button>
       <span class="bar-btn" id="btn-drawer"><kbd>F7</kbd> Cash Drawer</span>
       <span class="bar-btn" id="btn-report"><kbd>F6</kbd> Cashier Report</span>
       <span class="bar-btn" id="btn-logout"><kbd>F3</kbd> Logout</span>
@@ -29,10 +32,9 @@
   <div class="pos-main">
     <div class="pos-left">
       <div class="entry-wrap">
-        <div class="entry-row">
-          <label class="entry-qty-label" for="entry-qty">QTY</label>
-          <input type="number" id="entry-qty" min="1" step="1" value="1" aria-label="Product quantity" title="Quantity">
-          <input type="text" id="entry" autocomplete="off" placeholder="Scan barcode or type product name   (3*barcode = quantity)">
+        <div class="entry-row product-entry-row">
+          <label class="entry-qty-label" for="entry">PRODUCT</label>
+          <input type="text" id="entry" autocomplete="off" placeholder="Scan barcode or type product name">
         </div>
         <div id="suggest" class="suggest"></div>
         <div id="entry-message" class="entry-message"></div>
@@ -43,7 +45,7 @@
             <tr>
               <th style="text-align:left;">PRODUCT</th>
               <th class="text-end">PRICE</th>
-              <th class="text-end">QTY</th>
+              <th class="text-end" title="Click a quantity to edit it">QTY</th>
               <th class="text-end">AMOUNT</th>
             </tr>
           </thead>
@@ -62,7 +64,8 @@
       <div class="side-label">KEYS</div>
       <div class="key-list">
         <div><kbd>Enter</kbd> add item / on empty = checkout</div>
-        <div>Set Qty, then scan or type the product</div>
+        <div>Products are added with quantity 1</div>
+        <div>Click a Qty value in the table to edit it</div>
         <div><kbd>↑</kbd> <kbd>↓</kbd> select line</div>
         <div><kbd>+</kbd> <kbd>-</kbd> change quantity</div>
         <div><kbd>Del</kbd> void selected line</div>
@@ -80,7 +83,7 @@
     <span><kbd>F9</kbd> Checkout</span>
     <span><kbd>F10</kbd> Close Shift</span>
     <span><kbd>Del</kbd> Void Line</span>
-    <span><kbd>Esc</kbd> Void Sale</span>
+    <span><kbd>Esc</kbd> Void Current Sale</span>
     <span><kbd>F6</kbd> Cashier Report</span>
     <span><kbd>F3</kbd> Logout</span>
     <span><kbd>F11</kbd> Full Screen</span>

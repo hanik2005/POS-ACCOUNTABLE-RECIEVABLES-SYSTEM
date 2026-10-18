@@ -129,7 +129,10 @@ const ensureInvoiceModals = () => {
 };
 
 const money = (value) => {
-  return (Number(value) || 0).toFixed(2);
+  return new Intl.NumberFormat("en-PH", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(value) || 0);
 };
 
 const displayInvoices = async () => {
@@ -214,7 +217,7 @@ const displayInvoicesTable = () => {
     const row = document.createElement("tr");
     row.innerHTML = `
       <td>${escapeHtml(customer.customer_name)}</td>
-      <td>${customer.invoices.length}</td>
+      <td>${new Intl.NumberFormat("en-PH").format(customer.invoices.length)}</td>
       <td>₱${money(customer.balance)}</td>
       <td>
         <button type="button" class="btn btn-outline-primary btn-sm">
@@ -344,7 +347,7 @@ const openPaymentModal = (invoice) => {
     `${invoice.invoice_number} — ${invoice.customer_name}`;
   document.getElementById("payment-balance").innerText =
     `₱${money(invoice.balance)}`;
-  document.getElementById("payment-amount").value = money(invoice.balance);
+  document.getElementById("payment-amount").value = (Number(invoice.balance) || 0).toFixed(2);
   document.getElementById("payment-reference").value = "";
   document.getElementById("payment-remarks").value = "";
 

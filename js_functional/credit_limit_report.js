@@ -1,5 +1,6 @@
 import { paginate, createPagination } from "../js/module/pagination.js";
 import { functionalAPI as baseAPI } from "../js/config.js";
+import { formatNumber } from "../js/module/number_format.js";
 
 sessionStorage.setItem("baseAPI", baseAPI);
 
@@ -59,9 +60,9 @@ const renderReport = () => {
   const overLimitCount = reportRows.filter((row) => Number(row.over_limit_amount) > 0).length;
   const reachedCount = reportRows.filter((row) => row.credit_status == "LIMIT REACHED").length;
 
-  document.getElementById("customerCount").textContent = reportRows.length;
+  document.getElementById("customerCount").textContent = formatNumber(reportRows.length, 0);
   document.getElementById("totalOutstanding").textContent = formatCurrency(totalOutstanding);
-  document.getElementById("limitCount").textContent = overLimitCount + reachedCount;
+  document.getElementById("limitCount").textContent = formatNumber(overLimitCount + reachedCount, 0);
 
   const { rows, current } = paginate(filtered, currentPage);
   currentPage = current;

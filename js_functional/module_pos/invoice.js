@@ -1,5 +1,5 @@
 import { baseAPI } from "./config.js";
-import { toCents, printMoney, focusEntry } from "./utils.js";
+import { toCents, printMoney, formatNumber, focusEntry } from "./utils.js";
 import { openDialog, closeDialog, openMessageDialog } from "./dialog.js";
 
 export const loadPdfLibrary = () => {
@@ -102,7 +102,7 @@ export const buildInvoicePdf = (jsPDF, data) => {
 
     items.forEach((item) => {
       wrap(item.product_name);
-      row(`${item.quantity} x ${printMoney(item.unit_price)}`, printMoney(item.line_total));
+      row(`${formatNumber(item.quantity, 0)} x ${printMoney(item.unit_price)}`, printMoney(item.line_total));
     });
 
     line();

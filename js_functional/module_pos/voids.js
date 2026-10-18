@@ -1,6 +1,6 @@
 import { baseAPI } from "./config.js";
 import { state } from "./state.js";
-import { formatCurrency, moveIndex } from "./utils.js";
+import { formatCurrency, formatNumber, moveIndex } from "./utils.js";
 import { openDialog, closeDialog, openMessageDialog } from "./dialog.js";
 
 const escapeHtml = (value) => {
@@ -123,7 +123,7 @@ const showSaleDetails = async (sale) => {
   const detailRows = response.data.items.map((item) => `
     <tr>
       <td>${escapeHtml(item.product_name)}</td>
-      <td class="text-end">${escapeHtml(item.quantity)}</td>
+      <td class="text-end">${formatNumber(item.quantity, 0)}</td>
       <td class="text-end">${formatCurrency(item.unit_price)}</td>
       <td class="text-end">${formatCurrency(item.line_total)}</td>
     </tr>

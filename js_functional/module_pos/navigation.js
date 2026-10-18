@@ -1,6 +1,7 @@
 import { baseUrl, sessionAPI, cashierReportPage } from "./config.js";
 import { state } from "./state.js";
 import { openMessageDialog } from "./dialog.js";
+import { openCloseShiftDialog } from "./shift.js";
 
 export const leavePage = (action) => {
   if (state.details.length > 0) {
@@ -11,7 +12,7 @@ export const leavePage = (action) => {
   action();
 };
 
-export const logout = async () => {
+const completeLogout = async () => {
   const formData = new FormData();
   formData.append("operation", "logout");
 
@@ -26,6 +27,15 @@ export const logout = async () => {
   } else {
     openMessageDialog("ERROR", "Unable to log out.");
   }
+};
+
+export const logout = async () => {
+  if (state.shift) {
+    await openCloseShiftDialog(completeLogout);
+    return;
+  }
+
+  await completeLogout();
 };
 
 export const openCashierReport = () => {

@@ -1,3 +1,5 @@
+import { formatNumber } from "./number_format.js";
+
 export const pageSize = 10;
 
 export const paginate = (items, page) => {
@@ -27,8 +29,8 @@ export const createPagination = (total, current, onChange) => {
 
   const info = document.createElement("small");
 
-  info.classList.add("text-muted");
-  info.textContent = `Showing ${from} to ${to} of ${total}`;
+  info.classList.add("text-muted", "pagination-summary");
+  info.textContent = `Showing ${formatNumber(from, 0)} to ${formatNumber(to, 0)} of ${formatNumber(total, 0)}`;
 
   const nav = document.createElement("nav");
   const list = document.createElement("ul");
@@ -77,7 +79,7 @@ export const createPagination = (total, current, onChange) => {
         addItem("...", 0, true);
       }
 
-      addItem(page, page, false, page == current);
+      addItem(formatNumber(page, 0), page, false, page == current);
 
       previous = page;
     }

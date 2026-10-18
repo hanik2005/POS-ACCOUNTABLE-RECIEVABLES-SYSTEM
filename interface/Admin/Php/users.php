@@ -59,6 +59,7 @@ if (!isset($_SESSION['user_id'])) {
     </style>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="../../Design/Functional_Files/sweetalert-dark.css" rel="stylesheet">
 </head>
 
 <body>

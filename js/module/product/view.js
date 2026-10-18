@@ -1,3 +1,5 @@
+import { formatCurrency } from "../number_format.js";
+
 const baseAPI = sessionStorage.getItem("baseAPI");
 
 
@@ -42,7 +44,7 @@ export const viewProduct = async (productId) => {
 
             <tr>
                 <td><strong>Unit Price</strong></td>
-                <td>₱${parseFloat(product.unit_price).toFixed(2)}</td>
+                <td>${formatCurrency(parseFloat(product.unit_price))}</td>
             </tr>
 
             <tr>

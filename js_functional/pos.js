@@ -10,6 +10,7 @@ import { startCheckout } from "./module_pos/checkout.js";
 import { holdSale, openRecallDialog, openVoidSaleDialog } from "./module_pos/hold.js";
 import { openPaidVoidDialog } from "./module_pos/voids.js";
 import { leavePage, logout, openCashierReport } from "./module_pos/navigation.js";
+import { openPhoneScanner } from "./module_pos/phone_scanner.js";
 
 const onPageLoad = async () => {
   displayCart();
@@ -22,6 +23,15 @@ const onPageLoad = async () => {
 document.addEventListener("keydown", (e) => {
   if (e.repeat && (["Enter", "Escape", "Delete"].includes(e.key) || /^F\d+$/.test(e.key))) {
     e.preventDefault();
+    return;
+  }
+
+  if (e.target.closest(".cart-qty-edit, .cart-qty-input")) {
+    return;
+  }
+
+  if (state.dialog) {
+    state.dialog.onKey(e);
     return;
   }
 
@@ -40,11 +50,6 @@ document.addEventListener("keydown", (e) => {
   if (e.key == "F5") {
     e.preventDefault();
     openPaidVoidDialog();
-    return;
-  }
-
-  if (state.dialog) {
-    state.dialog.onKey(e);
     return;
   }
 
@@ -88,10 +93,6 @@ document.addEventListener("keydown", (e) => {
       break;
     case "ArrowDown":
     case "ArrowUp":
-      if (document.activeElement.id == "entry-qty") {
-        return;
-      }
-
       e.preventDefault();
 
       if (state.suggestions.length > 0) {
@@ -102,18 +103,13 @@ document.addEventListener("keydown", (e) => {
       break;
     case "+":
     case "-":
-      if (entry().value == "" && document.activeElement.id != "entry-qty") {
+      if (entry().value == "") {
         e.preventDefault();
         changeQty(e.key == "+" ? 1 : -1);
       }
       break;
     case "Enter":
       e.preventDefault();
-
-      if (document.activeElement.id == "entry-qty") {
-        entry().focus();
-        return;
-      }
 
       if (entry().value.trim() == "") {
         startCheckout();
@@ -143,8 +139,12 @@ document.addEventListener("DOMContentLoaded", () => {
     openPaidVoidDialog();
   });
 
+  document.getElementById("btn-phone-scanner").addEventListener("click", () => {
+    openPhoneScanner();
+  });
+
   document.addEventListener("click", (e) => {
-    if (!state.dialog && e.target.id != "entry-qty") {
+    if (!state.dialog && !e.target.closest(".entry-wrap, .cart-qty-edit, .cart-qty-input")) {
       entry().focus();
     }
   });

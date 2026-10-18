@@ -256,6 +256,79 @@ table {
   border-color: var(--admin-accent-strong);
 }
 
+.pagination-summary {
+  color: #b8c4d8 !important;
+}
+
+.pagination .page-link {
+  color: var(--admin-text);
+}
+
+.pagination .page-item.disabled .page-link {
+  color: #8b9ab3;
+}
+
+.swal2-popup,
+.swal2-popup.swal2-toast {
+  color: #e6edf7 !important;
+  background: #1b2332 !important;
+  border: 1px solid #2c3a52 !important;
+}
+
+.swal2-title,
+.swal2-html-container,
+.swal2-footer {
+  color: #e6edf7 !important;
+}
+
+.swal2-input,
+.swal2-textarea,
+.swal2-select {
+  color: #e6edf7 !important;
+  background: #0b0f17 !important;
+  border-color: #2c3a52 !important;
+}
+
+.swal2-input::placeholder,
+.swal2-textarea::placeholder {
+  color: #8b9ab3 !important;
+}
+
+.swal2-validation-message {
+  color: #ffd9de !important;
+  background: #4a1f29 !important;
+}
+
+.swal2-close {
+  color: #b8c4d8 !important;
+}
+
+.swal2-timer-progress-bar {
+  background: #35e08a !important;
+}
+
+.swal2-backdrop-show {
+  background: rgba(0, 0, 0, .78) !important;
+}
+
+.swal2-actions .swal2-styled.swal2-confirm {
+  color: #fff !important;
+  background: #2f5fb3 !important;
+  box-shadow: none !important;
+}
+
+.swal2-actions .swal2-styled.swal2-cancel {
+  color: #e6edf7 !important;
+  background: #2c3a52 !important;
+  box-shadow: none !important;
+}
+
+.swal2-actions .swal2-styled.swal2-deny {
+  color: #fff !important;
+  background: #d6455d !important;
+  box-shadow: none !important;
+}
+
 @media (max-width: 991px) {
   .navbar-nav {
     padding-top: 10px;
