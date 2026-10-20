@@ -186,17 +186,27 @@ export const openPhoneScanner = () => {
         scannerUrl.hostname = "PC-LAN-IP";
       }
 
+      scannerUrl.searchParams.set("code", pairingCode);
+
       openDialog(
         "Phone Barcode Scanner",
         `
           <div class="dialog-text">
-            <p>On your phone, open this page on the same network:</p>
-            <p><strong>${escapeHtml(scannerUrl.href)}</strong></p>
-            <p>If this shows PC-LAN-IP, replace it with this computer's local network address.</p>
-            <p>Enter this pairing code on the phone:</p>
+            <p>
+              Scan this QR code with your phone to open the scanner. The pairing code will fill automatically.
+            </p>
             <div
-              style="font-size: 2.5rem; font-weight: 700; letter-spacing: 0.3rem; text-align: center;"
-            >${escapeHtml(pairingCode)}</div>
+              id="phone-scanner-qr"
+              class="phone-scanner-qr"
+              role="img"
+              aria-label="QR code for the phone barcode scanner"
+            ></div>
+            <p
+              id="phone-scanner-qr-fallback"
+              class="phone-scanner-qr-fallback d-none"
+            ></p>
+            <p>Pairing code fallback:</p>
+            <div class="phone-scanner-pairing-code">${escapeHtml(pairingCode)}</div>
             <p id="phone-scanner-status">Waiting for phone scanner...</p>
             <button type="button" class="btn btn-secondary" id="stop-phone-scanner">Stop Scanner</button>
           </div>
@@ -211,6 +221,25 @@ export const openPhoneScanner = () => {
       );
 
       pairDialogOpen = true;
+      const qrContainer = document.getElementById("phone-scanner-qr");
+      const qrFallback = document.getElementById("phone-scanner-qr-fallback");
+
+      if (window.QRCode && scannerUrl.hostname != "PC-LAN-IP") {
+        new window.QRCode(qrContainer, {
+          text: scannerUrl.href,
+          width: 220,
+          height: 220,
+          colorDark: "#111827",
+          colorLight: "#ffffff",
+          correctLevel: window.QRCode.CorrectLevel.M,
+        });
+      } else {
+        qrFallback.classList.remove("d-none");
+        qrFallback.innerText = scannerUrl.hostname == "PC-LAN-IP"
+          ? `Replace PC-LAN-IP with this computer's local network address, then open: ${scannerUrl.href}`
+          : `QR generator is unavailable. Open this page on your phone: ${scannerUrl.href}`;
+      }
+
       document.getElementById("stop-phone-scanner").addEventListener("click", stopPhoneScanner);
       pollTimer = setInterval(receiveScans, 1000);
       receiveScans();

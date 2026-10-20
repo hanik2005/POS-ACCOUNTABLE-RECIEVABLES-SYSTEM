@@ -122,6 +122,13 @@ manualInput.addEventListener("keydown", (event) => {
 
 window.addEventListener("pagehide", stopCamera);
 
+const pairingCodeFromUrl = new URLSearchParams(window.location.search).get("code") || "";
+
+if (/^\d{8}$/.test(pairingCodeFromUrl)) {
+  pairingInput.value = pairingCodeFromUrl;
+  status.innerText = "Pairing code loaded from the QR code. Tap Connect and Start Camera.";
+}
+
 if (!window.isSecureContext) {
   status.innerText = "Camera access needs HTTPS. You can still send barcodes manually on this connection.";
 }
