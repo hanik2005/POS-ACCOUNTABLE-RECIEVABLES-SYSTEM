@@ -8,83 +8,35 @@ import { refreshShift } from "./shift.js";
 import { prepareInvoice, openPrintDialog } from "./invoice.js";
 
 const showCreditLimitDialog = (message) => {
-  openDialog("Credit limit reached", `<p class="dialog-text">${message}</p>`, "Enter = pay now · Esc = return to sale", (e) => {
-    if (e.key == "Enter") {
-      e.preventDefault();
-      closeDialog();
-      openPayDialog();
-    } else if (e.key == "Escape") {
-      e.preventDefault();
-      closeDialog();
-    }
-  });
+  openMessageDialog("Credit limit reached", message);
 };
 
-export const startCheckout = () => {
+export const startWalkInCheckout = () => {
   if (state.details.length == 0) {
     return;
   }
 
-  let index = state.customer ? 1 : 0;
-  const modes = ["Walk-in - pay directly", "Accounts Receivable - charge to customer"];
+  state.saleType = "WALK_IN";
+  state.customer = null;
+  displayCustomer();
+  openPayDialog();
+};
 
-  const chooseMode = () => {
-    closeDialog();
+export const startArCheckout = () => {
+  if (state.details.length == 0) {
+    return;
+  }
 
-    if (index == 0) {
-      state.saleType = "WALK_IN";
-      state.customer = null;
-      displayCustomer();
-      openPayDialog();
-      return;
-    }
+  state.saleType = "AR";
 
-    state.saleType = "AR";
+  if (!state.customer) {
+    openCustomerDialog(openCheckoutDialog, () => {
+      state.saleType = null;
+    });
+    return;
+  }
 
-    if (!state.customer) {
-      openCustomerDialog(openCheckoutDialog);
-      return;
-    }
-
-    openCheckoutDialog();
-  };
-
-  const render = () => {
-    document.getElementById("dialog-list").innerHTML = modes.map((mode, i) => `
-      <button type="button" class="list-row ${i == index ? "active" : ""}" data-sale-mode="${i}">
-        <span>${mode}</span>
-      </button>
-    `).join("");
-  };
-
-  openDialog(
-    "Choose sale type",
-    `<p class="dialog-text">Choose how this sale will be invoiced.</p><div id="dialog-list"></div>`,
-    "Up/down = select | Enter = continue | Esc = cancel",
-    (e) => {
-      if (e.key == "Escape") {
-        e.preventDefault();
-        closeDialog();
-      } else if (e.key == "Enter") {
-        e.preventDefault();
-        chooseMode();
-      } else {
-        index = moveIndex(e, index, modes.length);
-        render();
-      }
-    },
-  );
-
-  document.getElementById("dialog-list").addEventListener("click", (e) => {
-    const button = e.target.closest("[data-sale-mode]");
-
-    if (button) {
-      index = parseInt(button.dataset.saleMode, 10);
-      chooseMode();
-    }
-  });
-
-  render();
+  openCheckoutDialog();
 };
 
 export const openCheckoutDialog = () => {
@@ -109,7 +61,7 @@ export const openCheckoutDialog = () => {
      <div class="side-row"><span>Outstanding / limit</span><span>${formatCurrency(outstandingBalance / 100)} / ${formatCurrency(creditLimit / 100)}</span></div>
      <div class="side-row"><span>Available credit</span><span>${formatCurrency(availableCredit / 100)}</span></div>
      <div class="side-row"><span>Items</span><span>${getTotalQty()}</span></div>`,
-    "Enter = charge to Accounts Receivable · F9 = pay now · Esc = back",
+    "Enter = charge to Accounts Receivable · Esc = back",
     (e) => {
       if (e.key == "Escape") {
         e.preventDefault();
@@ -118,16 +70,14 @@ export const openCheckoutDialog = () => {
         e.preventDefault();
 
         if (toCents(getTotalSales()) > availableCredit) {
-          showCreditLimitDialog(`This sale exceeds the customer's available credit of ${formatCurrency(availableCredit / 100)}. Pay the required amount now or cancel the sale.`);
+          showCreditLimitDialog(
+            `This sale exceeds the customer's available credit of ${formatCurrency(availableCredit / 100)}. Adjust the sale or ask the admin to increase the credit limit.`,
+          );
           return;
         }
 
         closeDialog();
         saveSale("COMPLETED");
-      } else if (e.key == "F9") {
-        e.preventDefault();
-        closeDialog();
-        openPayDialog();
       }
     },
   );
@@ -137,8 +87,11 @@ export const openPayDialog = () => {
   const paymentMethods = state.paymentMethods;
   const isWalkIn = state.saleType == "WALK_IN";
 
-  if (!isWalkIn && !state.customer) {
-    openMessageDialog("Pay now", "Select a customer for an Accounts Receivable sale.");
+  if (!isWalkIn) {
+    openMessageDialog(
+      "Accounts Receivable",
+      "AR sales are charged to the customer's account. Choose a walk-in sale to accept payment now.",
+    );
     return;
   }
 
@@ -150,7 +103,7 @@ export const openPayDialog = () => {
   const total = getTotalSales();
   let index = Math.max(paymentMethods.findIndex(isCashMethod), 0);
 
-  // Amount the cashier typed. Blank on a non-cash method means "pay in full".
+  // A blank amount on a non-cash method means "pay in full".
   const getReceived = () => {
     const cash = isCashMethod(paymentMethods[index]);
     const raw = parseFloat(document.getElementById("dialog-input").value);
@@ -169,19 +122,20 @@ export const openPayDialog = () => {
     const balance = (toCents(total) - toCents(applied)) / 100;
     const change = cash && toCents(received) > toCents(total) ? (toCents(received) - toCents(total)) / 100 : 0;
     const floatLeft = state.shift ? parseFloat(state.shift.float_left) : 0;
+    const floatAfterPayment = floatLeft + (cash ? applied : 0);
 
     document.getElementById("dialog-list").innerHTML = paymentMethods
       .map((method, i) => `<div class="list-row ${i == index ? "active" : ""}"><span>${method.method_name}</span></div>`)
       .join("");
 
     document.getElementById("dialog-input").placeholder = cash
-      ? isWalkIn ? "Cash received" : "Amount received (less than total = partial)"
-      : isWalkIn ? "Amount paid (blank = full total)" : "Amount to pay (blank = full, less = partial)";
+      ? "Cash received"
+      : "Amount paid (blank = full total)";
     document.getElementById("pay-reference").classList.toggle("d-none", cash);
     document.getElementById("pay-balance").innerText = formatCurrency(balance);
     document.getElementById("pay-change").innerText = formatCurrency(change);
-    document.getElementById("pay-float").innerText = formatCurrency(floatLeft - change);
-    document.getElementById("pay-message").innerText = change > floatLeft ? "Not enough float for this change." : "";
+    document.getElementById("pay-float").innerText = formatCurrency(floatAfterPayment);
+    document.getElementById("pay-message").innerText = "";
   };
 
   const focusPayInput = () => {
@@ -191,15 +145,15 @@ export const openPayDialog = () => {
   openDialog(
     "Pay now",
     `<div class="pay-total">${formatCurrency(total)}</div>
-     <div class="side-row"><span>Customer</span><span>${isWalkIn ? "Walk-in customer" : state.customer.customerName}</span></div>
+     <div class="side-row"><span>Customer</span><span>Walk-in customer</span></div>
      <div id="dialog-list" class="mt-2"></div>
      <input id="dialog-input" type="number" step="0.01" min="0" class="pos-input mt-2" autocomplete="off">
      <input id="pay-reference" type="text" class="pos-input mt-2 d-none" placeholder="Reference number (optional)" autocomplete="off">
-     <div class="side-row"><span>${isWalkIn ? "Balance due" : "Balance to Accounts Receivable"}</span><span id="pay-balance">${formatCurrency(total)}</span></div>
+     <div class="side-row"><span>Balance due</span><span id="pay-balance">${formatCurrency(total)}</span></div>
      <div class="side-row"><span>Change</span><span id="pay-change">${formatCurrency(0)}</span></div>
-     <div class="side-row"><span>Float left after change</span><span id="pay-float">${formatCurrency(0)}</span></div>
+     <div class="side-row"><span>Drawer after sale</span><span id="pay-float">${formatCurrency(0)}</span></div>
      <p class="dialog-text" id="pay-message"></p>`,
-    isWalkIn ? "Arrow keys = payment method | Enter = pay in full | Esc = cancel" : "Arrow keys = payment method | Enter = pay (partial allowed) | Esc = cancel",
+    "Arrow keys = payment method | Enter = pay in full | Esc = cancel",
     (e) => {
       if (e.key == "Escape") {
         e.preventDefault();
@@ -221,7 +175,7 @@ export const openPayDialog = () => {
           return;
         }
 
-        if (isWalkIn && toCents(received) < toCents(total)) {
+        if (toCents(received) < toCents(total)) {
           document.getElementById("pay-message").innerText = "Walk-in sales must be paid in full. Choose Accounts Receivable for partial or unpaid sales.";
           return;
         }
@@ -231,29 +185,7 @@ export const openPayDialog = () => {
           return;
         }
 
-        const change = cash && toCents(received) > toCents(total)
-          ? (toCents(received) - toCents(total)) / 100
-          : 0;
-        const floatLeft = state.shift ? parseFloat(state.shift.float_left) : 0;
-
-        if (change > floatLeft) {
-          document.getElementById("pay-message").innerText = "Not enough float for this change.";
-          return;
-        }
-
         const applied = Math.min(toCents(received), toCents(total)) / 100;
-        const customer = isWalkIn
-          ? null
-          : state.customers.find((item) => item.customer_id == state.customer.customerId);
-        const availableCredit = Math.max(
-          toCents(customer ? customer.credit_limit : 0) - toCents(customer ? customer.outstanding_balance : 0),
-          0,
-        );
-
-        if (!isWalkIn && toCents(total) - toCents(applied) > availableCredit) {
-          document.getElementById("pay-message").innerText = `Pay at least ${formatCurrency((toCents(total) - availableCredit) / 100)} to stay within the customer's credit limit.`;
-          return;
-        }
 
         closeDialog();
         saveSale("COMPLETED", {
@@ -275,6 +207,30 @@ export const openPayDialog = () => {
 export const saveSale = async (status, payment) => {
   if (!state.shift) {
     openMessageDialog("ERROR", "The shift was not started.");
+    return;
+  }
+
+  if (state.details.length == 0) {
+    openMessageDialog("Cannot save sale", "Add at least one product before holding or completing a sale.");
+    return;
+  }
+
+  const invalidItem = state.details.some((item) => {
+    const qty = Number(item.qty);
+    const priceCents = toCents(Number(item.productPrice));
+    const amountCents = toCents(Number(item.amount));
+
+    return !Number.isInteger(qty) || qty < 1
+      || !Number.isFinite(priceCents) || priceCents < 0
+      || !Number.isFinite(amountCents) || amountCents < 0
+      || amountCents !== priceCents * qty;
+  });
+  const detailTotal = state.details.reduce((sum, item) => {
+    return sum + toCents(Number(item.amount));
+  }, 0);
+
+  if (invalidItem || detailTotal !== toCents(getTotalSales())) {
+    openMessageDialog("Invalid sale items", "Check the item quantities and amounts before saving this sale.");
     return;
   }
 
@@ -308,7 +264,7 @@ export const saveSale = async (status, payment) => {
     const balance = payment ? Math.max(toCents(total) - toCents(payment.amountApplied), 0) / 100 : total;
     const customerTerms = state.customers.find((item) => item.customer_id == state.customer?.customerId);
 
-    if (customerTerms) {
+    if (customerTerms && status == "COMPLETED") {
       customerTerms.outstanding_balance = Number(customerTerms.outstanding_balance) + balance;
       customerTerms.available_credit = Math.max(Number(customerTerms.credit_limit) - customerTerms.outstanding_balance, 0);
     }

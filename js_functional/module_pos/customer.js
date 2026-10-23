@@ -3,7 +3,7 @@ import { focusDialogInput, moveIndex } from "./utils.js";
 import { openDialog, closeDialog } from "./dialog.js";
 import { displayCustomer } from "./cart.js";
 
-export const openCustomerDialog = (after) => {
+export const openCustomerDialog = (after, onCancel) => {
   let list = [];
   let index = 0;
 
@@ -31,6 +31,10 @@ export const openCustomerDialog = (after) => {
       if (e.key == "Escape") {
         e.preventDefault();
         closeDialog();
+
+        if (onCancel) {
+          onCancel();
+        }
       } else if (e.key == "Enter") {
         e.preventDefault();
 

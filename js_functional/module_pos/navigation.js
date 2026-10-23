@@ -1,4 +1,4 @@
-import { baseUrl, sessionAPI, cashierReportPage } from "./config.js";
+import { baseUrl, sessionAPI, shiftReportPage } from "./config.js";
 import { state } from "./state.js";
 import { openMessageDialog } from "./dialog.js";
 import { openCloseShiftDialog } from "./shift.js";
@@ -38,6 +38,6 @@ export const logout = async () => {
   await completeLogout();
 };
 
-export const openCashierReport = () => {
-  window.location.href = cashierReportPage;
+export const openShiftReport = () => {
+  window.location.href = shiftReportPage;
 };

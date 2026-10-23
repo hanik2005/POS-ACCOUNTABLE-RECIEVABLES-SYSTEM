@@ -157,7 +157,6 @@ class Payment
   }
 }
 
-//submitted by the client - operation and json
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
   $operation = $_GET['operation'];
   $json = isset($_GET['json']) ? $_GET['json'] : "";

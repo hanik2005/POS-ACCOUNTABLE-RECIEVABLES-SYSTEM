@@ -39,24 +39,6 @@
     .pos-dialog-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 12px; color: #35e08a; }
     .pos-dialog-hint { margin-top: 14px; font-size: .85rem; color: #8b9ab3; }
     .dialog-text { font-size: 1.15rem; }
-    .phone-scanner-qr {
-      width: 244px;
-      min-height: 244px;
-      padding: 12px;
-      margin: 0 auto 1rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #ffffff;
-      border-radius: 8px;
-    }
-    .phone-scanner-qr-fallback { overflow-wrap: anywhere; }
-    .phone-scanner-pairing-code {
-      font-size: 2.5rem;
-      font-weight: 700;
-      letter-spacing: 0.3rem;
-      text-align: center;
-    }
     .dialog-label { display: block; color: #b8c4d8; font-size: .9rem; margin-top: 5px; }
     .dialog-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
     .pos-action-button { color: #0b0f17; background: #35e08a; border: 1px solid #35e08a; border-radius: 6px; padding: 8px 14px; font: inherit; font-weight: 700; cursor: pointer; }

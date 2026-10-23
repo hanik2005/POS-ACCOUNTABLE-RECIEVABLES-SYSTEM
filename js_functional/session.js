@@ -11,18 +11,46 @@ const pages = [
   { file: "units.html", title: "Units", roles: ["ADMIN"] },
   { file: "product_categories.html", title: "Product Categories", roles: ["ADMIN"] },
   { file: "users.html", title: "Users", roles: ["ADMIN"] },
-  { file: "pos.html", title: "POS", roles: ["CASHIER"], menu: true },
+  { file: "pos.html", title: "POS", roles: ["CASHIER", "SUPERVISOR"], menu: true },
   { file: "invoice.html", title: "Accounts Receivable", roles: ["ACCOUNTING"], menu: true },
   { file: "sales_report.html", title: "Sales Report", roles: ["ADMIN", "ACCOUNTING"], menu: true },
   { file: "credit_limit_report.html", title: "Credit Limit Report", roles: ["ADMIN"], menu: true },
-  { file: "cashier_report.html", title: "Cashier Report", roles: ["ADMIN", "ACCOUNTING", "CASHIER"], menu: true },
-  { file: "approvals.html", title: "Supervisor Home", roles: ["SUPERVISOR"], menu: true },
-  { file: "cash_drawer_requests.html", title: "Cash Drawer Requests", roles: ["SUPERVISOR"], menu: true },
-  { file: "paid_sale_void_requests.html", title: "Paid Sale Void Requests", roles: ["SUPERVISOR"], menu: true },
+  {
+    file: "shift_report.html",
+    title: "Shift Report",
+    roles: ["ADMIN", "ACCOUNTING", "CASHIER", "SUPERVISOR"],
+    menu: true,
+  },
+  {
+    file: "daily_report.html",
+    title: "Daily Z-Report",
+    roles: ["ADMIN", "ACCOUNTING", "SUPERVISOR"],
+    menu: true,
+  },
   { file: "terminal_assignment.html", title: "Terminal Assignment", roles: ["ADMIN"], menu: true },
 ];
 
 const currentPage = window.location.pathname.split("/").pop();
+const currentPath = window.location.pathname.toLowerCase();
+
+const getPageHref = (file) => {
+  if (["shift_report.html", "daily_report.html"].includes(file)) {
+    if (currentPath.includes("/interface/accounting/")) {
+      return `../Cashier/${file}`;
+    }
+
+    if (currentPath.includes("/interface/admin/functional/")) {
+      return `../../Cashier/${file}`;
+    }
+  }
+
+  if (currentPath.includes("/interface/cashier/")
+    && ["invoice.html", "sales_report.html"].includes(file)) {
+    return `../Accounting/${file}`;
+  }
+
+  return file;
+};
 
 document.documentElement.style.visibility = "hidden";
 
@@ -50,17 +78,8 @@ const isAuthorized = (user) => {
   const page = pages.find((page) => page.file == currentPage);
   const pagePath = window.location.pathname.toLowerCase();
   const isAdminFunctionalPage = pagePath.includes("/interface/admin/functional/");
-  const isSupervisorPage = pagePath.includes("/interface/supervisor/");
 
   if (isAdminFunctionalPage && user.role_name.toUpperCase() != "ADMIN") {
-    return false;
-  }
-
-  if (isSupervisorPage && user.role_name.toUpperCase() != "SUPERVISOR") {
-    return false;
-  }
-
-  if (page && page.roles.includes("SUPERVISOR") && !isSupervisorPage) {
     return false;
   }
 
@@ -71,17 +90,31 @@ const isAuthorized = (user) => {
   return page.roles.includes(user.role_name.toUpperCase());
 };
 
-const userBlockHtml = `
+const userBlockHtml = (hideLogout) => {
+  const logoutButton = hideLogout
+    ? ""
+    : '<button type="button" class="btn btn-outline-light btn-sm" id="button-logout">LOGOUT</button>';
+
+  return `
     <div class="d-flex align-items-center gap-2 text-white ms-lg-3 mt-2 mt-lg-0">
       <span id="header-user"></span>
       <span class="badge bg-light text-dark" id="header-role"></span>
-      <button type="button" class="btn btn-outline-light btn-sm" id="button-logout">LOGOUT</button>
+      ${logoutButton}
     </div>
   `;
+};
 
 const displayHeader = (user) => {
   const role = user.role_name.toUpperCase();
   const navbar = document.getElementById("mainNavbar");
+  const reportPages = [
+    "shift_report.html",
+    "daily_report.html",
+    "sales_report.html",
+    "cashier_report.html",
+  ];
+  const hideLogout = role == "CASHIER" && reportPages.includes(currentPage);
+  const userBlock = userBlockHtml(hideLogout);
 
   if (!navbar && !document.getElementById("app-header")) {
     return;
@@ -89,7 +122,14 @@ const displayHeader = (user) => {
 
   if (navbar) {
     navbar.querySelectorAll("a.nav-link").forEach((link) => {
-      const file = link.getAttribute("href").split("/").pop();
+      let file = link.getAttribute("href").split("/").pop();
+
+      if (file == "cashier_report.html") {
+        link.href = getPageHref("shift_report.html");
+        link.textContent = "Shift Report";
+        file = "shift_report.html";
+      }
+
       const page = pages.find((page) => page.file == file);
 
       link.classList.remove("active");
@@ -102,28 +142,54 @@ const displayHeader = (user) => {
     });
 
     const navbarContent = navbar.querySelector(".navbar-collapse") || navbar;
-    navbarContent.insertAdjacentHTML("beforeend", userBlockHtml);
+    const navbarList = navbarContent.querySelector(".navbar-nav");
+
+    const dailyReport = pages.find((page) => page.file == "daily_report.html");
+
+    if (navbarList && dailyReport.roles.includes(role)
+      && !navbarList.querySelector('a[href$="daily_report.html"]')) {
+      navbarList.insertAdjacentHTML("beforeend", `
+        <li class="nav-item">
+          <a
+            class="nav-link ${currentPage == "daily_report.html" ? "active" : ""}"
+            href="${getPageHref("daily_report.html")}"
+          >Daily Z-Report</a>
+        </li>
+      `);
+    }
+
+    navbarContent.insertAdjacentHTML("beforeend", userBlock);
   } else {
     const links = pages
       .filter((page) => page.menu && page.roles.includes(role))
-      .map(
-        (page) => `
+      .map((page) => {
+        const active = page.file == currentPage ? "active" : "";
+        const href = getPageHref(page.file);
+
+        return `
           <li class="nav-item">
-            <a class="nav-link ${page.file == currentPage ? "active" : ""}" href="${page.file}">${page.title}</a>
+            <a class="nav-link ${active}" href="${href}">${page.title}</a>
           </li>
-        `,
-      )
-      .join("");
+        `;
+      }).join("");
 
     document.getElementById("app-header").innerHTML = `
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-3 px-3 rounded">
           <span class="navbar-brand">POS &amp; AR</span>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#appNavbarContent" aria-controls="appNavbarContent" aria-expanded="false" aria-label="Toggle navigation">
+          <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#appNavbarContent"
+            aria-controls="appNavbarContent"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+          >
             <span class="navbar-toggler-icon"></span>
           </button>
           <div class="collapse navbar-collapse" id="appNavbarContent">
             <ul class="navbar-nav me-auto">${links}</ul>
-            ${userBlockHtml}
+            ${userBlock}
           </div>
         </nav>
       `;
@@ -132,9 +198,13 @@ const displayHeader = (user) => {
   document.getElementById("header-user").textContent = user.full_name;
   document.getElementById("header-role").textContent = user.role_name;
 
-  document.getElementById("button-logout").addEventListener("click", () => {
-    logout();
-  });
+  const logoutButton = document.getElementById("button-logout");
+
+  if (logoutButton) {
+    logoutButton.addEventListener("click", () => {
+      logout();
+    });
+  }
 };
 
 const displayNotAuthorized = () => {

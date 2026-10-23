@@ -5,8 +5,8 @@ import { openDialog, closeDialog, openMessageDialog } from "./dialog.js";
 import { refreshShift } from "./shift.js";
 
 export const drawerTypes = [
-  { label: "Float adjust - request add", movementType: "FLOAT_ADJUST", sign: 1 },
-  { label: "Float adjust - request remove", movementType: "FLOAT_ADJUST", sign: -1 },
+  { label: "Add float", movementType: "FLOAT_ADJUST", sign: 1 },
+  { label: "Remove float", movementType: "FLOAT_ADJUST", sign: -1 },
   { label: "Cash drop", movementType: "CASH_DROP", sign: 1 },
 ];
 
@@ -51,7 +51,7 @@ export const openDrawerDialog = async () => {
     `<div class="side-row"><span>Float left</span><span>${formatCurrency(parseFloat(shift.float_left))}</span></div>
      <div id="dialog-list" class="mt-2"></div>
      <input id="dialog-input" type="number" step="0.01" min="0.01" class="pos-input mt-2" placeholder="Amount">
-     <input id="dialog-reason" type="text" class="pos-input mt-2" placeholder="Reason (optional)" autocomplete="off">
+     <input id="dialog-reason" type="text" class="pos-input mt-2" placeholder="Reason for movement" autocomplete="off">
      ${response.data
        .slice(0, 5)
        .map(
@@ -60,11 +60,18 @@ export const openDrawerDialog = async () => {
              <span>${movementLabel(item)}</span>
              <span>${item.status}</span>
              <span>${formatCurrency(Math.abs(parseFloat(item.amount)))}</span>
+            <span>${item.approver_name || "Supervisor not recorded"}</span>
            </div>
          `,
        )
-       .join("")}`,
-    "↑↓ select · Enter = next / save · Esc = cancel",
+       .join("")}
+     <label class="dialog-label" for="supervisor-username">Supervisor username</label>
+     <input id="supervisor-username" type="text" class="pos-input mt-2"
+       placeholder="Supervisor username" autocomplete="username">
+     <label class="dialog-label" for="supervisor-password">Supervisor password</label>
+     <input id="supervisor-password" type="password" class="pos-input mt-2"
+       placeholder="Supervisor password" autocomplete="current-password">`,
+    "↑↓ select · Enter = next / record with supervisor sign-in · Esc = cancel",
     (e) => {
       if (e.key == "Escape") {
         e.preventDefault();
@@ -79,10 +86,24 @@ export const openDrawerDialog = async () => {
 
         if (!(amount > 0)) {
           focusDialogInput();
-        } else if (document.activeElement.id == "dialog-input") {
-          document.getElementById("dialog-reason").focus();
         } else {
-          saveMovement(drawerTypes[index], amount, document.getElementById("dialog-reason").value);
+          const nextField = {
+            "dialog-input": "dialog-reason",
+            "dialog-reason": "supervisor-username",
+            "supervisor-username": "supervisor-password",
+          }[document.activeElement.id];
+
+          if (nextField) {
+            document.getElementById(nextField).focus();
+          } else {
+            saveMovement(
+              drawerTypes[index],
+              amount,
+              document.getElementById("dialog-reason").value,
+              document.getElementById("supervisor-username").value.trim(),
+              document.getElementById("supervisor-password").value,
+            );
+          }
         }
       }
     },
@@ -92,10 +113,22 @@ export const openDrawerDialog = async () => {
   focusDialogInput();
 };
 
-export const saveMovement = async (type, amount, reason) => {
+export const saveMovement = async (type, amount, reason, supervisorUsername, supervisorPassword) => {
+  if (reason.trim() == "") {
+    document.getElementById("dialog-reason").focus();
+    return;
+  }
+
   closeDialog();
 
-  const jsonData = { shiftId: state.shift.shift_id, movementType: type.movementType, amount: amount * type.sign, reason: reason };
+  const jsonData = {
+    shiftId: state.shift.shift_id,
+    movementType: type.movementType,
+    amount: amount * type.sign,
+    reason: reason,
+    supervisorUsername: supervisorUsername,
+    supervisorPassword: supervisorPassword,
+  };
 
   const formData = new FormData();
   formData.append("operation", "saveCashMovement");
@@ -108,11 +141,24 @@ export const saveMovement = async (type, amount, reason) => {
   });
 
   if (response.data == 1 && type.movementType == "FLOAT_ADJUST") {
-    openMessageDialog("Float adjustment requested", `${type.sign > 0 ? "Add" : "Remove"} ${formatCurrency(amount)}. Waiting for a supervisor to approve and handle the drawer.`);
+    openMessageDialog(
+      "Float updated",
+      `${type.sign > 0 ? "Added" : "Removed"} ${formatCurrency(amount)}. The supervisor recorded the change at this POS.`,
+    );
   } else if (response.data == 1) {
-    openMessageDialog("Cash drop requested", `${formatCurrency(amount)}. A supervisor must approve the request and handle the cash drawer.`);
+    openMessageDialog(
+      "Cash dropped",
+      `${formatCurrency(amount)} was recorded by the supervisor at this POS.`,
+    );
+  } else if (response.data == 3) {
+    openMessageDialog("Supervisor verification failed", "Check the supervisor username and password.");
+  } else if (response.data == 4) {
+    openMessageDialog(
+      "Not enough cash",
+      "The float adjustment or cash drop is greater than the cash currently in the drawer.",
+    );
   } else {
-    openMessageDialog("ERROR", "The cash movement was not saved.");
+    openMessageDialog("ERROR", "The cash movement was not saved. Check the open shift and try again.");
   }
 
   refreshShift();

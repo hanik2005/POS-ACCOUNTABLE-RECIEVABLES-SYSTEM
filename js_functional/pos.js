@@ -6,11 +6,9 @@ import { loadPosSession, refreshShift, openCloseShiftDialog } from "./module_pos
 import { openDrawerDialog } from "./module_pos/drawer.js";
 import { displayCart, displayCustomer, addEntry, clearEntry, moveSuggestion, onEntryInput, moveSelected, changeQty, voidLine } from "./module_pos/cart.js";
 import { openCustomerDialog } from "./module_pos/customer.js";
-import { startCheckout } from "./module_pos/checkout.js";
+import { startArCheckout, startWalkInCheckout } from "./module_pos/checkout.js";
 import { holdSale, openRecallDialog, openVoidSaleDialog } from "./module_pos/hold.js";
-import { openPaidVoidDialog } from "./module_pos/voids.js";
-import { leavePage, logout, openCashierReport } from "./module_pos/navigation.js";
-import { openPhoneScanner } from "./module_pos/phone_scanner.js";
+import { leavePage, logout, openShiftReport } from "./module_pos/navigation.js";
 
 const onPageLoad = async () => {
   displayCart();
@@ -26,12 +24,14 @@ document.addEventListener("keydown", (e) => {
     return;
   }
 
-  if (e.target.closest(".cart-qty-edit, .cart-qty-input")) {
+  if (state.dialog) {
+    state.dialog.onKey(e);
     return;
   }
 
-  if (state.dialog) {
-    state.dialog.onKey(e);
+  if (e.key == "F5") {
+    e.preventDefault();
+    startArCheckout();
     return;
   }
 
@@ -43,13 +43,7 @@ document.addEventListener("keydown", (e) => {
 
   if (e.key == "F6") {
     e.preventDefault();
-    leavePage(openCashierReport);
-    return;
-  }
-
-  if (e.key == "F5") {
-    e.preventDefault();
-    openPaidVoidDialog();
+    leavePage(openShiftReport);
     return;
   }
 
@@ -69,10 +63,6 @@ document.addEventListener("keydown", (e) => {
     case "F8":
       e.preventDefault();
       openRecallDialog();
-      break;
-    case "F9":
-      e.preventDefault();
-      startCheckout();
       break;
     case "F10":
       e.preventDefault();
@@ -112,7 +102,7 @@ document.addEventListener("keydown", (e) => {
       e.preventDefault();
 
       if (entry().value.trim() == "") {
-        startCheckout();
+        startWalkInCheckout();
       } else {
         addEntry();
       }
@@ -132,19 +122,11 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("btn-report").addEventListener("click", () => {
-    leavePage(openCashierReport);
-  });
-
-  document.getElementById("btn-void-paid-sale").addEventListener("click", () => {
-    openPaidVoidDialog();
-  });
-
-  document.getElementById("btn-phone-scanner").addEventListener("click", () => {
-    openPhoneScanner();
+    leavePage(openShiftReport);
   });
 
   document.addEventListener("click", (e) => {
-    if (!state.dialog && !e.target.closest(".entry-wrap, .cart-qty-edit, .cart-qty-input")) {
+    if (!state.dialog && !e.target.closest(".entry-wrap")) {
       entry().focus();
     }
   });

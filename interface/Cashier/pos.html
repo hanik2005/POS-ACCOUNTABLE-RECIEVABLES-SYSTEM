@@ -17,14 +17,8 @@
     <div><span class="lbl">FLOAT</span><span id="bar-float">-</span></div>
     <div><span class="lbl">CUSTOMER</span><span id="bar-customer">-</span></div>
     <div class="bar-actions">
-      <button type="button" class="bar-btn" id="btn-void-paid-sale" title="Select a completed sale and request supervisor approval">
-        <kbd>F5</kbd> Void Paid Sale
-      </button>
-      <button type="button" class="bar-btn" id="btn-phone-scanner" title="Pair a phone barcode scanner">
-        Phone Scanner
-      </button>
       <span class="bar-btn" id="btn-drawer"><kbd>F7</kbd> Cash Drawer</span>
-      <span class="bar-btn" id="btn-report"><kbd>F6</kbd> Cashier Report</span>
+      <span class="bar-btn" id="btn-report"><kbd>F6</kbd> Shift Report</span>
       <span class="bar-btn" id="btn-logout"><kbd>F3</kbd> Logout</span>
     </div>
   </div>
@@ -45,7 +39,7 @@
             <tr>
               <th style="text-align:left;">PRODUCT</th>
               <th class="text-end">PRICE</th>
-              <th class="text-end" title="Click a quantity to edit it">QTY</th>
+              <th class="text-end">QTY</th>
               <th class="text-end">AMOUNT</th>
             </tr>
           </thead>
@@ -63,13 +57,13 @@
       <div class="last-item" id="last-item">-</div>
       <div class="side-label">KEYS</div>
       <div class="key-list">
-        <div><kbd>Enter</kbd> add item / on empty = checkout</div>
-        <div>Products are added with quantity 1</div>
-        <div>Click a Qty value in the table to edit it</div>
+        <div><kbd>Enter</kbd> add item / on empty = walk-in checkout</div>
+        <div><kbd>F5</kbd> Accounts Receivable checkout</div>
+        <div>Search a product and press Enter to enter its quantity</div>
         <div><kbd>↑</kbd> <kbd>↓</kbd> select line</div>
         <div><kbd>+</kbd> <kbd>-</kbd> change quantity</div>
         <div><kbd>Del</kbd> void selected line</div>
-        <div><kbd>Esc</kbd> void whole sale</div>
+        <div><kbd>Esc</kbd> void sale (supervisor sign-in)</div>
       </div>
     </div>
   </div>
@@ -77,14 +71,14 @@
   <div class="keybar">
     <span><kbd>F2</kbd> Customer</span>
     <span><kbd>F4</kbd> Hold</span>
-    <span><kbd>F5</kbd> Void Paid Sale</span>
     <span><kbd>F7</kbd> Cash Drawer</span>
     <span><kbd>F8</kbd> Recall</span>
-    <span><kbd>F9</kbd> Checkout</span>
+    <span><kbd>Enter</kbd> Walk-in Checkout</span>
+    <span><kbd>F5</kbd> AR Checkout</span>
     <span><kbd>F10</kbd> Close Shift</span>
     <span><kbd>Del</kbd> Void Line</span>
-    <span><kbd>Esc</kbd> Void Current Sale</span>
-    <span><kbd>F6</kbd> Cashier Report</span>
+    <span><kbd>Esc</kbd> Void Sale</span>
+    <span><kbd>F6</kbd> Shift Report</span>
     <span><kbd>F3</kbd> Logout</span>
     <span><kbd>F11</kbd> Full Screen</span>
   </div>

@@ -2,6 +2,21 @@ import { baseAPI } from "./config.js";
 import { toCents, printMoney, formatNumber, focusEntry } from "./utils.js";
 import { openDialog, closeDialog, openMessageDialog } from "./dialog.js";
 
+const VAT_RATE_PERCENT = 12;
+
+const getVatBreakdown = (totalAmount) => {
+  const totalCents = toCents(Number(totalAmount) || 0);
+  const vatCents = Math.round(
+    (totalCents * VAT_RATE_PERCENT) / (100 + VAT_RATE_PERCENT),
+  );
+
+  return {
+    vatableSales: (totalCents - vatCents) / 100,
+    vatAmount: vatCents / 100,
+    totalSales: totalCents / 100,
+  };
+};
+
 export const loadPdfLibrary = () => {
   return new Promise((resolve, reject) => {
     if (window.jspdf) {
@@ -26,6 +41,7 @@ export const buildInvoicePdf = (jsPDF, data) => {
   const tendered = payments.reduce((sum, payment) => sum + parseFloat(payment.amount_tendered), 0);
   const change = payments.reduce((sum, payment) => sum + parseFloat(payment.change_amount), 0);
   const balance = Math.max(toCents(parseFloat(sale.amount_due)) - toCents(paid), 0) / 100;
+  const vat = getVatBreakdown(sale.amount_due);
   const title = balance > 0 ? "SALES INVOICE" : "SALES RECEIPT";
 
   const printed = new Date().toLocaleString("en-PH", {
@@ -106,7 +122,9 @@ export const buildInvoicePdf = (jsPDF, data) => {
     });
 
     line();
-    row("TOTAL", printMoney(sale.amount_due), 9, "bold");
+    row("VATABLE SALES", printMoney(vat.vatableSales));
+    row(`VAT (${VAT_RATE_PERCENT}%)`, printMoney(vat.vatAmount));
+    row("TOTAL (VAT INCLUSIVE)", printMoney(vat.totalSales), 9, "bold");
 
     payments.forEach((payment) => {
       row(`Paid - ${payment.method_name}`, printMoney(payment.amount_applied));

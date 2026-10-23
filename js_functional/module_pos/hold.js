@@ -1,16 +1,114 @@
 import { baseAPI } from "./config.js";
 import { state } from "./state.js";
-import { formatCurrency, moveIndex } from "./utils.js";
+import { formatCurrency, formatNumber, moveIndex } from "./utils.js";
 import { openDialog, closeDialog, openMessageDialog } from "./dialog.js";
 import { displayCart, displayCustomer, getTotalSales, getTotalQty, resetSale } from "./cart.js";
 import { saveSale } from "./checkout.js";
+import { openSupervisorApprovalDialog } from "./supervisor.js";
+import { openCustomerDialog } from "./customer.js";
+
+const escapeHtml = (value) => {
+  return String(value || "").replace(/[&<>"']/g, (character) => {
+    return {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;",
+    }[character];
+  });
+};
 
 export const holdSale = () => {
   if (state.details.length == 0) {
+    openMessageDialog("Cannot hold sale", "Add at least one product before holding a sale.");
     return;
   }
 
-  saveSale("HOLD");
+  const modes = ["Walk-in customer", "Accounts Receivable - charge to customer"];
+  const previousCustomer = state.customer;
+  const previousSaleType = state.saleType;
+  let index = state.customer ? 1 : 0;
+
+  const render = () => {
+    document.getElementById("dialog-list").innerHTML = modes.map((mode, i) => `
+      <button type="button" class="list-row ${i == index ? "active" : ""}" data-hold-mode="${i}">
+        <span>${mode}</span>
+      </button>
+    `).join("");
+  };
+
+  const chooseMode = () => {
+    closeDialog();
+
+    if (index == 0) {
+      state.saleType = "WALK_IN";
+      state.customer = null;
+      displayCustomer();
+      saveSale("HOLD");
+      return;
+    }
+
+    if (state.customers.length == 0) {
+      state.customer = previousCustomer;
+      state.saleType = previousSaleType;
+      openMessageDialog("No AR customers", "Add an active customer before holding an Accounts Receivable sale.");
+      return;
+    }
+
+    state.saleType = "AR";
+
+    if (previousCustomer) {
+      state.customer = previousCustomer;
+      displayCustomer();
+      saveSale("HOLD");
+      return;
+    }
+
+    state.customer = null;
+    displayCustomer();
+    openCustomerDialog(
+      () => {
+        state.saleType = "AR";
+        saveSale("HOLD");
+      },
+      () => {
+        state.customer = previousCustomer;
+        state.saleType = previousSaleType;
+        displayCustomer();
+      },
+    );
+  };
+
+  openDialog(
+    "Choose customer type",
+    `<p class="dialog-text">Choose whether this held sale is for a walk-in customer or an AR account.</p>
+     <div id="dialog-list"></div>`,
+    "Up/down = select | Enter = continue | Esc = cancel",
+    (e) => {
+      if (e.key == "Escape") {
+        e.preventDefault();
+        closeDialog();
+      } else if (e.key == "Enter") {
+        e.preventDefault();
+        chooseMode();
+      } else {
+        index = moveIndex(e, index, modes.length);
+        render();
+      }
+    },
+  );
+
+  document.getElementById("dialog-list").addEventListener("click", (e) => {
+    const button = e.target.closest("[data-hold-mode]");
+
+    if (button) {
+      index = parseInt(button.dataset.holdMode, 10);
+      chooseMode();
+    }
+  });
+
+  render();
 };
 
 export const openRecallDialog = async () => {
@@ -36,8 +134,8 @@ export const openRecallDialog = async () => {
       .map(
         (sale, i) => `
           <div class="list-row ${i == index ? "active" : ""}">
-            <span>${sale.customer_name || "No customer yet"}</span>
-            <span>${sale.item_count} item(s)</span>
+            <span>${escapeHtml(sale.recall_name)}</span>
+            <span>${formatNumber(parseFloat(sale.item_count), 0)} item(s)</span>
             <span>${formatCurrency(parseFloat(sale.total_amount))}</span>
           </div>
         `,
@@ -45,23 +143,28 @@ export const openRecallDialog = async () => {
       .join("");
   };
 
-  openDialog("Held sales", `<div id="dialog-list"></div>`, "↑↓ select · Enter recall · Esc cancel", (e) => {
-    if (e.key == "Escape") {
-      e.preventDefault();
-      closeDialog();
-    } else if (e.key == "Enter") {
-      e.preventDefault();
-      recallSale(held[index]);
-    } else {
-      index = moveIndex(e, index, held.length);
-      render();
-    }
-  });
+  openDialog(
+    "Held sales",
+    `<div id="dialog-list"></div>`,
+    "\u2191\u2193 select \u00b7 Enter view items \u00b7 Esc cancel",
+    (e) => {
+      if (e.key == "Escape") {
+        e.preventDefault();
+        closeDialog();
+      } else if (e.key == "Enter") {
+        e.preventDefault();
+        showHeldSale(held[index]);
+      } else {
+        index = moveIndex(e, index, held.length);
+        render();
+      }
+    },
+  );
 
   render();
 };
 
-export const recallSale = async (held) => {
+const showHeldSale = async (held) => {
   const response = await axios.get(`${baseAPI}/sales.php`, {
     params: {
       operation: "getHeldSale",
@@ -69,15 +172,68 @@ export const recallSale = async (held) => {
     },
   });
 
-  state.details = response.data.map((line) => ({
+  const details = response.data;
+  const invalidDetails = !Array.isArray(details) || details.length == 0
+    || details.some((line) => {
+      const quantity = Number(line.quantity);
+      const unitPrice = Number(line.unit_price);
+      const lineTotal = Number(line.line_total);
+
+      return !Number.isInteger(quantity) || quantity < 1
+        || !Number.isFinite(unitPrice) || unitPrice < 0
+        || !Number.isFinite(lineTotal) || lineTotal < 0
+        || Math.round(unitPrice * quantity * 100) != Math.round(lineTotal * 100);
+    });
+  const detailTotalCents = Array.isArray(details)
+    ? details.reduce((sum, line) => sum + Math.round(Number(line.line_total) * 100), 0)
+    : 0;
+
+  if (invalidDetails || detailTotalCents != Math.round(Number(held.total_amount) * 100)) {
+    openMessageDialog("Invalid held sale", "This held sale has no valid items and cannot be recalled.");
+    return;
+  }
+
+  const itemRows = details
+    .map((line) => `
+      <div class="list-row">
+        <span>${escapeHtml(line.product_name)} x${formatNumber(parseFloat(line.quantity), 0)}</span>
+        <span>${formatCurrency(parseFloat(line.line_total))}</span>
+      </div>
+    `)
+    .join("");
+
+  openDialog(
+    `Recall ${escapeHtml(held.recall_name)}`,
+    `<div class="recall-items">${itemRows}</div>
+     <div class="side-row"><strong>Total</strong><strong>${formatCurrency(parseFloat(held.total_amount))}</strong></div>`,
+    "Enter = recall sale \u00b7 Esc = back to held sales",
+    (e) => {
+      if (e.key == "Escape") {
+        e.preventDefault();
+        openRecallDialog();
+      } else if (e.key == "Enter") {
+        e.preventDefault();
+        recallSale(held, details);
+      }
+    },
+  );
+};
+
+export const recallSale = async (held, lines) => {
+  const details = lines || await getHeldSaleDetails(held.sales_id);
+
+  state.details = details.map((line) => ({
     productId: line.product_id,
     productName: line.product_name,
     productPrice: parseFloat(line.unit_price),
-    qty: parseInt(line.quantity),
+    qty: parseInt(line.quantity, 10),
     amount: parseFloat(line.line_total),
   }));
 
-  state.customer = held.customer_id ? { customerId: held.customer_id, customerName: held.customer_name } : null;
+  state.customer = held.customer_id
+    ? { customerId: held.customer_id, customerName: held.customer_name }
+    : null;
+  state.saleType = held.customer_id ? "AR" : "WALK_IN";
   state.recallId = held.sales_id;
   state.selected = state.details.length - 1;
 
@@ -86,17 +242,12 @@ export const recallSale = async (held) => {
   displayCustomer();
 };
 
-export const voidSale = async (salesId) => {
-  const jsonData = { salesId: salesId };
-
-  const formData = new FormData();
-  formData.append("operation", "voidSale");
-  formData.append("json", JSON.stringify(jsonData));
-
-  const response = await axios({
-    url: `${baseAPI}/sales.php`,
-    method: "POST",
-    data: formData,
+const getHeldSaleDetails = async (salesId) => {
+  const response = await axios.get(`${baseAPI}/sales.php`, {
+    params: {
+      operation: "getHeldSale",
+      json: JSON.stringify({ salesId: salesId }),
+    },
   });
 
   return response.data;
@@ -107,24 +258,46 @@ export const openVoidSaleDialog = () => {
     return;
   }
 
-  openDialog(
+  const saleDetails = state.details.map((item) => ({ ...item }));
+  const total = getTotalSales();
+
+  openSupervisorApprovalDialog(
     "Void sale",
-    `<p class="dialog-text">Void this current sale? ${getTotalQty()} item(s) - ${formatCurrency(getTotalSales())}</p>`,
-    "Enter = Yes · Esc = No",
-    async (e) => {
-      if (e.key == "Escape") {
-        e.preventDefault();
-        closeDialog();
-      } else if (e.key == "Enter") {
-        e.preventDefault();
-        closeDialog();
+    `Void ${getTotalQty()} item(s) - ${formatCurrency(total)}? A supervisor must sign in at this POS.`,
+    async (credentials) => {
+      const formData = new FormData();
+      formData.append("operation", "authorizePosVoid");
+      formData.append("json", JSON.stringify({
+        shiftId: state.shift ? state.shift.shift_id : null,
+        actionType: "VOID_SALE",
+        salesId: state.recallId,
+        amount: total,
+        details: saleDetails,
+        supervisorUsername: credentials.supervisorUsername,
+        supervisorPassword: credentials.supervisorPassword,
+        reason: credentials.reason,
+      }));
 
-        if (state.recallId) {
-          await voidSale(state.recallId);
-        }
+      const response = await axios({
+        url: `${baseAPI}/shift.php`,
+        method: "POST",
+        data: formData,
+      });
 
+      if (response.data == 1) {
         resetSale();
+        return {
+          success: true,
+          afterClose: () => openMessageDialog("Sale voided", "The supervisor approved this sale void."),
+        };
       }
+
+      return {
+        success: false,
+        message: response.data == 3
+          ? "Supervisor sign-in failed. Check the username and password."
+          : "The sale could not be voided. Confirm the open shift and try again.",
+      };
     },
   );
 };

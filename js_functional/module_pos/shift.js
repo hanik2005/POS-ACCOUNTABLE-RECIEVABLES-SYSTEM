@@ -5,11 +5,9 @@ import { openDialog, closeDialog, openMessageDialog } from "./dialog.js";
 
 export const displayFloat = () => {
   const shift = state.shift;
-  const pendingCount = shift ? parseInt(shift.pending_requests) || 0 : 0;
-  const pending = formatNumber(pendingCount, 0);
 
   document.getElementById("bar-float").innerText = shift
-    ? `${formatCurrency(parseFloat(shift.float_left))}${pendingCount > 0 ? ` (${pending} pending)` : ""}`
+    ? formatCurrency(parseFloat(shift.float_left))
     : "-";
 };
 
@@ -27,6 +25,19 @@ export const loadPosSession = async () => {
   const response = await axios.get(`${baseAPI}/shift.php`, {
     params: { operation: "getPosSession" },
   });
+
+  if (response.data.role == "SUPERVISOR") {
+    document.getElementById("bar-cashier").innerText = response.data.cashier;
+    document.getElementById("bar-terminal").innerText = "Cashier terminal required";
+    document.getElementById("bar-shift").innerText = "Supervisor sign-in";
+    document.getElementById("bar-float").innerText = "-";
+    openMessageDialog(
+      "Supervisor at POS",
+      "Cash drawer and void approvals happen on the active cashier POS. "
+        + "Log out, let the cashier open their shift, then enter your credentials in the approval prompt.",
+    );
+    return;
+  }
 
   state.terminal = response.data.terminal;
   state.shift = response.data.shift;
@@ -50,26 +61,41 @@ export const loadPosSession = async () => {
 export const openStartShiftDialog = () => {
   const terminal = state.terminal;
   const canStartShift = terminal && parseInt(terminal.can_start_shift) == 1;
-  let details = `<p class="dialog-text">This cashier has no active terminal assignment. Ask the admin to assign a terminal and schedule.</p>`;
+  let details = `
+    <p class="dialog-text">
+      This cashier has no active terminal assignment. Ask the admin to assign a terminal and schedule.
+    </p>`;
 
   if (terminal) {
     const scheduleHours = `${terminal.start_time.slice(0, 5)}–${terminal.end_time.slice(0, 5)}`;
     const scheduleMessage = canStartShift
-      ? "Check the cash drawer float before starting."
-      : `Your assigned ${terminal.schedule_name} schedule is ${scheduleHours}. You cannot start outside those hours. Ask the admin to assign a schedule that covers this shift.`;
+      ? "The supervisor must count and approve a new starting float for this shift."
+      : `Your assigned ${terminal.schedule_name} schedule is ${scheduleHours}.
+        You cannot start outside those hours. Ask the admin to assign a schedule that covers this shift.`;
 
     details = `
-      <div class="pay-total">${formatCurrency(parseFloat(terminal.float_start))}</div>
       <div class="side-row"><span>Terminal</span><span>${terminal.terminal_name}</span></div>
       <div class="side-row"><span>Schedule</span><span>${terminal.schedule_name} (${scheduleHours})</span></div>
-      <p class="dialog-text mt-2">${scheduleMessage}</p>`;
+      <p class="dialog-text mt-2">${scheduleMessage}</p>
+      ${canStartShift ? `
+        <label class="dialog-label" for="dialog-input">Supervisor-approved starting float</label>
+        <input id="dialog-input" type="number" step="0.01" min="0" class="pos-input"
+          placeholder="Starting float" autocomplete="off">
+        <label class="dialog-label" for="supervisor-username">Supervisor username</label>
+        <input id="supervisor-username" type="text" class="pos-input"
+          placeholder="Supervisor username" autocomplete="username">
+        <label class="dialog-label" for="supervisor-password">Supervisor password</label>
+        <input id="supervisor-password" type="password" class="pos-input"
+          placeholder="Supervisor password" autocomplete="current-password">`
+        : ""}`;
   }
 
   openDialog(
     terminal ? "Start shift" : "Shift unavailable",
     `${details}
      <div class="dialog-actions">
-       <button type="button" id="start-shift-button" class="pos-action-button" ${canStartShift ? "" : "disabled"}>Start Shift</button>
+       <button type="button" id="start-shift-button" class="pos-action-button"
+         ${canStartShift ? "" : "disabled"}>Start Shift</button>
        <button type="button" id="start-shift-logout" class="pos-action-button secondary">Log Out</button>
      </div>`,
     canStartShift ? "Enter = start shift · Choose Log Out to leave" : "Choose Log Out or ask the admin to update your assignment",
@@ -77,8 +103,16 @@ export const openStartShiftDialog = () => {
       if (e.key == "Enter") {
         e.preventDefault();
         if (canStartShift) {
-          closeDialog();
-          openShift();
+          const nextField = {
+            "dialog-input": "supervisor-username",
+            "supervisor-username": "supervisor-password",
+          }[document.activeElement.id];
+
+          if (nextField) {
+            document.getElementById(nextField).focus();
+          } else {
+            submitOpenShift();
+          }
         }
       }
     },
@@ -88,8 +122,7 @@ export const openStartShiftDialog = () => {
 
   if (startButton && canStartShift) {
     startButton.addEventListener("click", () => {
-      closeDialog();
-      openShift();
+      submitOpenShift();
     });
   }
 
@@ -97,12 +130,39 @@ export const openStartShiftDialog = () => {
     closeDialog();
     document.getElementById("btn-logout").click();
   });
+
+  if (canStartShift) {
+    focusDialogInput();
+  }
 };
 
-export const openShift = async () => {
+const submitOpenShift = () => {
+  const floatStart = document.getElementById("dialog-input").value;
+  const supervisorUsername = document.getElementById("supervisor-username").value.trim();
+  const supervisorPassword = document.getElementById("supervisor-password").value;
+
+  if (floatStart == "" || !Number.isFinite(Number(floatStart)) || Number(floatStart) < 0
+    || supervisorUsername == "" || supervisorPassword == "") {
+    openMessageDialog(
+      "Starting float required",
+      "Enter the float counted by the supervisor and the supervisor's username and password.",
+      openStartShiftDialog,
+    );
+    return;
+  }
+
+  closeDialog();
+  openShift(Number(floatStart), supervisorUsername, supervisorPassword);
+};
+
+export const openShift = async (floatStart, supervisorUsername, supervisorPassword) => {
   const formData = new FormData();
   formData.append("operation", "openShift");
-  formData.append("json", JSON.stringify({}));
+  formData.append("json", JSON.stringify({
+    floatStart: floatStart,
+    supervisorUsername: supervisorUsername,
+    supervisorPassword: supervisorPassword,
+  }));
 
   const response = await axios({
     url: `${baseAPI}/shift.php`,
@@ -116,6 +176,12 @@ export const openShift = async () => {
     openMessageDialog(
       "Outside assigned schedule",
       "Ask the admin to assign you to the current schedule before starting the shift.",
+      openStartShiftDialog,
+    );
+  } else if (response.data == 4) {
+    openMessageDialog(
+      "Supervisor verification failed",
+      "Check that the username and password belong to an active supervisor.",
       openStartShiftDialog,
     );
   } else {
@@ -153,23 +219,38 @@ export const openCloseShiftDialog = async (afterClose) => {
         <tr><td>Schedule</td><td>${report.schedule_name}</td></tr>
         <tr><td>Opened</td><td>${formatTime(report.opened_at)}</td></tr>
         <tr><td>Transactions</td><td>${formatNumber(report.transactions, 0)}</td></tr>
-        <tr><td>Sales</td><td>${formatCurrency(gross)}</td></tr>
+        <tr><td>Gross sales</td><td>${formatCurrency(gross)}</td></tr>
+        <tr><td>Paid at sale (POS)</td><td>${formatCurrency(parseFloat(report.paid_at_sale))}</td></tr>
+        <tr><td>Charged to AR</td><td>${formatCurrency(parseFloat(report.ar_charged))}</td></tr>
+        <tr><td>Voided sales (count)</td><td>${formatNumber(report.void_transactions, 0)}</td></tr>
+        <tr><td>Voided sales (amount)</td><td>${formatCurrency(parseFloat(report.void_sales))}</td></tr>
+        <tr><td>Voided lines (count)</td><td>${formatNumber(report.void_line_count, 0)}</td></tr>
+        <tr><td>Voided lines (amount)</td><td>${formatCurrency(parseFloat(report.void_line_amount))}</td></tr>
         <tr><td>Float start</td><td>${formatCurrency(parseFloat(report.float_start))}</td></tr>
-        <tr><td>Float adjust</td><td>${formatCurrency(parseFloat(report.float_adjust))}</td></tr>
+        <tr><td>Float added</td><td>${formatCurrency(parseFloat(report.float_added))}</td></tr>
+        <tr><td>Float removed</td><td>${formatCurrency(parseFloat(report.float_removed))}</td></tr>
         <tr><td>Cash received</td><td>${formatCurrency(parseFloat(report.cash_received))}</td></tr>
         <tr><td>Change given</td><td>${formatCurrency(parseFloat(report.change_given))}</td></tr>
-        <tr><td>Cash drop</td><td>${formatCurrency(parseFloat(report.cash_drop))}</td></tr>
+        <tr><td>Cash drops (count)</td><td>${formatNumber(report.cash_drop_count, 0)}</td></tr>
+        <tr><td>Cash drops (amount)</td><td>${formatCurrency(parseFloat(report.cash_drop))}</td></tr>
+        <tr><td>Payments by method</td><td>${report.payment_summary}</td></tr>
         <tr class="expected"><td>Expected cash</td><td>${formatCurrency(parseFloat(report.expected_cash))}</td></tr>
       </table>
-      <p class="dialog-text mt-2">The cashier and supervisor must count the drawer separately. The supervisor count becomes the next shift float.</p>
+       <p class="dialog-text mt-2">
+          The cashier and supervisor count separately. The next shift starts with a new float approved by its supervisor.
+       </p>
       <label class="dialog-label" for="dialog-input">Cashier counted cash</label>
-      <input id="dialog-input" type="number" step="0.01" min="0" class="pos-input" placeholder="Cashier count" autocomplete="off">
+       <input id="dialog-input" type="number" step="0.01" min="0" class="pos-input"
+         placeholder="Cashier count" autocomplete="off">
       <label class="dialog-label" for="supervisor-closing-cash">Supervisor counted cash</label>
-      <input id="supervisor-closing-cash" type="number" step="0.01" min="0" class="pos-input" placeholder="Supervisor count" autocomplete="off">
+       <input id="supervisor-closing-cash" type="number" step="0.01" min="0" class="pos-input"
+         placeholder="Supervisor count" autocomplete="off">
       <label class="dialog-label" for="supervisor-username">Supervisor username</label>
-      <input id="supervisor-username" type="text" class="pos-input" placeholder="Supervisor username" autocomplete="username">
+       <input id="supervisor-username" type="text" class="pos-input"
+         placeholder="Supervisor username" autocomplete="username">
       <label class="dialog-label" for="supervisor-password">Supervisor password</label>
-      <input id="supervisor-password" type="password" class="pos-input" placeholder="Supervisor password" autocomplete="current-password">
+       <input id="supervisor-password" type="password" class="pos-input"
+         placeholder="Supervisor password" autocomplete="current-password">
       <div class="dialog-actions">
         <button type="button" id="confirm-close-shift" class="pos-action-button">Confirm Close Shift</button>
         <button type="button" id="cancel-close-shift" class="pos-action-button secondary">Cancel</button>
@@ -181,7 +262,17 @@ export const openCloseShiftDialog = async (afterClose) => {
         closeDialog();
       } else if (e.key == "Enter") {
         e.preventDefault();
-        submitCloseShift(afterClose);
+        const nextField = {
+          "dialog-input": "supervisor-closing-cash",
+          "supervisor-closing-cash": "supervisor-username",
+          "supervisor-username": "supervisor-password",
+        }[document.activeElement.id];
+
+        if (nextField) {
+          document.getElementById(nextField).focus();
+        } else {
+          submitCloseShift(afterClose);
+        }
       }
     },
   );
@@ -246,14 +337,9 @@ const closeShift = async (closingData, afterClose) => {
     displayFloat();
     openMessageDialog(
       "Shift closed",
-      `Cashier count: ${formatCurrency(closingData.cashierClosingCash)}. Supervisor count: ${formatCurrency(closingData.supervisorClosingCash)}.`,
+      `Cashier count: ${formatCurrency(closingData.cashierClosingCash)}.
+        Supervisor count: ${formatCurrency(closingData.supervisorClosingCash)}.`,
       after,
-    );
-  } else if (response.data == 2) {
-    openMessageDialog(
-      "Cash request pending",
-      "Wait for the supervisor to approve or reject all cash drawer requests first.",
-      () => openCloseShiftDialog(afterClose),
     );
   } else if (response.data == 3) {
     openMessageDialog(

@@ -1,7 +1,8 @@
+import { baseAPI } from "./config.js";
 import { state } from "./state.js";
 import { entry, formatCurrency, formatNumber, showStatus } from "./utils.js";
-
-let editingQtyIndex = null;
+import { openDialog, closeDialog, openMessageDialog } from "./dialog.js";
+import { openSupervisorApprovalDialog } from "./supervisor.js";
 
 const escapeHtml = (value) => {
   return String(value || "").replace(/[&<>"']/g, (character) => {
@@ -26,7 +27,12 @@ export const displaySuggestions = () => {
   }
 
   state.suggestions = state.products
-    .filter((product) => product.product_name.toLowerCase().includes(search) || (product.barcode || "").toLowerCase().includes(search))
+    .filter((product) => {
+      const nameMatch = product.product_name.toLowerCase().includes(search);
+      const barcodeMatch = (product.barcode || "").toLowerCase().includes(search);
+
+      return nameMatch || barcodeMatch;
+    })
     .slice(0, 6);
 
   state.suggestIndex = Math.min(state.suggestIndex, Math.max(state.suggestions.length - 1, 0));
@@ -34,19 +40,13 @@ export const displaySuggestions = () => {
   box.innerHTML = state.suggestions
     .map(
       (product, i) => `
-        <button type="button" class="suggest-item ${i == state.suggestIndex ? "active" : ""}" data-product-index="${i}">
+        <div class="suggest-item ${i == state.suggestIndex ? "active" : ""}">
           <span>${escapeHtml(product.product_name)}</span>
           <span>${formatCurrency(parseFloat(product.unit_price))}</span>
-        </button>
+        </div>
       `,
     )
     .join("");
-
-  box.querySelectorAll("button[data-product-index]").forEach((button) => {
-    button.addEventListener("click", () => {
-      addProduct(state.suggestions[parseInt(button.dataset.productIndex, 10)]);
-    });
-  });
 };
 
 export const onEntryInput = () => {
@@ -91,52 +91,14 @@ export const displayCart = () => {
     .map(
       (item, i) => `
         <tr class="${i == state.selected ? "selected" : ""}">
-          <td>${item.productName}</td>
+          <td>${escapeHtml(item.productName)}</td>
           <td class="text-end">${formatCurrency(item.productPrice)}</td>
-          <td class="text-end">
-            ${editingQtyIndex == i
-              ? `<input type="number" class="cart-qty-input" data-index="${i}" value="${item.qty}" min="1" step="1" aria-label="Change quantity for ${escapeHtml(item.productName)}">`
-              : `<button type="button" class="cart-qty-edit" data-index="${i}" aria-label="Edit quantity for ${escapeHtml(item.productName)}" title="Click to edit quantity">${formatNumber(item.qty, 0)}</button>`}
-          </td>
+          <td class="text-end">${formatNumber(item.qty, 0)}</td>
           <td class="text-end">${formatCurrency(item.amount)}</td>
         </tr>
       `,
     )
     .join("");
-
-  tbody.querySelectorAll(".cart-qty-edit").forEach((button) => {
-    button.addEventListener("click", () => {
-      editingQtyIndex = parseInt(button.dataset.index, 10);
-      state.selected = editingQtyIndex;
-      displayCart();
-
-      const input = tbody.querySelector(".cart-qty-input");
-      input.focus();
-      input.select();
-    });
-  });
-
-  const qtyInput = tbody.querySelector(".cart-qty-input");
-
-  if (qtyInput) {
-    const index = parseInt(qtyInput.dataset.index, 10);
-
-    qtyInput.addEventListener("keydown", (event) => {
-      event.stopPropagation();
-
-      if (event.key == "Enter") {
-        event.preventDefault();
-        commitQtyEdit(index, true);
-      } else if (event.key == "Escape") {
-        event.preventDefault();
-        cancelQtyEdit(true);
-      }
-    });
-
-    qtyInput.addEventListener("blur", () => {
-      commitQtyEdit(index);
-    });
-  }
 
   const row = tbody.querySelector(".selected");
 
@@ -146,42 +108,6 @@ export const displayCart = () => {
 
   document.getElementById("total").innerText = formatCurrency(getTotalSales());
   document.getElementById("count").innerText = formatNumber(getTotalQty(), 0);
-};
-
-const commitQtyEdit = (index, focusProduct = false) => {
-  if (editingQtyIndex != index) {
-    return;
-  }
-
-  const input = document.querySelector(`.cart-qty-input[data-index="${index}"]`);
-  const quantity = Number(input.value);
-
-  if (!Number.isInteger(quantity) || quantity < 1) {
-    editingQtyIndex = null;
-    displayCart();
-    showStatus("Enter a whole quantity greater than zero.");
-    return;
-  }
-
-  state.details[index].qty = quantity;
-  state.details[index].amount = state.details[index].productPrice * quantity;
-  state.selected = index;
-  editingQtyIndex = null;
-  displayCart();
-  showStatus("");
-
-  if (focusProduct) {
-    entry().focus();
-  }
-};
-
-const cancelQtyEdit = (focusProduct = false) => {
-  editingQtyIndex = null;
-  displayCart();
-
-  if (focusProduct) {
-    entry().focus();
-  }
 };
 
 export const displayCustomer = () => {
@@ -216,13 +142,44 @@ export const addToCart = (product, qty) => {
   displayCart();
 };
 
-const addProduct = (product) => {
-  addToCart(product, 1);
+const addProduct = (product, qty) => {
+  addToCart(product, qty);
   entry().value = "";
   state.suggestIndex = 0;
   showStatus("");
   displaySuggestions();
   entry().focus();
+};
+
+const openQuantityDialog = (product) => {
+  openDialog(
+    "Enter quantity",
+    `<p class="dialog-text">${escapeHtml(product.product_name)} - ${formatCurrency(parseFloat(product.unit_price))}</p>
+     <label class="dialog-label" for="dialog-input">Quantity</label>
+     <input id="dialog-input" type="number" min="1" step="1" value="1" class="pos-input" autocomplete="off">`,
+    "Enter = add product \u00b7 Esc = cancel",
+    (e) => {
+      if (e.key == "Escape") {
+        e.preventDefault();
+        closeDialog();
+      } else if (e.key == "Enter") {
+        e.preventDefault();
+        const qty = Number(document.getElementById("dialog-input").value);
+
+        if (!Number.isInteger(qty) || qty < 1) {
+          document.getElementById("dialog-input").focus();
+          return;
+        }
+
+        closeDialog();
+        addProduct(product, qty);
+      }
+    },
+  );
+
+  const quantityInput = document.getElementById("dialog-input");
+  quantityInput.focus();
+  quantityInput.select();
 };
 
 export const addEntry = () => {
@@ -247,7 +204,7 @@ export const addEntry = () => {
     return;
   }
 
-  addProduct(product);
+  openQuantityDialog(product);
 };
 
 export const moveSelected = (step) => {
@@ -278,15 +235,53 @@ export const voidLine = () => {
     return;
   }
 
-  state.details.splice(state.selected, 1);
+  const item = state.details[state.selected];
+  const itemDetails = { ...item };
 
-  state.selected = Math.min(state.selected, state.details.length - 1);
+  openSupervisorApprovalDialog(
+    "Void line",
+    `Void ${escapeHtml(item.productName)} x${formatNumber(item.qty, 0)} - ${formatCurrency(item.amount)}?`,
+    async (credentials) => {
+      const formData = new FormData();
+      formData.append("operation", "authorizePosVoid");
+      formData.append("json", JSON.stringify({
+        shiftId: state.shift ? state.shift.shift_id : null,
+        actionType: "VOID_LINE",
+        amount: item.amount,
+        details: itemDetails,
+        supervisorUsername: credentials.supervisorUsername,
+        supervisorPassword: credentials.supervisorPassword,
+        reason: credentials.reason,
+      }));
 
-  displayCart();
+      const response = await axios({
+        url: `${baseAPI}/shift.php`,
+        method: "POST",
+        data: formData,
+      });
+
+      if (response.data == 1) {
+        state.details.splice(state.selected, 1);
+        state.selected = Math.min(state.selected, state.details.length - 1);
+        displayCart();
+        return {
+          success: true,
+          afterClose: () => openMessageDialog("Line voided", "The supervisor approved this line void."),
+        };
+      }
+
+      return {
+        success: false,
+        message: response.data == 3
+          ? "Supervisor sign-in failed. Check the username and password."
+          : "The line could not be voided. Confirm the open shift and try again.",
+      };
+    },
+  );
+
 };
 
 export const resetSale = () => {
-  editingQtyIndex = null;
   state.details = [];
   state.customer = null;
   state.saleType = null;

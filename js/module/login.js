@@ -29,7 +29,7 @@ export const login = async (userData) => {
                     `${baseUrl}/interface/Accounting/invoice.html`;
             } else if (response.data.user.role_name.toUpperCase() == "SUPERVISOR") {
                 window.location.href =
-                    `${baseUrl}/interface/Supervisor/approvals.html`;
+                    `${baseUrl}/interface/Cashier/pos.html`;
             }  
         } else {
             Swal.fire(

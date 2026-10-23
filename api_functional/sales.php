@@ -63,8 +63,8 @@ class Sales
 
     $json = json_decode($json, true);
 
-    $header = $json['header'];
-    $details = $json['details'];
+    $header = isset($json['header']) && is_array($json['header']) ? $json['header'] : [];
+    $details = isset($json['details']) && is_array($json['details']) ? $json['details'] : [];
 
     $session = new Session();
     $userId = $session->getUserId();
@@ -72,6 +72,63 @@ class Sales
     $customerId = !empty($header['customerId']) ? $header['customerId'] : null;
     $saleType = !empty($header['saleType']) ? strtoupper($header['saleType']) : ($customerId ? 'AR' : 'WALK_IN');
     $recallId = !empty($header['recallId']) ? $header['recallId'] : null;
+    $payment = !empty($header['payment']) ? $header['payment'] : null;
+    $status = !empty($header['status']) ? strtoupper($header['status']) : '';
+    $headerAmount = isset($header['amount']) && is_numeric($header['amount'])
+      ? round((float) $header['amount'], 2)
+      : -1;
+    $validatedDetails = [];
+    $detailTotal = 0;
+
+    if (!in_array($status, ['HOLD', 'COMPLETED'], true)
+      || !in_array($saleType, ['AR', 'WALK_IN'], true)
+      || count($details) == 0 || $headerAmount < 0) {
+      return json_encode(0);
+    }
+
+    if ($saleType == 'AR' && $customerId === null) {
+      return json_encode(0);
+    }
+
+    if ($saleType == 'WALK_IN') {
+      $customerId = null;
+    }
+
+    foreach ($details as $row) {
+      if (!is_array($row) || !isset($row['productId'], $row['qty'], $row['productPrice'], $row['amount'])
+        || !is_numeric($row['productId']) || !is_numeric($row['qty'])
+        || !is_numeric($row['productPrice']) || !is_numeric($row['amount'])) {
+        return json_encode(0);
+      }
+
+      $productId = (int) $row['productId'];
+      $quantity = (int) $row['qty'];
+      $productPrice = round((float) $row['productPrice'], 2);
+      $lineAmount = round((float) $row['amount'], 2);
+      $expectedLineAmount = round($productPrice * $quantity, 2);
+
+      if ((float) $row['productId'] != $productId || $productId < 1
+        || (float) $row['qty'] != $quantity || $quantity < 1
+        || $productPrice < 0 || $lineAmount < 0 || $lineAmount != $expectedLineAmount) {
+        return json_encode(0);
+      }
+
+      $validatedDetails[] = [
+        'productId' => $productId,
+        'qty' => $quantity,
+        'productPrice' => $productPrice,
+        'amount' => $lineAmount,
+      ];
+      $detailTotal += $lineAmount;
+    }
+
+    if (round($detailTotal, 2) != $headerAmount) {
+      return json_encode(0);
+    }
+
+    $details = $validatedDetails;
+    $header['status'] = $status;
+    $header['amount'] = $headerAmount;
     $salesDate = date('Y-m-d');
 
     try {
@@ -80,6 +137,10 @@ class Sales
       if ($header['status'] == 'COMPLETED') {
         if (!in_array($saleType, ['AR', 'WALK_IN'], true)) {
           throw new Exception("The sale type is invalid.");
+        }
+
+        if ($saleType == 'AR' && $payment) {
+          throw new Exception("Accounts Receivable sales must be charged to the customer account.");
         }
 
         if ($saleType == 'WALK_IN') {
@@ -112,21 +173,17 @@ class Sales
           $outstandingBalance = (float) $stmt->fetchColumn();
           $creditLimit = round((float) $creditLimit, 2);
           $saleTotal = round((float) $header['amount'], 2);
-          $payment = !empty($header['payment']) ? $header['payment'] : null;
-          $amountApplied = $payment ? round(min((float) $payment['amountApplied'], $saleTotal), 2) : 0;
-          $newReceivable = max($saleTotal - $amountApplied, 0);
+          $newReceivable = $saleTotal;
 
           if (round($outstandingBalance + $newReceivable, 2) > $creditLimit) {
             $availableCredit = max($creditLimit - $outstandingBalance, 0);
             $conn->rollBack();
             return json_encode([
               "success" => false,
-              "message" => "Credit limit reached. The customer has " . number_format($availableCredit, 2) . " available credit. Pay at least " . number_format(max($saleTotal - $availableCredit, 0), 2) . " now or cancel the sale."
+              "message" => "Credit limit reached. The customer has " . number_format($availableCredit, 2) . " available credit. Adjust the sale or ask the admin to increase the credit limit."
             ]);
           }
         }
-
-        $payment = !empty($header['payment']) ? $header['payment'] : null;
 
         if ($saleType == 'WALK_IN') {
           $saleTotal = round((float) $header['amount'], 2);
@@ -311,10 +368,20 @@ class Sales
     $userId = $session->getUserId();
 
     $sql = "SELECT s.sales_id, s.total_amount, s.customer_id, c.customer_name,
-        (SELECT IFNULL(SUM(d.quantity), 0) FROM sales_dtl d WHERE d.sales_id = s.sales_id) AS item_count
+        CASE WHEN s.customer_id IS NULL THEN 'Walk-in customer'
+          ELSE CONCAT('AR - ', c.customer_name) END AS recall_name,
+        held_items.item_count
         FROM sales_hdr s
         LEFT JOIN customers c ON s.customer_id = c.customer_id
+        INNER JOIN (
+          SELECT sales_id, SUM(quantity) AS item_count, SUM(line_total) AS detail_total
+          FROM sales_dtl
+          GROUP BY sales_id
+          HAVING SUM(quantity) > 0
+            AND SUM(CASE WHEN quantity < 1 OR quantity <> FLOOR(quantity) THEN 1 ELSE 0 END) = 0
+        ) held_items ON held_items.sales_id = s.sales_id
         WHERE s.status = 'HOLD' AND s.created_by = :userId
+          AND ABS(ROUND(held_items.detail_total, 2) - ROUND(s.total_amount, 2)) < 0.01
         ORDER BY s.sales_id DESC";
     $stmt = $conn->prepare($sql);
     $stmt->bindParam(":userId", $userId);
@@ -329,13 +396,17 @@ class Sales
     include "../api/connection-pdo.php";
 
     $json = json_decode($json, true);
+    $session = new Session();
+    $userId = $session->getUserId();
 
     $sql = "SELECT d.product_id, p.product_name, d.unit_price, d.quantity, d.line_total
         FROM sales_dtl d
         INNER JOIN products p ON d.product_id = p.product_id
-        WHERE d.sales_id = :salesId";
+        INNER JOIN sales_hdr s ON d.sales_id = s.sales_id
+        WHERE d.sales_id = :salesId AND s.created_by = :userId AND s.status = 'HOLD'";
     $stmt = $conn->prepare($sql);
     $stmt->bindParam(":salesId", $json['salesId']);
+    $stmt->bindParam(":userId", $userId);
     $stmt->execute();
     $rs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -784,27 +855,6 @@ switch ($operation) {
     break;
   case "getHeldSale":
     echo $sales->getHeldSale($json);
-    break;
-  case "voidSale":
-    echo $sales->voidSale($json);
-    break;
-  case "getVoidableSales":
-    echo $sales->getVoidableSales();
-    break;
-  case "getVoidableSaleDetails":
-    echo $sales->getVoidableSaleDetails($json);
-    break;
-  case "requestSaleVoid":
-    echo $sales->requestSaleVoid($json);
-    break;
-  case "authorizeVoidSale":
-    echo $sales->authorizeVoidSale($json);
-    break;
-  case "getSaleVoidRequests":
-    echo $sales->getSaleVoidRequests();
-    break;
-  case "decideSaleVoid":
-    echo $sales->decideSaleVoid($json);
     break;
   case "getAllSales":
     echo $sales->getAllSales();
