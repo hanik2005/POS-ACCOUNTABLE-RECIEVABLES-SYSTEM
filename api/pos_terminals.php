@@ -11,20 +11,17 @@ class POSTerminals{
         $sql = "INSERT INTO tbl_pos_terminal
                 (
                     terminal_name,
-                    float_start,
                     status
                 )
                 VALUES
                 (
                     :terminalName,
-                    :floatStart,
                     :status
                 )";
 
         $stmt = $conn->prepare($sql);
 
         $stmt->bindParam(":terminalName", $json["terminalName"]);
-        $stmt->bindParam(":floatStart", $json["floatStart"]);
         $stmt->bindParam(":status",$json["status"]);
         $stmt->execute();
 
@@ -39,7 +36,6 @@ class POSTerminals{
         $sql = "SELECT
                     terminal_id,
                     terminal_name,
-                    float_start,
                     status
                 FROM tbl_pos_terminal
                 ORDER BY terminal_id DESC";
@@ -63,7 +59,6 @@ class POSTerminals{
         $sql = "SELECT
                     terminal_id,
                     terminal_name,
-                    float_start,
                     status
                 FROM tbl_pos_terminal
                 WHERE terminal_id = :terminalId";
@@ -85,19 +80,15 @@ class POSTerminals{
 
         $json = json_decode($json, true);
 
-        $floatStart = isset($json["floatStart"]) ? $json["floatStart"] : null;
-
         $sql = "UPDATE tbl_pos_terminal
                 SET
                     terminal_name = :terminalName,
-                    float_start = COALESCE(:floatStart, float_start),
                     status = :status
                 WHERE terminal_id = :terminalId";
 
         $stmt = $conn->prepare($sql);
 
         $stmt->bindParam(":terminalName", $json["terminalName"]);
-        $stmt->bindParam(":floatStart", $floatStart);
         $stmt->bindParam(":status", $json["status"]);
         $stmt->bindParam(":terminalId", $json["terminalId"]);
 

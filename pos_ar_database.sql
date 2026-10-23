@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 23, 2026 at 07:40 AM
+-- Generation Time: Oct 23, 2026 at 01:20 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -20,93 +20,6 @@ SET time_zone = "+00:00";
 --
 -- Database: `pos_ar_database`
 --
-
--- --------------------------------------------------------
-
---
--- Table structure for table `barcode_scanner_scans`
---
-
-CREATE TABLE `barcode_scanner_scans` (
-  `scan_id` bigint(20) NOT NULL,
-  `scanner_session_id` int(11) NOT NULL,
-  `barcode` varchar(128) NOT NULL,
-  `created_at` datetime NOT NULL,
-  `consumed_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `barcode_scanner_scans`
---
-
-INSERT INTO `barcode_scanner_scans` (`scan_id`, `scanner_session_id`, `barcode`, `created_at`, `consumed_at`) VALUES
-(1, 8, '0987457', '2026-10-18 12:45:10', '2026-10-18 12:45:11'),
-(2, 10, '9808112838266', '2026-10-18 12:54:42', '2026-10-18 12:54:43'),
-(3, 11, '4800119238266', '2026-10-18 12:57:53', '2026-10-18 12:57:53'),
-(4, 13, '4800119238266', '2026-10-18 13:06:18', '2026-10-18 13:06:19'),
-(5, 14, '4800119238266', '2026-10-18 13:07:15', '2026-10-18 13:07:16'),
-(6, 14, '4800119238266', '2026-10-18 13:07:15', '2026-10-18 13:07:16'),
-(7, 18, '820213238263', '2026-10-19 19:17:37', '2026-10-19 19:17:38'),
-(8, 18, '4800119238266', '2026-10-19 19:17:38', '2026-10-19 19:17:39'),
-(9, 18, '880153238266', '2026-10-19 19:17:46', '2026-10-19 19:17:47'),
-(10, 20, '4800888169716', '2026-10-19 19:30:22', '2026-10-19 19:30:22'),
-(11, 23, '4800119238266', '2026-10-19 20:55:08', '2026-10-19 20:55:09'),
-(12, 34, '24696', '2026-10-20 19:35:56', '2026-10-20 19:35:57');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `barcode_scanner_sessions`
---
-
-CREATE TABLE `barcode_scanner_sessions` (
-  `scanner_session_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `pairing_code` char(8) NOT NULL,
-  `status` varchar(10) NOT NULL DEFAULT 'ACTIVE',
-  `created_at` datetime NOT NULL,
-  `expires_at` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `barcode_scanner_sessions`
---
-
-INSERT INTO `barcode_scanner_sessions` (`scanner_session_id`, `user_id`, `pairing_code`, `status`, `created_at`, `expires_at`) VALUES
-(1, 26, '54008327', 'CLOSED', '2026-10-18 12:07:35', '2026-10-18 12:17:35'),
-(2, 26, '39998705', 'CLOSED', '2026-10-18 12:09:15', '2026-10-18 12:19:15'),
-(3, 26, '87386896', 'CLOSED', '2026-10-18 12:14:04', '2026-10-18 12:24:04'),
-(4, 26, '14823396', 'CLOSED', '2026-10-18 12:20:10', '2026-10-18 12:30:10'),
-(5, 26, '72996152', 'CLOSED', '2026-10-18 12:27:10', '2026-10-18 12:37:10'),
-(6, 26, '75028398', 'CLOSED', '2026-10-18 12:35:22', '2026-10-18 12:45:22'),
-(7, 26, '76754304', 'CLOSED', '2026-10-18 12:38:07', '2026-10-18 12:48:07'),
-(8, 26, '41681199', 'CLOSED', '2026-10-18 12:44:27', '2026-10-18 12:54:27'),
-(9, 26, '12786144', 'CLOSED', '2026-10-18 12:46:06', '2026-10-18 12:56:06'),
-(10, 26, '20145937', 'CLOSED', '2026-10-18 12:54:21', '2026-10-18 13:04:21'),
-(11, 26, '26868082', 'CLOSED', '2026-10-18 12:57:34', '2026-10-18 13:07:34'),
-(12, 1, '04899629', 'CLOSED', '2026-10-18 13:03:25', '2026-10-18 13:13:25'),
-(13, 1, '02288834', 'CLOSED', '2026-10-18 13:05:43', '2026-10-18 13:15:43'),
-(14, 1, '97397268', 'CLOSED', '2026-10-18 13:06:49', '2026-10-18 13:16:49'),
-(15, 2, '63068995', 'CLOSED', '2026-10-19 19:07:31', '2026-10-19 19:17:31'),
-(16, 2, '52332315', 'CLOSED', '2026-10-19 19:10:07', '2026-10-19 19:20:07'),
-(17, 2, '50742274', 'CLOSED', '2026-10-19 19:12:38', '2026-10-19 19:22:38'),
-(18, 2, '00968315', 'CLOSED', '2026-10-19 19:15:24', '2026-10-19 19:25:24'),
-(19, 2, '72973873', 'CLOSED', '2026-10-19 19:19:18', '2026-10-19 19:29:18'),
-(20, 1, '29262276', 'CLOSED', '2026-10-19 19:29:52', '2026-10-19 19:39:52'),
-(21, 1, '58809222', 'CLOSED', '2026-10-19 19:30:31', '2026-10-19 19:40:31'),
-(22, 2, '05715667', 'CLOSED', '2026-10-19 20:48:05', '2026-10-19 20:58:05'),
-(23, 2, '85730179', 'CLOSED', '2026-10-19 20:53:06', '2026-10-19 21:03:06'),
-(24, 1, '58833655', 'CLOSED', '2026-10-20 15:28:58', '2026-10-20 15:38:58'),
-(25, 1, '93301373', 'CLOSED', '2026-10-20 15:31:36', '2026-10-20 15:41:36'),
-(26, 1, '01983951', 'CLOSED', '2026-10-20 15:40:50', '2026-10-20 15:50:50'),
-(27, 1, '38129603', 'CLOSED', '2026-10-20 15:42:03', '2026-10-20 15:52:03'),
-(28, 1, '65207107', 'CLOSED', '2026-10-20 15:43:43', '2026-10-20 15:53:43'),
-(29, 1, '65447365', 'CLOSED', '2026-10-20 15:45:40', '2026-10-20 15:55:40'),
-(30, 1, '71891300', 'ACTIVE', '2026-10-20 15:45:44', '2026-10-20 15:55:44'),
-(31, 2, '17437795', 'CLOSED', '2026-10-20 19:13:42', '2026-10-20 19:23:42'),
-(32, 2, '85314078', 'CLOSED', '2026-10-20 19:14:53', '2026-10-20 19:24:53'),
-(33, 2, '43191840', 'CLOSED', '2026-10-20 19:25:23', '2026-10-20 19:35:23'),
-(34, 2, '39651097', 'PAIRED', '2026-10-20 19:33:29', '2026-10-20 19:43:29');
 
 -- --------------------------------------------------------
 
@@ -771,7 +684,8 @@ INSERT INTO `invoice` (`invoice_id`, `sales_id`, `invoice_number`, `due_date`, `
 (549, 566, 'INV-2026-0549', '2026-12-22', 165.00, 'UNPAID'),
 (550, 567, 'INV-2026-0550', '2026-10-23', 865.00, 'PAID'),
 (551, 569, 'INV-2026-0551', '2026-10-23', 130.00, 'PAID'),
-(552, 570, 'INV-2026-0552', '2026-10-23', 205.00, 'PAID');
+(552, 570, 'INV-2026-0552', '2026-10-23', 205.00, 'PAID'),
+(553, 571, 'INV-2026-0553', '2026-12-22', 197.00, 'UNPAID');
 
 -- --------------------------------------------------------
 
@@ -1900,7 +1814,10 @@ INSERT INTO `sales_dtl` (`sales_detail_id`, `sales_id`, `product_id`, `quantity`
 (1586, 569, 105, 1, 95.00, 95.00),
 (1587, 569, 104, 1, 35.00, 35.00),
 (1588, 570, 105, 1, 95.00, 95.00),
-(1589, 570, 97, 1, 110.00, 110.00);
+(1589, 570, 97, 1, 110.00, 110.00),
+(1590, 571, 89, 1, 32.00, 32.00),
+(1591, 571, 74, 1, 110.00, 110.00),
+(1592, 571, 81, 1, 55.00, 55.00);
 
 -- --------------------------------------------------------
 
@@ -2467,7 +2384,8 @@ INSERT INTO `sales_hdr` (`sales_id`, `customer_id`, `terminal_id`, `shift_id`, `
 (567, NULL, 11, 275, '2026-10-23', 865.00, 26, 'COMPLETED'),
 (568, 15, 3, 276, '2026-10-23', 130.00, 2, 'HOLD'),
 (569, NULL, 3, 276, '2026-10-23', 130.00, 2, 'COMPLETED'),
-(570, NULL, 3, 276, '2026-10-23', 205.00, 2, 'COMPLETED');
+(570, NULL, 3, 276, '2026-10-23', 205.00, 2, 'COMPLETED'),
+(571, 10, 3, 277, '2026-10-23', 197.00, 2, 'COMPLETED');
 
 -- --------------------------------------------------------
 
@@ -2675,7 +2593,8 @@ INSERT INTO `shifts` (`shift_id`, `user_id`, `terminal_id`, `schedule_id`, `open
 (273, 2, 3, 4, '2026-10-23 10:26:24', '2026-10-23 10:49:33', 3000.00, 57, 3000.00, 3330.00, 57, 3330.00, 'CLOSED'),
 (274, 2, 3, 4, '2026-10-23 10:50:05', '2026-10-23 11:41:14', 1000.00, 57, 1000.00, 1000.00, 57, 1000.00, 'CLOSED'),
 (275, 26, 11, 2, '2026-10-23 12:21:36', '2026-10-23 12:50:37', 1000.00, 57, 1865.00, 1865.00, 57, 1865.00, 'CLOSED'),
-(276, 2, 3, 4, '2026-10-23 12:51:33', '2026-10-23 13:39:27', 1000.00, 57, 1335.00, 1335.00, 57, 1335.00, 'CLOSED');
+(276, 2, 3, 4, '2026-10-23 12:51:33', '2026-10-23 13:39:27', 1000.00, 57, 1335.00, 1335.00, 57, 1335.00, 'CLOSED'),
+(277, 2, 3, 4, '2026-10-23 18:40:14', NULL, 500.00, 57, NULL, NULL, NULL, NULL, 'OPEN');
 
 -- --------------------------------------------------------
 
@@ -2762,7 +2681,9 @@ INSERT INTO `shift_cash_movement` (`movement_id`, `shift_id`, `movement_type`, `
 (60, 257, 'FLOAT_ADJUST', 1000.00, 'there is shortage', 'APPROVED', 57, '2026-10-17 22:34:11', '2026-10-17 22:32:33'),
 (61, 258, 'CASH_DROP', 5000.00, NULL, 'APPROVED', 57, '2026-10-18 10:12:43', '2026-10-18 10:12:21'),
 (62, 257, 'FLOAT_ADJUST', -10000.00, 'to much', 'APPROVED', 57, '2026-10-18 11:13:53', '2026-10-18 11:13:07'),
-(63, 269, 'FLOAT_ADJUST', -2000.00, 'to much money', 'APPROVED', 57, '2026-10-21 08:21:38', '2026-10-21 08:18:30');
+(63, 269, 'FLOAT_ADJUST', -2000.00, 'to much money', 'APPROVED', 57, '2026-10-21 08:21:38', '2026-10-21 08:18:30'),
+(64, 277, 'CASH_DROP', 200.00, 'for safe keeping', 'APPROVED', 57, '2026-10-23 18:40:56', '2026-10-23 18:40:56'),
+(65, 277, 'CASH_DROP', 100.00, 'dsafsaf', 'APPROVED', 57, '2026-10-23 18:43:11', '2026-10-23 18:43:11');
 
 -- --------------------------------------------------------
 
@@ -2797,7 +2718,6 @@ INSERT INTO `shift_schedule` (`schedule_id`, `schedule_name`, `start_time`, `end
 CREATE TABLE `tbl_pos_terminal` (
   `terminal_id` int(11) NOT NULL,
   `terminal_name` varchar(100) NOT NULL,
-  `float_start` decimal(12,2) NOT NULL DEFAULT 5000.00,
   `status` varchar(20) NOT NULL DEFAULT 'ACTIVE'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -2805,65 +2725,65 @@ CREATE TABLE `tbl_pos_terminal` (
 -- Dumping data for table `tbl_pos_terminal`
 --
 
-INSERT INTO `tbl_pos_terminal` (`terminal_id`, `terminal_name`, `float_start`, `status`) VALUES
-(1, 'POS Terminal 01', 5000.00, 'ACTIVE'),
-(2, 'POS Terminal 02', 5000.00, 'ACTIVE'),
-(3, 'CASHIER COUNTER 1', 5000.00, 'ACTIVE'),
-(4, 'CASHIER COUNTER 2', 4635.00, 'ACTIVE'),
-(5, 'CASHIER COUNTER 3', 5000.00, 'ACTIVE'),
-(6, 'CASHIER COUNTER 4', 5000.00, 'ACTIVE'),
-(7, 'CASHIER COUNTER 5', 4970.00, 'ACTIVE'),
-(8, 'ACOUNTANT COUNTER 1', 5000.00, 'ACTIVE'),
-(9, 'CASHIER COUNTER 6', 5000.00, 'ACTIVE'),
-(10, 'CASHIER COUNTER 7', 5000.00, 'ACTIVE'),
-(11, 'CASHIER COUNTER 8', 5000.00, 'ACTIVE'),
-(12, 'CASHIER COUNTER 9', 5000.00, 'ACTIVE'),
-(13, 'CASHIER COUNTER 10', 5000.00, 'ACTIVE'),
-(14, 'CASHIER COUNTER 11', 5000.00, 'ACTIVE'),
-(15, 'CASHIER COUNTER 12', 5000.00, 'ACTIVE'),
-(16, 'CASHIER COUNTER 13', 5000.00, 'ACTIVE'),
-(17, 'CASHIER COUNTER 14', 5000.00, 'ACTIVE'),
-(18, 'CASHIER COUNTER 15', 5000.00, 'ACTIVE'),
-(19, 'CASHIER COUNTER 16', 5000.00, 'ACTIVE'),
-(20, 'CASHIER COUNTER 17', 5000.00, 'ACTIVE'),
-(21, 'CASHIER COUNTER 18', 5000.00, 'ACTIVE'),
-(22, 'CASHIER COUNTER 19', 5000.00, 'ACTIVE'),
-(23, 'CASHIER COUNTER 20', 5000.00, 'ACTIVE'),
-(24, 'CASHIER COUNTER 21', 5000.00, 'ACTIVE'),
-(25, 'CASHIER COUNTER 22', 5000.00, 'ACTIVE'),
-(26, 'CASHIER COUNTER 23', 5000.00, 'ACTIVE'),
-(27, 'CASHIER COUNTER 24', 5000.00, 'ACTIVE'),
-(28, 'CASHIER COUNTER 25', 5000.00, 'ACTIVE'),
-(29, 'CASHIER COUNTER 26', 5000.00, 'ACTIVE'),
-(30, 'CASHIER COUNTER 27', 5000.00, 'ACTIVE'),
-(31, 'CASHIER COUNTER 28', 5000.00, 'ACTIVE'),
-(32, 'CASHIER COUNTER 29', 5000.00, 'ACTIVE'),
-(33, 'CASHIER COUNTER 30', 5000.00, 'ACTIVE'),
-(34, 'CASHIER COUNTER 31', 5000.00, 'ACTIVE'),
-(35, 'CASHIER COUNTER 32', 5000.00, 'ACTIVE'),
-(36, 'CASHIER COUNTER 33', 5000.00, 'ACTIVE'),
-(37, 'CASHIER COUNTER 34', 5000.00, 'ACTIVE'),
-(38, 'CASHIER COUNTER 35', 5000.00, 'ACTIVE'),
-(39, 'CASHIER COUNTER 36', 5000.00, 'ACTIVE'),
-(40, 'CASHIER COUNTER 37', 5000.00, 'ACTIVE'),
-(41, 'CASHIER COUNTER 38', 5000.00, 'ACTIVE'),
-(42, 'CASHIER COUNTER 39', 5000.00, 'ACTIVE'),
-(43, 'CASHIER COUNTER 40', 5000.00, 'ACTIVE'),
-(44, 'CASHIER COUNTER 41', 5000.00, 'ACTIVE'),
-(45, 'CASHIER COUNTER 42', 5000.00, 'ACTIVE'),
-(46, 'CASHIER COUNTER 43', 5000.00, 'ACTIVE'),
-(47, 'CASHIER COUNTER 44', 5000.00, 'ACTIVE'),
-(48, 'CASHIER COUNTER 45', 5000.00, 'ACTIVE'),
-(49, 'CASHIER COUNTER 46', 5000.00, 'ACTIVE'),
-(50, 'CASHIER COUNTER 47', 5000.00, 'ACTIVE'),
-(51, 'CASHIER COUNTER 48', 5000.00, 'ACTIVE'),
-(52, 'CASHIER COUNTER 49', 5000.00, 'ACTIVE'),
-(53, 'CASHIER COUNTER 50', 5000.00, 'ACTIVE'),
-(54, 'CASHIER COUNTER 51', 5000.00, 'ACTIVE'),
-(55, 'CASHIER COUNTER 52', 5000.00, 'ACTIVE'),
-(56, 'CASHIER COUNTER 53', 5000.00, 'ACTIVE'),
-(57, 'CASHIER COUNTER 54', 5000.00, 'ACTIVE'),
-(58, 'CASHIER COUNTER 55', 5000.00, 'ACTIVE');
+INSERT INTO `tbl_pos_terminal` (`terminal_id`, `terminal_name`, `status`) VALUES
+(1, 'POS Terminal 01', 'ACTIVE'),
+(2, 'POS Terminal 02', 'ACTIVE'),
+(3, 'CASHIER COUNTER 1', 'ACTIVE'),
+(4, 'CASHIER COUNTER 2', 'ACTIVE'),
+(5, 'CASHIER COUNTER 3', 'ACTIVE'),
+(6, 'CASHIER COUNTER 4', 'ACTIVE'),
+(7, 'CASHIER COUNTER 5', 'ACTIVE'),
+(8, 'ACOUNTANT COUNTER 1', 'ACTIVE'),
+(9, 'CASHIER COUNTER 6', 'ACTIVE'),
+(10, 'CASHIER COUNTER 7', 'ACTIVE'),
+(11, 'CASHIER COUNTER 8', 'ACTIVE'),
+(12, 'CASHIER COUNTER 9', 'ACTIVE'),
+(13, 'CASHIER COUNTER 10', 'ACTIVE'),
+(14, 'CASHIER COUNTER 11', 'ACTIVE'),
+(15, 'CASHIER COUNTER 12', 'ACTIVE'),
+(16, 'CASHIER COUNTER 13', 'ACTIVE'),
+(17, 'CASHIER COUNTER 14', 'ACTIVE'),
+(18, 'CASHIER COUNTER 15', 'ACTIVE'),
+(19, 'CASHIER COUNTER 16', 'ACTIVE'),
+(20, 'CASHIER COUNTER 17', 'ACTIVE'),
+(21, 'CASHIER COUNTER 18', 'ACTIVE'),
+(22, 'CASHIER COUNTER 19', 'ACTIVE'),
+(23, 'CASHIER COUNTER 20', 'ACTIVE'),
+(24, 'CASHIER COUNTER 21', 'ACTIVE'),
+(25, 'CASHIER COUNTER 22', 'ACTIVE'),
+(26, 'CASHIER COUNTER 23', 'ACTIVE'),
+(27, 'CASHIER COUNTER 24', 'ACTIVE'),
+(28, 'CASHIER COUNTER 25', 'ACTIVE'),
+(29, 'CASHIER COUNTER 26', 'ACTIVE'),
+(30, 'CASHIER COUNTER 27', 'ACTIVE'),
+(31, 'CASHIER COUNTER 28', 'ACTIVE'),
+(32, 'CASHIER COUNTER 29', 'ACTIVE'),
+(33, 'CASHIER COUNTER 30', 'ACTIVE'),
+(34, 'CASHIER COUNTER 31', 'ACTIVE'),
+(35, 'CASHIER COUNTER 32', 'ACTIVE'),
+(36, 'CASHIER COUNTER 33', 'ACTIVE'),
+(37, 'CASHIER COUNTER 34', 'ACTIVE'),
+(38, 'CASHIER COUNTER 35', 'ACTIVE'),
+(39, 'CASHIER COUNTER 36', 'ACTIVE'),
+(40, 'CASHIER COUNTER 37', 'ACTIVE'),
+(41, 'CASHIER COUNTER 38', 'ACTIVE'),
+(42, 'CASHIER COUNTER 39', 'ACTIVE'),
+(43, 'CASHIER COUNTER 40', 'ACTIVE'),
+(44, 'CASHIER COUNTER 41', 'ACTIVE'),
+(45, 'CASHIER COUNTER 42', 'ACTIVE'),
+(46, 'CASHIER COUNTER 43', 'ACTIVE'),
+(47, 'CASHIER COUNTER 44', 'ACTIVE'),
+(48, 'CASHIER COUNTER 45', 'ACTIVE'),
+(49, 'CASHIER COUNTER 46', 'ACTIVE'),
+(50, 'CASHIER COUNTER 47', 'ACTIVE'),
+(51, 'CASHIER COUNTER 48', 'ACTIVE'),
+(52, 'CASHIER COUNTER 49', 'ACTIVE'),
+(53, 'CASHIER COUNTER 50', 'ACTIVE'),
+(54, 'CASHIER COUNTER 51', 'ACTIVE'),
+(55, 'CASHIER COUNTER 52', 'ACTIVE'),
+(56, 'CASHIER COUNTER 53', 'ACTIVE'),
+(57, 'CASHIER COUNTER 54', 'ACTIVE'),
+(58, 'CASHIER COUNTER 55', 'ACTIVE');
 
 -- --------------------------------------------------------
 
@@ -3076,21 +2996,6 @@ INSERT INTO `users` (`user_id`, `username`, `password_hash`, `full_name`, `email
 --
 
 --
--- Indexes for table `barcode_scanner_scans`
---
-ALTER TABLE `barcode_scanner_scans`
-  ADD PRIMARY KEY (`scan_id`),
-  ADD KEY `idx_barcode_scans_pending` (`scanner_session_id`,`consumed_at`,`scan_id`);
-
---
--- Indexes for table `barcode_scanner_sessions`
---
-ALTER TABLE `barcode_scanner_sessions`
-  ADD PRIMARY KEY (`scanner_session_id`),
-  ADD KEY `idx_barcode_scanner_pairing` (`pairing_code`,`status`,`expires_at`),
-  ADD KEY `idx_barcode_scanner_user` (`user_id`,`status`);
-
---
 -- Indexes for table `customers`
 --
 ALTER TABLE `customers`
@@ -3256,18 +3161,6 @@ ALTER TABLE `users`
 --
 
 --
--- AUTO_INCREMENT for table `barcode_scanner_scans`
---
-ALTER TABLE `barcode_scanner_scans`
-  MODIFY `scan_id` bigint(20) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
-
---
--- AUTO_INCREMENT for table `barcode_scanner_sessions`
---
-ALTER TABLE `barcode_scanner_sessions`
-  MODIFY `scanner_session_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
-
---
 -- AUTO_INCREMENT for table `customers`
 --
 ALTER TABLE `customers`
@@ -3283,7 +3176,7 @@ ALTER TABLE `group_days`
 -- AUTO_INCREMENT for table `invoice`
 --
 ALTER TABLE `invoice`
-  MODIFY `invoice_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=553;
+  MODIFY `invoice_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=554;
 
 --
 -- AUTO_INCREMENT for table `payments_dtl`
@@ -3331,13 +3224,13 @@ ALTER TABLE `roles`
 -- AUTO_INCREMENT for table `sales_dtl`
 --
 ALTER TABLE `sales_dtl`
-  MODIFY `sales_detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1590;
+  MODIFY `sales_detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1593;
 
 --
 -- AUTO_INCREMENT for table `sales_hdr`
 --
 ALTER TABLE `sales_hdr`
-  MODIFY `sales_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=571;
+  MODIFY `sales_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=572;
 
 --
 -- AUTO_INCREMENT for table `sale_void_requests`
@@ -3349,13 +3242,13 @@ ALTER TABLE `sale_void_requests`
 -- AUTO_INCREMENT for table `shifts`
 --
 ALTER TABLE `shifts`
-  MODIFY `shift_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=277;
+  MODIFY `shift_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=278;
 
 --
 -- AUTO_INCREMENT for table `shift_cash_movement`
 --
 ALTER TABLE `shift_cash_movement`
-  MODIFY `movement_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=64;
+  MODIFY `movement_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=66;
 
 --
 -- AUTO_INCREMENT for table `shift_schedule`
@@ -3390,12 +3283,6 @@ ALTER TABLE `users`
 --
 -- Constraints for dumped tables
 --
-
---
--- Constraints for table `barcode_scanner_scans`
---
-ALTER TABLE `barcode_scanner_scans`
-  ADD CONSTRAINT `barcode_scanner_scans_ibfk_1` FOREIGN KEY (`scanner_session_id`) REFERENCES `barcode_scanner_sessions` (`scanner_session_id`);
 
 --
 -- Constraints for table `customers`

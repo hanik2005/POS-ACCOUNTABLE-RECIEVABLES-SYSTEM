@@ -1,7 +1,7 @@
 const baseUrl = "http://localhost/POS_AR_SYSTEM";
 const baseAPI = `${baseUrl}/api_functional`;
 const sessionAPI = `${baseUrl}/api/session.php`;
-const cashierReportPage = "cashier_report.html";
+const shiftReportPage = "shift_report.html";
 const invoicePage = "invoice.html";
 
 sessionStorage.setItem("baseAPI", baseAPI);
@@ -1265,8 +1265,8 @@ const logout = async () => {
   }
 };
 
-const openCashierReport = () => {
-  window.location.href = cashierReportPage;
+const openShiftReport = () => {
+  window.location.href = shiftReportPage;
 };
 
 const openAccountsReceivable = () => {
@@ -1293,7 +1293,7 @@ document.addEventListener("keydown", (e) => {
 
   if (e.key == "F6") {
     e.preventDefault();
-    leavePage(openCashierReport);
+    leavePage(openShiftReport);
     return;
   }
 
@@ -1392,7 +1392,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("btn-report").addEventListener("click", () => {
-    leavePage(openCashierReport);
+    leavePage(openShiftReport);
   });
 
   document.addEventListener("click", () => {

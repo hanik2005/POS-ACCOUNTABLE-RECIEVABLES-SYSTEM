@@ -10,13 +10,6 @@ sessionStorage.setItem("baseAPI", baseAPI);
 let posTerminals = [];
 let currentPage = 1;
 
-const formatCurrency = (amount) => {
-  return new Intl.NumberFormat("en-PH", {
-    style: "currency",
-    currency: "PHP",
-  }).format(amount);
-};
-
 document.addEventListener("DOMContentLoaded", () => {
   displayPOSTerminals();
 
@@ -32,7 +25,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const filtered = posTerminals.filter(
         (terminal) =>
           terminal.terminal_name.toLowerCase().includes(searchValue) ||
-          String(terminal.float_start).includes(searchValue) ||
           terminal.status.toLowerCase().includes(searchValue),
       );
 
@@ -78,7 +70,6 @@ const displayPOSTerminalsTable = (posTerminals) => {
   tHead.innerHTML = `
     <tr>
       <th>Terminal Name</th>
-      <th>Float Start</th>
       <th>Status</th>
       <th>Action</th>
     </tr>
@@ -93,7 +84,6 @@ const displayPOSTerminalsTable = (posTerminals) => {
 
     tr.innerHTML = `
       <td>${terminal.terminal_name}</td>
-      <td>${formatCurrency(parseFloat(terminal.float_start))}</td>
       <td>${terminal.status}</td>
       <td>
         <button type="button" class="btn btn-primary btn-sm btn-view">
@@ -139,18 +129,8 @@ const displayPOSTerminalsTable = (posTerminals) => {
 };
 
 const insertPOSTerminal = async () => {
-  const floatStart = parseFloat(document.getElementById("floatStartInput").value);
-
-  if (!(floatStart >= 0)) {
-    Swal.fire("Please enter a valid float start.");
-    return;
-  }
-
   const jsonData = {
     terminalName: document.getElementById("terminalNameInput").value,
-
-    floatStart: floatStart,
-
     status: "ACTIVE",
   };
 

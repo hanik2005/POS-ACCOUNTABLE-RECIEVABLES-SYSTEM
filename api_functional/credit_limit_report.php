@@ -1,11 +1,19 @@
 <?php
 require_once __DIR__ . "/../api/config-cors.php";
 
+include "../api/session.php";
+
 class CreditLimitReport
 {
   function getCreditLimitReport()
   {
     include "../api/connection-pdo.php";
+
+    $roleName = strtoupper($_SESSION['role_name'] ?? "");
+
+    if (!in_array($roleName, ['ADMIN', 'ACCOUNTING'], true)) {
+      return json_encode([]);
+    }
 
     $sql = "SELECT c.customer_id, c.customer_name, c.credit_limit, c.status,
         IFNULL(ar.outstanding_balance, 0) AS outstanding_balance,

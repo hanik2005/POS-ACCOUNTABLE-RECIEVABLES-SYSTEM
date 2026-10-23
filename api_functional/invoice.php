@@ -11,7 +11,7 @@ class Invoice
   {
     include "../api/connection-pdo.php";
 
-    if (strtoupper($_SESSION['role_name'] ?? '') != 'ACCOUNTING') {
+    if (!in_array(strtoupper($_SESSION['role_name'] ?? ''), ['ADMIN', 'ACCOUNTING'], true)) {
       return json_encode([]);
     }
 

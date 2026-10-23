@@ -1,16 +1,28 @@
 import { paginate, createPagination } from "../js/module/pagination.js";
-import { functionalAPI as baseAPI } from "../js/config.js";
+import { functionalAPI as baseAPI, sessionAPI } from "../js/config.js";
 
 let invoices = [];
 let paymentMethods = [];
 let selectedCustomerInvoices = [];
 let selectedInvoice = null;
 let currentPage = 1;
+let canReceivePayments = false;
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   ensureInvoiceModals();
+
+  const sessionResponse = await axios.get(sessionAPI, {
+    params: { operation: "getSession" },
+  });
+  const sessionUser = sessionResponse.data.success ? sessionResponse.data.user : null;
+  canReceivePayments = sessionUser
+    && sessionUser.role_name.toUpperCase() == "ACCOUNTING";
+
   displayInvoices();
-  loadPaymentMethods();
+
+  if (canReceivePayments) {
+    loadPaymentMethods();
+  }
 
   document
     .getElementById("button-save-payment")
@@ -279,7 +291,12 @@ const showCustomerInvoices = (customer) => {
 
   const modal = document.getElementById("customerInvoicesModal");
   const modalHeader = modal.querySelector(".modal-header");
+  const actionHeading = modal.querySelector("thead th:last-child");
   let title = document.getElementById("customer-invoice-title");
+
+  if (actionHeading) {
+    actionHeading.classList.toggle("d-none", !canReceivePayments);
+  }
 
   if (!title) {
     title = document.createElement("h5");
@@ -301,14 +318,16 @@ const showCustomerInvoices = (customer) => {
       <td>${escapeHtml(invoice.due_date)}</td>
       <td>₱${money(invoice.balance)}</td>
       <td>${escapeHtml(invoice.status)}</td>
-      <td>
-        <button class="btn btn-success btn-sm" type="button">Pay</button>
+      <td class="${canReceivePayments ? "" : "d-none"}">
+        ${canReceivePayments ? '<button class="btn btn-success btn-sm" type="button">Pay</button>' : ""}
       </td>
     `;
 
-    row
-      .querySelector("button")
-      .addEventListener("click", () => openPaymentModal(invoice));
+    if (canReceivePayments) {
+      row
+        .querySelector("button")
+        .addEventListener("click", () => openPaymentModal(invoice));
+    }
     body.appendChild(row);
   });
 

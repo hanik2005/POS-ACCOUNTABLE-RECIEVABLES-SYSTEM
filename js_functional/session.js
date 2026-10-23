@@ -12,9 +12,10 @@ const pages = [
   { file: "product_categories.html", title: "Product Categories", roles: ["ADMIN"] },
   { file: "users.html", title: "Users", roles: ["ADMIN"] },
   { file: "pos.html", title: "POS", roles: ["CASHIER", "SUPERVISOR"], menu: true },
-  { file: "invoice.html", title: "Accounts Receivable", roles: ["ACCOUNTING"], menu: true },
+  { file: "invoice.html", title: "Accounts Receivable", roles: ["ADMIN", "ACCOUNTING"], menu: true },
   { file: "sales_report.html", title: "Sales Report", roles: ["ADMIN", "ACCOUNTING"], menu: true },
-  { file: "credit_limit_report.html", title: "Credit Limit Report", roles: ["ADMIN"], menu: true },
+  { file: "aging_report.html", title: "Aging Report", roles: ["ADMIN", "ACCOUNTING"], menu: true },
+  { file: "credit_limit_report.html", title: "Credit Limit Report", roles: ["ADMIN", "ACCOUNTING"], menu: true },
   {
     file: "shift_report.html",
     title: "Shift Report",
@@ -34,18 +35,14 @@ const currentPage = window.location.pathname.split("/").pop();
 const currentPath = window.location.pathname.toLowerCase();
 
 const getPageHref = (file) => {
-  if (["shift_report.html", "daily_report.html"].includes(file)) {
-    if (currentPath.includes("/interface/accounting/")) {
-      return `../Cashier/${file}`;
-    }
-
-    if (currentPath.includes("/interface/admin/functional/")) {
-      return `../../Cashier/${file}`;
-    }
-  }
-
   if (currentPath.includes("/interface/cashier/")
-    && ["invoice.html", "sales_report.html"].includes(file)) {
+    && [
+      "invoice.html",
+      "sales_report.html",
+      "aging_report.html",
+      "credit_limit_report.html",
+      "daily_report.html",
+    ].includes(file)) {
     return `../Accounting/${file}`;
   }
 
@@ -79,8 +76,8 @@ const isAuthorized = (user) => {
   const pagePath = window.location.pathname.toLowerCase();
   const isAdminFunctionalPage = pagePath.includes("/interface/admin/functional/");
 
-  if (isAdminFunctionalPage && user.role_name.toUpperCase() != "ADMIN") {
-    return false;
+  if (isAdminFunctionalPage) {
+    return user.role_name.toUpperCase() == "ADMIN";
   }
 
   if (!page) {
@@ -111,7 +108,6 @@ const displayHeader = (user) => {
     "shift_report.html",
     "daily_report.html",
     "sales_report.html",
-    "cashier_report.html",
   ];
   const hideLogout = role == "CASHIER" && reportPages.includes(currentPage);
   const userBlock = userBlockHtml(hideLogout);
@@ -123,12 +119,6 @@ const displayHeader = (user) => {
   if (navbar) {
     navbar.querySelectorAll("a.nav-link").forEach((link) => {
       let file = link.getAttribute("href").split("/").pop();
-
-      if (file == "cashier_report.html") {
-        link.href = getPageHref("shift_report.html");
-        link.textContent = "Shift Report";
-        file = "shift_report.html";
-      }
 
       const page = pages.find((page) => page.file == file);
 

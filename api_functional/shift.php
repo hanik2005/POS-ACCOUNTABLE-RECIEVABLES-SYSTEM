@@ -46,7 +46,7 @@ class Shift
 
   function getUserAssignments($conn, $userId)
   {
-    $sql = "SELECT t.terminal_id, t.terminal_name, t.float_start, a.schedule_id,
+    $sql = "SELECT t.terminal_id, t.terminal_name, a.schedule_id,
         s.schedule_name, s.start_time, s.end_time
         FROM terminal_assignment a
         INNER JOIN tbl_pos_terminal t ON a.terminal_id = t.terminal_id
