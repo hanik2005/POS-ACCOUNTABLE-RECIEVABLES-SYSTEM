@@ -3,78 +3,247 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sales Report - POS &amp; Accounts Receivable System</title>
+  <title>Sales Report - POS &amp; AR</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="../../Design/Master_Files/style.css" rel="stylesheet">
+  <link href="../../Design/Functional_Files/sweetalert-dark.css" rel="stylesheet">
+  <link href="../../Design/Functional_Files/report-print.css" rel="stylesheet">
   <style>
-    .report-summary-cards .card {
-      --bs-card-bg: #1b2432;
-      --bs-card-color: #f8f9fa;
-      --bs-card-border-color: #344054;
-      background: #1b2432;
-      border-color: #344054;
-      color: #f8f9fa;
+    @media print {
+      .navbar,
+      .no-print {
+        display: none !important;
+      }
+
+      @page {
+        size: landscape;
+      }
+
+      .sales-report-table {
+        display: block !important;
+      }
+
+      .sales-report-cards {
+        display: none !important;
+      }
+
+      .sales-report-table table {
+        font-size: 8pt;
+      }
     }
 
-    .report-summary-cards .card-body,
-    .report-summary-cards h5 {
-      color: #f8f9fa;
+    .sales-report-fields {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem 1rem;
     }
 
-    .report-summary-cards small {
-      color: #cbd5e1 !important;
+    .sales-report-fields dt {
+      color: var(--admin-muted, #8b97aa);
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .sales-report-fields dd {
+      margin-bottom: 0;
+      overflow-wrap: anywhere;
+    }
+
+    @media (min-width: 576px) {
+      .sales-report-fields {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
     }
   </style>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
   <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
     <div class="container-fluid">
-      <a class="navbar-brand" href="../dashboard.html">POS &amp; AR INC</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+      <a class="navbar-brand" href="invoice.html">POS &amp; AR INC</a>
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#mainNavbar"
+        aria-controls="mainNavbar"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
         <span class="navbar-toggler-icon"></span>
       </button>
       <div class="collapse navbar-collapse" id="mainNavbar">
         <ul class="navbar-nav ms-auto mt-2">
-           <li class="nav-item"><a class="nav-link" href="../dashboard.html">Dashboard</a></li>
-            <li class="nav-item"><a class="nav-link active" href="invoice.html">Accounts Receivable</a></li>
-            <li class="nav-item"><a class="nav-link" href="sales_report.html">Sales Report</a></li>
-            <li class="nav-item"><a class="nav-link" href="aging_report.html">Aging Report</a></li>
-            <li class="nav-item"><a class="nav-link" href="credit_limit_report.html">Credit Limit Report</a></li>
-            <li class="nav-item"><a class="nav-link" href="shift_report.html">Shift Report</a></li>
-            <li class="nav-item"><a class="nav-link" href="daily_report.html">Daily Z-Report</a></li>
+          <li class="nav-item"><a class="nav-link" href="../dashboard.html">Dashboard</a></li>
+          <li class="nav-item">
+            <a class="nav-link" href="invoice.html">Accounts Receivable</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="aging_report.html">Aging Report</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" href="sales_report.html">Sales Report</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="credit_limit_report.html">Credit Limit Report</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="shift_report.html">Shift Report</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="daily_report.html">Daily Z-Report</a>
+          </li>
         </ul>
       </div>
     </div>
   </nav>
   <main class="container-fluid">
     <div class="content">
-      <div class="mb-4"><div class="dashboard-section-title">Reports</div><h2 class="page-title mt-2 mb-1">Sales Report</h2><p class="page-subtitle mb-0">Review sales, collections and outstanding receivables for a date range.</p></div>
-      <div class="card mb-3"><div class="card-body">
-        <div class="d-flex flex-wrap align-items-center gap-2">
-          <input type="date" id="dateFrom" class="form-control" style="max-width: 190px">
-          <input type="date" id="dateTo" class="form-control" style="max-width: 190px">
+      <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+        <div>
+          <div class="dashboard-section-title">Reports</div>
+          <h2 class="page-title mt-2 mb-1">Sales Report</h2>
+          <p class="page-subtitle mb-0">
+            Review completed sales, void sale actions, AR charges, collections, and balances.
+            Period: <strong id="reportPeriod">-</strong>
+          </p>
+        </div>
+        <div class="d-flex flex-wrap align-items-end gap-2 no-print">
+          <div>
+            <label for="dateFrom" class="form-label">Report period from</label>
+            <input type="date" id="dateFrom" class="form-control">
+          </div>
+          <div>
+            <label for="dateTo" class="form-label">Report period to</label>
+            <input type="date" id="dateTo" class="form-control">
+          </div>
           <button type="button" id="generateBtn" class="btn btn-primary">Generate</button>
           <button type="button" id="printBtn" class="btn btn-secondary">Print</button>
         </div>
-      </div></div>
-      <div class="row g-3 text-center mb-3 report-summary-cards">
-        <div class="col-6 col-md-4 col-xl-3"><div class="card h-100"><div class="card-body"><small class="text-muted">Completed Transactions</small><h5 id="sumTransactions" class="mt-2 mb-0">0</h5></div></div></div>
-        <div class="col-6 col-md-4 col-xl-3"><div class="card h-100"><div class="card-body"><small class="text-muted">Gross Sales</small><h5 id="sumTotalSales" class="mt-2 mb-0">₱0.00</h5></div></div></div>
-        <div class="col-6 col-md-4 col-xl-3"><div class="card h-100"><div class="card-body"><small class="text-muted">VATable Sales</small><h5 id="sumNetSales" class="mt-2 mb-0">₱0.00</h5></div></div></div>
-        <div class="col-6 col-md-4 col-xl-3"><div class="card h-100"><div class="card-body"><small class="text-muted">VAT (12%)</small><h5 id="sumVat" class="mt-2 mb-0">₱0.00</h5></div></div></div>
-        <div class="col-6 col-md-4 col-xl-3"><div class="card h-100"><div class="card-body"><small class="text-muted">Payments Applied at POS</small><h5 id="sumPaymentsAtPos" class="mt-2 mb-0">₱0.00</h5></div></div></div>
-        <div class="col-6 col-md-4 col-xl-3"><div class="card h-100"><div class="card-body"><small class="text-muted">Charged to AR</small><h5 id="sumPostedAR" class="mt-2 mb-0">₱0.00</h5></div></div></div>
-        <div class="col-6 col-md-4 col-xl-3"><div class="card h-100"><div class="card-body"><small class="text-muted">AR Collected in Period</small><h5 id="sumCollected" class="mt-2 mb-0">₱0.00</h5></div></div></div>
-        <div class="col-6 col-md-4 col-xl-3"><div class="card h-100"><div class="card-body"><small class="text-muted">Current AR Balance</small><h5 id="sumOutstanding" class="mt-2 mb-0">₱0.00</h5></div></div></div>
-        <div class="col-6 col-md-4 col-xl-3"><div class="card h-100"><div class="card-body"><small class="text-muted">Voided Transactions</small><h5 id="sumVoidedTransactions" class="mt-2 mb-0">0</h5></div></div></div>
-        <div class="col-6 col-md-4 col-xl-3"><div class="card h-100"><div class="card-body"><small class="text-muted">Voided Sales</small><h5 id="sumVoided" class="mt-2 mb-0">₱0.00</h5></div></div></div>
       </div>
-      <div class="card"><div class="card-body"><div id="main-div"></div></div></div>
+      <div class="row g-3 mb-3 report-summary-cards">
+        <div class="col-6 col-lg-3">
+          <div class="card h-100"><div class="card-body">
+            <small class="text-muted">Completed Transactions</small>
+            <h5 id="sumTransactions" class="mt-2 mb-0">0</h5>
+          </div></div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="card h-100"><div class="card-body">
+            <small class="text-muted">Gross Sales</small>
+            <h5 id="sumTotalSales" class="mt-2 mb-0">&#8369;0.00</h5>
+          </div></div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="card h-100"><div class="card-body">
+            <small class="text-muted">VATable Sales</small>
+            <h5 id="sumNetSales" class="mt-2 mb-0">&#8369;0.00</h5>
+          </div></div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="card h-100"><div class="card-body">
+            <small class="text-muted">VAT (12%)</small>
+            <h5 id="sumVat" class="mt-2 mb-0">&#8369;0.00</h5>
+          </div></div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="card h-100"><div class="card-body">
+            <small class="text-muted">Payments Applied at POS</small>
+            <h5 id="sumPaymentsAtPos" class="mt-2 mb-0">&#8369;0.00</h5>
+          </div></div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="card h-100"><div class="card-body">
+            <small class="text-muted">Charged to AR</small>
+            <h5 id="sumPostedAR" class="mt-2 mb-0">&#8369;0.00</h5>
+          </div></div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="card h-100"><div class="card-body">
+            <small class="text-muted">AR Collected in Period</small>
+            <h5 id="sumCollected" class="mt-2 mb-0">&#8369;0.00</h5>
+          </div></div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="card h-100"><div class="card-body">
+            <small class="text-muted">Open AR from Period Sales</small>
+            <h5 id="sumOutstanding" class="mt-2 mb-0">&#8369;0.00</h5>
+          </div></div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="card h-100"><div class="card-body">
+            <small class="text-muted">Void Sale Actions</small>
+            <h5 id="sumVoidSaleActions" class="mt-2 mb-0">0</h5>
+          </div></div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="card h-100"><div class="card-body">
+            <small class="text-muted">Void Sale Action Amount</small>
+            <h5 id="sumVoidSaleAmount" class="mt-2 mb-0">&#8369;0.00</h5>
+          </div></div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="card h-100"><div class="card-body">
+            <small class="text-muted">Void Line Actions</small>
+            <h5 id="sumVoidLineCount" class="mt-2 mb-0">0</h5>
+          </div></div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="card h-100"><div class="card-body">
+            <small class="text-muted">Void Line Amount</small>
+            <h5 id="sumVoidLineAmount" class="mt-2 mb-0">&#8369;0.00</h5>
+          </div></div>
+        </div>
+      </div>
+      <section class="card mb-3 no-print">
+        <div class="card-body">
+          <div class="row g-2 align-items-end no-print">
+            <div class="col-12 col-md-6 col-xl-3">
+              <label for="searchSales" class="form-label">Search sales</label>
+              <input
+                type="search"
+                id="searchSales"
+                class="form-control"
+                placeholder="Invoice, customer, terminal or cashier"
+              >
+            </div>
+            <div class="col-6 col-md-3 col-xl-2">
+              <label for="saleTypeFilter" class="form-label">Sale type</label>
+              <select id="saleTypeFilter" class="form-select">
+                <option value="all">All sale types</option>
+                <option value="WALK_IN">Walk-in</option>
+                <option value="AR">Accounts receivable</option>
+              </select>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+              <label for="terminalFilter" class="form-label">Terminal</label>
+              <select id="terminalFilter" class="form-select">
+                <option value="all">All terminals</option>
+              </select>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+              <label for="cashierFilter" class="form-label">Cashier</label>
+              <select id="cashierFilter" class="form-select">
+                <option value="all">All cashiers</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-4 col-xl-1 text-md-end">
+              <span class="text-muted small" id="matchingCount">0 sales</span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="card">
+        <div class="card-body" id="main-div"></div>
+      </section>
+      <section class="card mt-3">
+        <div class="card-header">Void Sale Actions</div>
+        <div class="card-body" id="void-sales-actions-body"></div>
+      </section>
     </div>
   </main>
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script type="module" src="../../../js_functional/session.js"></script>
   <script type="module" src="../../../js_functional/sales_report.js"></script>
 </body>

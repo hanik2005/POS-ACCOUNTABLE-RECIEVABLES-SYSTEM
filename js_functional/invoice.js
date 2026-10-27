@@ -60,6 +60,7 @@ const ensureInvoiceModals = () => {
                   <th>Invoice</th>
                   <th>Sales date</th>
                   <th>Due date</th>
+                  <th>Due status</th>
                   <th>Balance</th>
                   <th>Status</th>
                   <th></th>
@@ -145,6 +146,30 @@ const money = (value) => {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(Number(value) || 0);
+};
+
+const getInvoiceDueStatus = (invoice) => {
+  if (invoice.days_past_due === null
+    || invoice.days_past_due === undefined
+    || invoice.days_past_due === "") {
+    return '<span class="text-muted">Unknown</span>';
+  }
+
+  const daysPastDue = Number(invoice.days_past_due);
+
+  if (!Number.isFinite(daysPastDue)) {
+    return '<span class="text-muted">Unknown</span>';
+  }
+
+  if (daysPastDue > 0) {
+    return `<span class="text-danger fw-semibold">Overdue ${daysPastDue} days</span>`;
+  }
+
+  if (daysPastDue == 0) {
+    return '<span class="text-warning fw-semibold">Due today</span>';
+  }
+
+  return `<span class="text-success">Due in ${Math.abs(daysPastDue)} days</span>`;
 };
 
 const displayInvoices = async () => {
@@ -316,6 +341,7 @@ const showCustomerInvoices = (customer) => {
       <td>${escapeHtml(invoice.invoice_number)}</td>
       <td>${escapeHtml(invoice.sales_date)}</td>
       <td>${escapeHtml(invoice.due_date)}</td>
+      <td>${getInvoiceDueStatus(invoice)}</td>
       <td>₱${money(invoice.balance)}</td>
       <td>${escapeHtml(invoice.status)}</td>
       <td class="${canReceivePayments ? "" : "d-none"}">

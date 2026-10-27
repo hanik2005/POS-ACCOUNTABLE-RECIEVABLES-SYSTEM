@@ -230,6 +230,47 @@ export const changeQty = (step) => {
   displayCart();
 };
 
+export const editQty = () => {
+  if (state.selected < 0 || state.selected >= state.details.length) {
+    openMessageDialog("Select a product", "Select a cart line before adjusting its quantity.");
+    return;
+  }
+
+  const item = state.details[state.selected];
+
+  openDialog(
+    "Adjust quantity",
+    `<p class="dialog-text">${escapeHtml(item.productName)}</p>
+     <label class="dialog-label" for="dialog-input">Quantity</label>
+     <input id="dialog-input" type="number" min="1" step="1" value="${item.qty}" class="pos-input" autocomplete="off">`,
+    "Enter = save quantity \u00b7 Esc = cancel",
+    (e) => {
+      if (e.key == "Escape") {
+        e.preventDefault();
+        closeDialog();
+      } else if (e.key == "Enter") {
+        e.preventDefault();
+        const quantity = Number(document.getElementById("dialog-input").value);
+
+        if (!Number.isInteger(quantity) || quantity < 1) {
+          document.getElementById("dialog-input").focus();
+          return;
+        }
+
+        item.qty = quantity;
+        item.amount = item.productPrice * quantity;
+        document.getElementById("last-item").innerText = `${item.productName}  x${formatNumber(quantity, 0)}`;
+        displayCart();
+        closeDialog();
+      }
+    },
+  );
+
+  const quantityInput = document.getElementById("dialog-input");
+  quantityInput.focus();
+  quantityInput.select();
+};
+
 export const voidLine = () => {
   if (state.selected < 0 || state.selected >= state.details.length) {
     return;
@@ -249,8 +290,7 @@ export const voidLine = () => {
         actionType: "VOID_LINE",
         amount: item.amount,
         details: itemDetails,
-        supervisorUsername: credentials.supervisorUsername,
-        supervisorPassword: credentials.supervisorPassword,
+        supervisorPin: credentials.supervisorPin,
         reason: credentials.reason,
       }));
 
@@ -273,7 +313,7 @@ export const voidLine = () => {
       return {
         success: false,
         message: response.data == 3
-          ? "Supervisor sign-in failed. Check the username and password."
+          ? "Supervisor PIN not recognized. Check that the PIN is active and try again."
           : "The line could not be voided. Confirm the open shift and try again.",
       };
     },

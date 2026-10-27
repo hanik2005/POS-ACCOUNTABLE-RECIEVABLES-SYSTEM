@@ -4,7 +4,7 @@ import { goFullScreen, enterFullScreen } from "./module_pos/fullscreen.js";
 import { loadPosOptions } from "./module_pos/options.js";
 import { loadPosSession, refreshShift, openCloseShiftDialog } from "./module_pos/shift.js";
 import { openDrawerDialog } from "./module_pos/drawer.js";
-import { displayCart, displayCustomer, addEntry, clearEntry, moveSuggestion, onEntryInput, moveSelected, changeQty, voidLine } from "./module_pos/cart.js";
+import { displayCart, displayCustomer, addEntry, clearEntry, moveSuggestion, onEntryInput, moveSelected, changeQty, editQty, voidLine } from "./module_pos/cart.js";
 import { openCustomerDialog } from "./module_pos/customer.js";
 import { startArCheckout, startWalkInCheckout } from "./module_pos/checkout.js";
 import { holdSale, openRecallDialog, openVoidSaleDialog } from "./module_pos/hold.js";
@@ -67,6 +67,10 @@ document.addEventListener("keydown", (e) => {
     case "F10":
       e.preventDefault();
       openCloseShiftDialog();
+      break;
+    case "F12":
+      e.preventDefault();
+      editQty();
       break;
     case "Escape":
       e.preventDefault();

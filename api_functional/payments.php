@@ -89,14 +89,15 @@ class Payment
       $tendered = $tenderedCents / 100;
       $changeAmount = $isCash ? round($tendered - $appliedTotal, 2) : 0;
 
-      $sql = "INSERT INTO payments_hdr(payment_number, customer_id, payment_method_id, shift_id, payment_date,
+      $sql = "INSERT INTO payments_hdr(payment_number, customer_id, payment_method_id, shift_id, created_by, payment_date,
           amount, amount_tendered, change_amount, reference_number, remarks)
-          VALUES(:paymentNumber, :customerId, :methodId, :shiftId, :paymentDate, :amount, :amountTendered, :changeAmount, :reference, :remarks)";
+          VALUES(:paymentNumber, :customerId, :methodId, :shiftId, :createdBy, :paymentDate, :amount, :amountTendered, :changeAmount, :reference, :remarks)";
       $stmt = $conn->prepare($sql);
       $stmt->bindParam(":paymentNumber", $paymentNumber);
       $stmt->bindParam(":customerId", $header['customerId']);
       $stmt->bindParam(":methodId", $header['paymentMethodId']);
       $stmt->bindParam(":shiftId", $shiftId);
+      $stmt->bindParam(":createdBy", $userId);
       $paymentDate = date('Y-m-d');
       $stmt->bindParam(":paymentDate", $paymentDate);
       $stmt->bindParam(":amount", $appliedTotal);

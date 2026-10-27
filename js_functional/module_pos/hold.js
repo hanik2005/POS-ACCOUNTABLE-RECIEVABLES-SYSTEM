@@ -263,7 +263,7 @@ export const openVoidSaleDialog = () => {
 
   openSupervisorApprovalDialog(
     "Void sale",
-    `Void ${getTotalQty()} item(s) - ${formatCurrency(total)}? A supervisor must sign in at this POS.`,
+    `Void ${getTotalQty()} item(s) - ${formatCurrency(total)}? Enter the supervisor PIN.`,
     async (credentials) => {
       const formData = new FormData();
       formData.append("operation", "authorizePosVoid");
@@ -273,8 +273,7 @@ export const openVoidSaleDialog = () => {
         salesId: state.recallId,
         amount: total,
         details: saleDetails,
-        supervisorUsername: credentials.supervisorUsername,
-        supervisorPassword: credentials.supervisorPassword,
+        supervisorPin: credentials.supervisorPin,
         reason: credentials.reason,
       }));
 
@@ -295,7 +294,7 @@ export const openVoidSaleDialog = () => {
       return {
         success: false,
         message: response.data == 3
-          ? "Supervisor sign-in failed. Check the username and password."
+          ? "Supervisor PIN not recognized. Check that the PIN is active and try again."
           : "The sale could not be voided. Confirm the open shift and try again.",
       };
     },

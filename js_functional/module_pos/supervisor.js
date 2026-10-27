@@ -6,15 +6,13 @@ export const openSupervisorApprovalDialog = (title, description, onApprove) => {
   openDialog(
     title,
     `<p class="dialog-text">${description}</p>
-     <label class="dialog-label" for="supervisor-username">Supervisor username</label>
-     <input id="supervisor-username" type="text" class="pos-input" autocomplete="username" placeholder="Supervisor username">
-     <label class="dialog-label" for="supervisor-password">Supervisor password</label>
-     <input id="supervisor-password" type="password" class="pos-input"
-       autocomplete="current-password" placeholder="Supervisor password">
+     <label class="dialog-label" for="supervisor-pin">Supervisor PIN</label>
+     <input id="supervisor-pin" type="password" class="pos-input" inputmode="numeric"
+       maxlength="6" autocomplete="off" placeholder="Enter 4-6 digit PIN">
      <label class="dialog-label" for="supervisor-reason">Reason</label>
      <input id="supervisor-reason" type="text" class="pos-input" autocomplete="off" placeholder="Reason for this action">
      <p id="supervisor-approval-error" class="dialog-text" role="alert"></p>`,
-    "Supervisor sign-in · Enter = approve · Esc = cancel",
+    "Supervisor PIN · Enter = approve · Esc = cancel",
     async (e) => {
       if (e.key == "Escape") {
         e.preventDefault();
@@ -29,8 +27,7 @@ export const openSupervisorApprovalDialog = (title, description, onApprove) => {
       e.preventDefault();
 
       const nextField = {
-        "supervisor-username": "supervisor-password",
-        "supervisor-password": "supervisor-reason",
+        "supervisor-pin": "supervisor-reason",
       }[document.activeElement.id];
 
       if (nextField) {
@@ -38,22 +35,30 @@ export const openSupervisorApprovalDialog = (title, description, onApprove) => {
         return;
       }
 
-      const supervisorUsername = document.getElementById("supervisor-username").value.trim();
-      const supervisorPassword = document.getElementById("supervisor-password").value;
+      const supervisorPin = document.getElementById("supervisor-pin").value.trim();
       const reason = document.getElementById("supervisor-reason").value.trim();
 
-      if (supervisorUsername == "" || supervisorPassword == "" || reason == "") {
+      if (!/^\d{4,6}$/.test(supervisorPin) || reason == "") {
         document.getElementById("supervisor-approval-error").innerText =
-          "Enter the supervisor username, password, and reason.";
+          "Enter a 4-6 digit supervisor PIN and a reason.";
         return;
       }
 
       submitting = true;
-      const result = await onApprove({
-        supervisorUsername: supervisorUsername,
-        supervisorPassword: supervisorPassword,
-        reason: reason,
-      });
+      let result;
+
+      try {
+        result = await onApprove({
+          supervisorPin: supervisorPin,
+          reason: reason,
+        });
+      } catch {
+        submitting = false;
+        document.getElementById("supervisor-approval-error").innerText =
+          "Approval could not be verified because the server request failed.";
+        return;
+      }
+
       submitting = false;
 
       if (!result.success) {
@@ -69,5 +74,5 @@ export const openSupervisorApprovalDialog = (title, description, onApprove) => {
     },
   );
 
-  document.getElementById("supervisor-username").focus();
+  document.getElementById("supervisor-pin").focus();
 };

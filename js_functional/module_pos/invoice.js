@@ -4,6 +4,14 @@ import { openDialog, closeDialog, openMessageDialog } from "./dialog.js";
 
 const VAT_RATE_PERCENT = 12;
 
+const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+}[character]));
+
 const getVatBreakdown = (totalAmount) => {
   const totalCents = toCents(Number(totalAmount) || 0);
   const vatCents = Math.round(
@@ -181,7 +189,7 @@ export const saveInvoiceFile = async (invoiceNumber, blob) => {
   return response.data == 1;
 };
 
-export const prepareInvoice = async (salesId) => {
+export const prepareInvoice = async (salesId, emailCustomer = false) => {
   try {
     const jsPDF = await loadPdfLibrary();
 
@@ -199,9 +207,31 @@ export const prepareInvoice = async (salesId) => {
     const invoiceNumber = response.data.sale.invoice_number;
     const blob = buildInvoicePdf(jsPDF, response.data);
     const saved = await saveInvoiceFile(invoiceNumber, blob);
+    let email = null;
 
-    return { invoiceNumber: invoiceNumber, blob: blob, saved: saved };
+    if (emailCustomer && saved) {
+      const formData = new FormData();
+      formData.append("operation", "sendInvoice");
+      formData.append("json", JSON.stringify({ salesId: salesId }));
+
+      try {
+        const emailResponse = await axios({
+          url: `${baseAPI}/invoice_email.php`,
+          method: "POST",
+          data: formData,
+        });
+        email = emailResponse.data;
+      } catch (error) {
+        console.error("The AR invoice email request failed.", error);
+        email = { success: false, message: "The invoice was saved, but its email could not be sent." };
+      }
+    } else if (emailCustomer) {
+      email = { success: false, message: "The invoice PDF was not saved, so it could not be emailed." };
+    }
+
+    return { invoiceNumber: invoiceNumber, blob: blob, saved: saved, email: email };
   } catch (error) {
+    console.error("Invoice preparation failed.", error);
     return null;
   }
 };
@@ -243,9 +273,13 @@ export const openPrintDialog = async (invoice) => {
     return;
   }
 
+  const invoiceNumber = escapeHtml(pdf.invoiceNumber);
+  const emailMessage = pdf.email ? escapeHtml(pdf.email.message) : "";
+
   openDialog(
     "Print invoice",
-    `<p class="dialog-text">${pdf.invoiceNumber} ${pdf.saved ? "was saved to the invoices folder." : "was not saved to the invoices folder."}</p>
+    `<p class="dialog-text">${invoiceNumber} ${pdf.saved ? "was saved to the invoices folder." : "was not saved to the invoices folder."}</p>
+     ${pdf.email ? `<p class="dialog-text">${emailMessage}</p>` : ""}
      <p class="dialog-text">Do you want to print it?</p>`,
     "Enter = Yes · Esc = No",
     (e) => {

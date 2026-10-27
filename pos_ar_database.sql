@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 23, 2026 at 01:20 PM
+-- Generation Time: Oct 25, 2026 at 03:16 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.0.30
 
@@ -98,6 +98,31 @@ INSERT INTO `customers` (`customer_id`, `customer_name`, `contact_number`, `emai
 (55, 'Soledad V. Catapang', '09268025822', 'soledadvcatapang@example.com', 'Corrales Avenue, Pasig City', 15000.00, 3, 'ACTIVE'),
 (56, 'Baltazar O. Rellosa', '09950515438', 'baltazarorellosa@example.com', 'Velez Street, Cebu City', 65000.00, 4, 'ACTIVE'),
 (57, 'Concepcion Y. Dumlao', '09352157116', 'concepcionydumlao@example.com', 'Claro M. Recto Avenue, Cebu City', 120000.00, 5, 'ACTIVE');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `email_notification_state`
+--
+
+CREATE TABLE `email_notification_state` (
+  `notification_key` varchar(100) NOT NULL,
+  `notification_type` varchar(30) NOT NULL,
+  `customer_id` int(11) DEFAULT NULL,
+  `invoice_id` int(11) DEFAULT NULL,
+  `notified_at` datetime NOT NULL,
+  `resolved_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `email_notification_state`
+--
+
+INSERT INTO `email_notification_state` (`notification_key`, `notification_type`, `customer_id`, `invoice_id`, `notified_at`, `resolved_at`) VALUES
+('ar-invoice-565', 'AR_INVOICE', 5, 565, '2026-10-24 23:32:55', NULL),
+('ar-invoice-566', 'AR_INVOICE', 5, 566, '2026-10-24 23:51:48', NULL),
+('ar-invoice-567', 'AR_INVOICE', 5, 567, '2026-10-24 23:52:31', NULL),
+('ar-invoice-568', 'AR_INVOICE', 5, 568, '2026-10-25 00:15:09', NULL);
 
 -- --------------------------------------------------------
 
@@ -399,7 +424,7 @@ INSERT INTO `invoice` (`invoice_id`, `sales_id`, `invoice_number`, `due_date`, `
 (264, 274, 'INV-2026-0264', '2027-01-08', 124.00, 'UNPAID'),
 (265, 275, 'INV-2026-0265', '2026-10-30', 1125.00, 'PAID'),
 (266, 276, 'INV-2026-0266', '2026-10-30', 483.50, 'UNPAID'),
-(267, 277, 'INV-2026-0267', '2026-10-15', 555.00, 'UNPAID'),
+(267, 277, 'INV-2026-0267', '2026-10-15', 555.00, 'PAID'),
 (268, 278, 'INV-2026-0268', '2026-11-30', 434.94, 'PAID'),
 (269, 279, 'INV-2026-0269', '2026-11-30', 218.00, 'PAID'),
 (270, 280, 'INV-2026-0270', '2027-01-09', 489.00, 'PAID'),
@@ -484,7 +509,7 @@ INSERT INTO `invoice` (`invoice_id`, `sales_id`, `invoice_number`, `due_date`, `
 (349, 359, 'INV-2026-0349', '2026-10-19', 585.97, 'PAID'),
 (350, 360, 'INV-2026-0350', '2026-12-03', 1471.00, 'PAID'),
 (351, 361, 'INV-2026-0351', '2026-11-03', 392.00, 'PAID'),
-(352, 362, 'INV-2026-0352', '2026-10-19', 765.00, 'UNPAID'),
+(352, 362, 'INV-2026-0352', '2026-10-19', 765.00, 'PAID'),
 (353, 363, 'INV-2026-0353', '2026-11-03', 936.50, 'UNPAID'),
 (354, 364, 'INV-2026-0354', '2027-01-12', 420.00, 'PAID'),
 (355, 365, 'INV-2026-0355', '2026-11-23', 287.00, 'PAID'),
@@ -685,7 +710,23 @@ INSERT INTO `invoice` (`invoice_id`, `sales_id`, `invoice_number`, `due_date`, `
 (550, 567, 'INV-2026-0550', '2026-10-23', 865.00, 'PAID'),
 (551, 569, 'INV-2026-0551', '2026-10-23', 130.00, 'PAID'),
 (552, 570, 'INV-2026-0552', '2026-10-23', 205.00, 'PAID'),
-(553, 571, 'INV-2026-0553', '2026-12-22', 197.00, 'UNPAID');
+(553, 571, 'INV-2026-0553', '2026-12-22', 197.00, 'UNPAID'),
+(554, 572, 'INV-2026-0554', '2026-11-22', 448.00, 'UNPAID'),
+(555, 573, 'INV-2026-0555', '2026-10-23', 285.00, 'PAID'),
+(556, 574, 'INV-2026-0556', '2026-10-23', 237.00, 'PAID'),
+(557, 575, 'INV-2026-0557', '2026-10-23', 162.00, 'PAID'),
+(558, 576, 'INV-2026-0558', '2026-12-23', 95.00, 'UNPAID'),
+(559, 577, 'INV-2026-0559', '2026-11-08', 73.00, 'UNPAID'),
+(560, 578, 'INV-2026-0560', '2026-11-08', 141.00, 'UNPAID'),
+(561, 579, 'INV-2026-0561', '2026-11-08', 130.00, 'UNPAID'),
+(562, 580, 'INV-2026-0562', '2026-11-08', 113.00, 'UNPAID'),
+(563, 581, 'INV-2026-0563', '2026-11-08', 210.00, 'UNPAID'),
+(564, 582, 'INV-2026-0564', '2026-11-08', 143.00, 'UNPAID'),
+(565, 583, 'INV-2026-0565', '2026-11-08', 64.00, 'UNPAID'),
+(566, 584, 'INV-2026-0566', '2026-11-08', 133.00, 'UNPAID'),
+(567, 585, 'INV-2026-0567', '2026-11-08', 144.00, 'UNPAID'),
+(568, 586, 'INV-2026-0568', '2026-11-09', 192.00, 'UNPAID'),
+(569, 587, 'INV-2026-0569', '2026-10-25', 167.00, 'PAID');
 
 -- --------------------------------------------------------
 
@@ -1131,7 +1172,13 @@ INSERT INTO `payments_dtl` (`payment_detail_id`, `payment_id`, `invoice_id`, `am
 (428, 371, 548, 146.00),
 (429, 372, 550, 865.00),
 (430, 373, 551, 130.00),
-(431, 374, 552, 205.00);
+(431, 374, 552, 205.00),
+(432, 375, 555, 285.00),
+(433, 376, 556, 237.00),
+(434, 377, 557, 162.00),
+(435, 378, 267, 555.00),
+(436, 379, 352, 765.00),
+(437, 380, 569, 167.00);
 
 -- --------------------------------------------------------
 
@@ -1145,6 +1192,7 @@ CREATE TABLE `payments_hdr` (
   `customer_id` int(11) DEFAULT NULL,
   `payment_method_id` int(11) NOT NULL,
   `shift_id` int(11) DEFAULT NULL,
+  `created_by` int(11) DEFAULT NULL,
   `payment_date` date NOT NULL,
   `amount` decimal(12,2) NOT NULL,
   `amount_tendered` decimal(12,2) DEFAULT NULL,
@@ -1526,7 +1574,13 @@ INSERT INTO `payments_hdr` (`payment_id`, `payment_number`, `customer_id`, `paym
 (371, 'PAY-2026-0371', NULL, 1, 272, '2026-10-23', 146.00, 200.00, 54.00, NULL, 'Paid at POS'),
 (372, 'PAY-2026-0372', NULL, 1, 275, '2026-10-23', 865.00, 1000.00, 135.00, NULL, 'Paid at POS'),
 (373, 'PAY-2026-0373', NULL, 1, 276, '2026-10-23', 130.00, 200.00, 70.00, NULL, 'Paid at POS'),
-(374, 'PAY-2026-0374', NULL, 1, 276, '2026-10-23', 205.00, 500.00, 295.00, NULL, 'Paid at POS');
+(374, 'PAY-2026-0374', NULL, 1, 276, '2026-10-23', 205.00, 500.00, 295.00, NULL, 'Paid at POS'),
+(375, 'PAY-2026-0375', NULL, 1, 277, '2026-10-23', 285.00, 500.00, 215.00, NULL, 'Paid at POS'),
+(376, 'PAY-2026-0376', NULL, 6, 277, '2026-10-23', 237.00, 237.00, 0.00, '418921701251', 'Paid at POS'),
+(377, 'PAY-2026-0377', NULL, 1, 277, '2026-10-23', 162.00, 500.00, 338.00, NULL, 'Paid at POS'),
+(378, 'PAY-2026-0378', 44, 1, NULL, '2026-10-23', 555.00, 555.00, 0.00, 'r3515142352', 'fsagfsagasg'),
+(379, 'PAY-2026-0379', 44, 1, NULL, '2026-10-23', 765.00, 765.00, 0.00, 'r3515142352', 'sadsadsadfsdfsdf'),
+(380, 'PAY-2026-0380', NULL, 1, 279, '2026-10-25', 167.00, 500.00, 333.00, NULL, 'Paid at POS');
 
 -- --------------------------------------------------------
 
@@ -1567,7 +1621,6 @@ CREATE TABLE `pos_supervisor_actions` (
   `cashier_user_id` int(11) NOT NULL,
   `supervisor_user_id` int(11) NOT NULL,
   `action_type` varchar(20) NOT NULL,
-  `related_sale_id` int(11) DEFAULT NULL,
   `details_json` longtext DEFAULT NULL,
   `reason` varchar(255) NOT NULL,
   `amount` decimal(12,2) NOT NULL DEFAULT 0.00,
@@ -1578,16 +1631,21 @@ CREATE TABLE `pos_supervisor_actions` (
 -- Dumping data for table `pos_supervisor_actions`
 --
 
-INSERT INTO `pos_supervisor_actions` (`action_id`, `shift_id`, `cashier_user_id`, `supervisor_user_id`, `action_type`, `related_sale_id`, `details_json`, `reason`, `amount`, `action_at`) VALUES
-(1, 271, 6, 57, 'VOID_SALE', NULL, '[{\"productId\":\"88\",\"productName\":\"Ajinomoto Ginisa Flavor Seasoning Mix 8g x 16\",\"productPrice\":35,\"qty\":2,\"amount\":70}]', 'remove this', 70.00, '2026-10-22 10:20:06'),
-(2, 271, 6, 57, 'VOID_LINE', NULL, '{\"productId\":\"104\",\"productName\":\"3M Scotch-Brite Easy Clean Scrub Sponge\",\"productPrice\":35,\"qty\":3,\"amount\":105}', 'because something happen', 105.00, '2026-10-22 10:20:59'),
-(3, 270, 2, 57, 'VOID_SALE', NULL, '[{\"productId\":\"80\",\"productName\":\"Century Tuna Flakes in Vegetable Oil 95g\",\"productPrice\":29,\"qty\":1,\"amount\":29},{\"productId\":\"104\",\"productName\":\"3M Scotch-Brite Easy Clean Scrub Sponge\",\"productPrice\":35,\"qty\":1,\"amount\":35},{\"productId\":\"85\",\"productName\":\"Ajinomoto Sarsaya Oyster Sauce 156g\",\"productPrice\":38,\"qty\":1,\"amount\":38}]', 'stop', 102.00, '2026-10-23 10:17:11'),
-(4, 270, 2, 57, 'VOID_LINE', NULL, '{\"productId\":\"86\",\"productName\":\"Ajinomoto Sarsaya Oyster Sauce 405g\",\"productPrice\":80,\"qty\":1,\"amount\":80}', 'there is a mistake', 80.00, '2026-10-23 10:18:13'),
-(5, 270, 2, 57, 'VOID_LINE', NULL, '{\"productId\":\"104\",\"productName\":\"3M Scotch-Brite Easy Clean Scrub Sponge\",\"productPrice\":35,\"qty\":1,\"amount\":35}', 'mistake', 35.00, '2026-10-23 10:18:38'),
-(6, 272, 6, 57, 'VOID_SALE', NULL, '[{\"productId\":\"80\",\"productName\":\"Century Tuna Flakes in Vegetable Oil 95g\",\"productPrice\":29,\"qty\":1,\"amount\":29},{\"productId\":\"81\",\"productName\":\"Highlands Corned Beef 150g\",\"productPrice\":55,\"qty\":1,\"amount\":55},{\"productId\":\"89\",\"productName\":\"Ajinomoto Ginisa Low-Sodium Seasoning Mix 8g x 12\",\"productPrice\":32,\"qty\":1,\"amount\":32}]', 'the customer is not gonna finish it', 116.00, '2026-10-23 11:51:06'),
-(7, 272, 6, 57, 'VOID_SALE', NULL, '[{\"productId\":\"105\",\"productName\":\"7UP Lemon-Lime Soft Drink 2L\",\"productPrice\":95,\"qty\":1,\"amount\":95},{\"productId\":\"104\",\"productName\":\"3M Scotch-Brite Easy Clean Scrub Sponge\",\"productPrice\":35,\"qty\":2,\"amount\":70},{\"productId\":\"91\",\"productName\":\"Alaska Evaporada 1L\",\"productPrice\":98,\"qty\":1,\"amount\":98}]', 'the reason is not gonna return it', 263.00, '2026-10-23 11:51:50'),
-(8, 275, 26, 57, 'VOID_SALE', NULL, '[{\"productId\":\"105\",\"productName\":\"7UP Lemon-Lime Soft Drink 2L\",\"productPrice\":95,\"qty\":1,\"amount\":95},{\"productId\":\"74\",\"productName\":\"Great Taste White Coffee Mix 30g x 10\",\"productPrice\":110,\"qty\":1,\"amount\":110},{\"productId\":\"85\",\"productName\":\"Ajinomoto Sarsaya Oyster Sauce 156g\",\"productPrice\":38,\"qty\":1,\"amount\":38}]', 'reason', 243.00, '2026-10-23 12:48:51'),
-(9, 276, 2, 57, 'VOID_LINE', NULL, '{\"productId\":\"104\",\"productName\":\"3M Scotch-Brite Easy Clean Scrub Sponge\",\"productPrice\":35,\"qty\":1,\"amount\":35}', 'reason', 35.00, '2026-10-23 13:37:56');
+INSERT INTO `pos_supervisor_actions` (`action_id`, `shift_id`, `cashier_user_id`, `supervisor_user_id`, `action_type`, `details_json`, `reason`, `amount`, `action_at`) VALUES
+(1, 271, 6, 57, 'VOID_SALE', '[{\"productId\":\"88\",\"productName\":\"Ajinomoto Ginisa Flavor Seasoning Mix 8g x 16\",\"productPrice\":35,\"qty\":2,\"amount\":70}]', 'remove this', 70.00, '2026-10-22 10:20:06'),
+(2, 271, 6, 57, 'VOID_LINE', '{\"productId\":\"104\",\"productName\":\"3M Scotch-Brite Easy Clean Scrub Sponge\",\"productPrice\":35,\"qty\":3,\"amount\":105}', 'because something happen', 105.00, '2026-10-22 10:20:59'),
+(3, 270, 2, 57, 'VOID_SALE', '[{\"productId\":\"80\",\"productName\":\"Century Tuna Flakes in Vegetable Oil 95g\",\"productPrice\":29,\"qty\":1,\"amount\":29},{\"productId\":\"104\",\"productName\":\"3M Scotch-Brite Easy Clean Scrub Sponge\",\"productPrice\":35,\"qty\":1,\"amount\":35},{\"productId\":\"85\",\"productName\":\"Ajinomoto Sarsaya Oyster Sauce 156g\",\"productPrice\":38,\"qty\":1,\"amount\":38}]', 'stop', 102.00, '2026-10-23 10:17:11'),
+(4, 270, 2, 57, 'VOID_LINE', '{\"productId\":\"86\",\"productName\":\"Ajinomoto Sarsaya Oyster Sauce 405g\",\"productPrice\":80,\"qty\":1,\"amount\":80}', 'there is a mistake', 80.00, '2026-10-23 10:18:13'),
+(5, 270, 2, 57, 'VOID_LINE', '{\"productId\":\"104\",\"productName\":\"3M Scotch-Brite Easy Clean Scrub Sponge\",\"productPrice\":35,\"qty\":1,\"amount\":35}', 'mistake', 35.00, '2026-10-23 10:18:38'),
+(6, 272, 6, 57, 'VOID_SALE', '[{\"productId\":\"80\",\"productName\":\"Century Tuna Flakes in Vegetable Oil 95g\",\"productPrice\":29,\"qty\":1,\"amount\":29},{\"productId\":\"81\",\"productName\":\"Highlands Corned Beef 150g\",\"productPrice\":55,\"qty\":1,\"amount\":55},{\"productId\":\"89\",\"productName\":\"Ajinomoto Ginisa Low-Sodium Seasoning Mix 8g x 12\",\"productPrice\":32,\"qty\":1,\"amount\":32}]', 'the customer is not gonna finish it', 116.00, '2026-10-23 11:51:06'),
+(7, 272, 6, 57, 'VOID_SALE', '[{\"productId\":\"105\",\"productName\":\"7UP Lemon-Lime Soft Drink 2L\",\"productPrice\":95,\"qty\":1,\"amount\":95},{\"productId\":\"104\",\"productName\":\"3M Scotch-Brite Easy Clean Scrub Sponge\",\"productPrice\":35,\"qty\":2,\"amount\":70},{\"productId\":\"91\",\"productName\":\"Alaska Evaporada 1L\",\"productPrice\":98,\"qty\":1,\"amount\":98}]', 'the reason is not gonna return it', 263.00, '2026-10-23 11:51:50'),
+(8, 275, 26, 57, 'VOID_SALE', '[{\"productId\":\"105\",\"productName\":\"7UP Lemon-Lime Soft Drink 2L\",\"productPrice\":95,\"qty\":1,\"amount\":95},{\"productId\":\"74\",\"productName\":\"Great Taste White Coffee Mix 30g x 10\",\"productPrice\":110,\"qty\":1,\"amount\":110},{\"productId\":\"85\",\"productName\":\"Ajinomoto Sarsaya Oyster Sauce 156g\",\"productPrice\":38,\"qty\":1,\"amount\":38}]', 'reason', 243.00, '2026-10-23 12:48:51'),
+(9, 276, 2, 57, 'VOID_LINE', '{\"productId\":\"104\",\"productName\":\"3M Scotch-Brite Easy Clean Scrub Sponge\",\"productPrice\":35,\"qty\":1,\"amount\":35}', 'reason', 35.00, '2026-10-23 13:37:56'),
+(10, 277, 2, 57, 'VOID_SALE', '[{\"productId\":\"105\",\"productName\":\"7UP Lemon-Lime Soft Drink 2L\",\"productPrice\":95,\"qty\":1,\"amount\":95},{\"productId\":\"104\",\"productName\":\"3M Scotch-Brite Easy Clean Scrub Sponge\",\"productPrice\":35,\"qty\":1,\"amount\":35},{\"productId\":\"74\",\"productName\":\"Great Taste White Coffee Mix 30g x 10\",\"productPrice\":110,\"qty\":1,\"amount\":110},{\"productId\":\"97\",\"productName\":\"Champion Supra High Foam Detergent Liquid 1L\",\"productPrice\":110,\"qty\":1,\"amount\":110}]', 'gsdgsgsgsgsd', 350.00, '2026-10-23 19:41:07'),
+(11, 277, 2, 57, 'VOID_LINE', '{\"productId\":\"105\",\"productName\":\"7UP Lemon-Lime Soft Drink 2L\",\"productPrice\":95,\"qty\":1,\"amount\":95}', 'remove', 95.00, '2026-10-23 19:41:41'),
+(12, 279, 2, 57, 'VOID_LINE', '{\"productId\":\"81\",\"productName\":\"Highlands Corned Beef 150g\",\"productPrice\":55,\"qty\":1,\"amount\":55}', 'hgsahhashsah', 55.00, '2026-10-25 00:01:34'),
+(13, 279, 2, 57, 'VOID_LINE', '{\"productId\":\"81\",\"productName\":\"Highlands Corned Beef 150g\",\"productPrice\":55,\"qty\":1,\"amount\":55}', 'there is a reason', 55.00, '2026-10-25 00:13:29'),
+(14, 279, 2, 57, 'VOID_SALE', '[{\"productId\":\"104\",\"productName\":\"3M Scotch-Brite Easy Clean Scrub Sponge\",\"productPrice\":35,\"qty\":1,\"amount\":35},{\"productId\":\"74\",\"productName\":\"Great Taste White Coffee Mix 30g x 10\",\"productPrice\":110,\"qty\":1,\"amount\":110}]', 'reason is the reason', 145.00, '2026-10-25 00:13:51');
 
 -- --------------------------------------------------------
 
@@ -1817,7 +1875,44 @@ INSERT INTO `sales_dtl` (`sales_detail_id`, `sales_id`, `product_id`, `quantity`
 (1589, 570, 97, 1, 110.00, 110.00),
 (1590, 571, 89, 1, 32.00, 32.00),
 (1591, 571, 74, 1, 110.00, 110.00),
-(1592, 571, 81, 1, 55.00, 55.00);
+(1592, 571, 81, 1, 55.00, 55.00),
+(1593, 572, 105, 1, 95.00, 95.00),
+(1594, 572, 85, 1, 38.00, 38.00),
+(1595, 572, 104, 9, 35.00, 315.00),
+(1596, 573, 105, 1, 95.00, 95.00),
+(1597, 573, 86, 1, 80.00, 80.00),
+(1598, 573, 97, 1, 110.00, 110.00),
+(1599, 574, 105, 1, 95.00, 95.00),
+(1600, 574, 89, 1, 32.00, 32.00),
+(1601, 574, 74, 1, 110.00, 110.00),
+(1602, 575, 105, 1, 95.00, 95.00),
+(1603, 575, 89, 1, 32.00, 32.00),
+(1604, 575, 104, 1, 35.00, 35.00),
+(1605, 576, 105, 1, 95.00, 95.00),
+(1606, 577, 88, 1, 35.00, 35.00),
+(1607, 577, 85, 1, 38.00, 38.00),
+(1608, 578, 80, 1, 29.00, 29.00),
+(1609, 578, 89, 1, 32.00, 32.00),
+(1610, 578, 86, 1, 80.00, 80.00),
+(1611, 579, 88, 1, 35.00, 35.00),
+(1612, 579, 105, 1, 95.00, 95.00),
+(1613, 580, 80, 2, 29.00, 58.00),
+(1614, 580, 81, 1, 55.00, 55.00),
+(1615, 581, 105, 1, 95.00, 95.00),
+(1616, 581, 88, 1, 35.00, 35.00),
+(1617, 581, 86, 1, 80.00, 80.00),
+(1618, 582, 105, 1, 95.00, 95.00),
+(1619, 582, 92, 1, 48.00, 48.00),
+(1620, 583, 89, 2, 32.00, 64.00),
+(1621, 584, 105, 1, 95.00, 95.00),
+(1622, 584, 85, 1, 38.00, 38.00),
+(1623, 585, 89, 2, 32.00, 64.00),
+(1624, 585, 86, 1, 80.00, 80.00),
+(1625, 586, 89, 1, 32.00, 32.00),
+(1626, 586, 86, 2, 80.00, 160.00),
+(1627, 587, 89, 1, 32.00, 32.00),
+(1628, 587, 86, 1, 80.00, 80.00),
+(1629, 587, 81, 1, 55.00, 55.00);
 
 -- --------------------------------------------------------
 
@@ -1865,7 +1960,7 @@ INSERT INTO `sales_hdr` (`sales_id`, `customer_id`, `terminal_id`, `shift_id`, `
 (44, 7, 4, 10, '2026-10-04', 184.97, 6, 'COMPLETED'),
 (45, 5, 3, 15, '2026-10-12', 70.00, 2, 'COMPLETED'),
 (46, 14, 3, 16, '2026-10-12', 650.00, 2, 'HOLD'),
-(47, 1, 3, 16, '2026-10-12', 375.00, 2, 'VOID'),
+(47, 1, 3, 16, '2026-10-12', 375.00, 2, 'CANCELLED'),
 (48, 39, 10, 137, '2026-09-21', 1448.00, 24, 'COMPLETED'),
 (49, 39, 10, 137, '2026-09-21', 732.00, 24, 'COMPLETED'),
 (50, 19, 10, 137, '2026-09-21', 872.50, 24, 'COMPLETED'),
@@ -2359,10 +2454,10 @@ INSERT INTO `sales_hdr` (`sales_id`, `customer_id`, `terminal_id`, `shift_id`, `
 (539, 1, 3, 257, '2026-10-15', 1670.00, 2, 'COMPLETED'),
 (540, 1, 3, 257, '2026-10-15', 1446.00, 2, 'COMPLETED'),
 (541, 1, 3, 257, '2026-10-17', 620.00, 2, 'COMPLETED'),
-(542, 40, 3, 257, '2026-10-17', 620.00, 2, 'VOID'),
-(543, NULL, 3, 257, '2026-10-17', 11200.00, 2, 'VOID'),
-(544, NULL, 7, 258, '2026-10-18', 470.00, 6, 'VOID'),
-(545, NULL, 3, 269, '2026-10-21', 191.00, 2, 'VOID'),
+(542, 40, 3, 257, '2026-10-17', 620.00, 2, 'CANCELLED'),
+(543, NULL, 3, 257, '2026-10-17', 11200.00, 2, 'CANCELLED'),
+(544, NULL, 7, 258, '2026-10-18', 470.00, 6, 'CANCELLED'),
+(545, NULL, 3, 269, '2026-10-21', 191.00, 2, 'CANCELLED'),
 (548, NULL, 3, 269, '2026-10-21', 130.00, 2, 'HOLD'),
 (550, 48, 3, 269, '2026-10-21', 200.00, 2, 'COMPLETED'),
 (551, NULL, 3, 270, '2026-10-22', 285.00, 2, 'HOLD'),
@@ -2385,35 +2480,23 @@ INSERT INTO `sales_hdr` (`sales_id`, `customer_id`, `terminal_id`, `shift_id`, `
 (568, 15, 3, 276, '2026-10-23', 130.00, 2, 'HOLD'),
 (569, NULL, 3, 276, '2026-10-23', 130.00, 2, 'COMPLETED'),
 (570, NULL, 3, 276, '2026-10-23', 205.00, 2, 'COMPLETED'),
-(571, 10, 3, 277, '2026-10-23', 197.00, 2, 'COMPLETED');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `sale_void_requests`
---
-
-CREATE TABLE `sale_void_requests` (
-  `void_request_id` int(11) NOT NULL,
-  `sales_id` int(11) NOT NULL,
-  `requested_by` int(11) NOT NULL,
-  `reason` varchar(255) NOT NULL,
-  `status` varchar(20) NOT NULL DEFAULT 'PENDING',
-  `decision_mode` varchar(20) NOT NULL DEFAULT 'REQUEST',
-  `decided_by` int(11) DEFAULT NULL,
-  `requested_at` datetime NOT NULL,
-  `decided_at` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `sale_void_requests`
---
-
-INSERT INTO `sale_void_requests` (`void_request_id`, `sales_id`, `requested_by`, `reason`, `status`, `decision_mode`, `decided_by`, `requested_at`, `decided_at`) VALUES
-(1, 542, 2, 'changing his mind', 'APPROVED', 'DIRECT', 57, '2026-10-17 22:53:33', '2026-10-17 22:53:33'),
-(2, 543, 2, 'changing his mind', 'APPROVED', 'REQUEST', 57, '2026-10-17 23:28:59', '2026-10-17 23:29:34'),
-(3, 544, 6, 'change mind', 'APPROVED', 'REQUEST', 57, '2026-10-18 10:11:17', '2026-10-18 10:11:41'),
-(4, 545, 2, 'daot', 'APPROVED', 'DIRECT', 57, '2026-10-21 08:37:36', '2026-10-21 08:37:36');
+(571, 10, 3, 277, '2026-10-23', 197.00, 2, 'COMPLETED'),
+(572, 41, 3, 277, '2026-10-23', 448.00, 2, 'COMPLETED'),
+(573, NULL, 3, 277, '2026-10-23', 285.00, 2, 'COMPLETED'),
+(574, NULL, 3, 277, '2026-10-23', 237.00, 2, 'COMPLETED'),
+(575, NULL, 3, 277, '2026-10-23', 162.00, 2, 'COMPLETED'),
+(576, 40, 3, 279, '2026-10-24', 95.00, 2, 'COMPLETED'),
+(577, 5, 3, 279, '2026-10-24', 73.00, 2, 'COMPLETED'),
+(578, 5, 3, 279, '2026-10-24', 141.00, 2, 'COMPLETED'),
+(579, 5, 3, 279, '2026-10-24', 130.00, 2, 'COMPLETED'),
+(580, 5, 3, 279, '2026-10-24', 113.00, 2, 'COMPLETED'),
+(581, 5, 3, 279, '2026-10-24', 210.00, 2, 'COMPLETED'),
+(582, 5, 3, 279, '2026-10-24', 143.00, 2, 'COMPLETED'),
+(583, 5, 3, 279, '2026-10-24', 64.00, 2, 'COMPLETED'),
+(584, 5, 3, 279, '2026-10-24', 133.00, 2, 'COMPLETED'),
+(585, 5, 3, 279, '2026-10-24', 144.00, 2, 'COMPLETED'),
+(586, 5, 3, 279, '2026-10-25', 192.00, 2, 'COMPLETED'),
+(587, NULL, 3, 279, '2026-10-25', 167.00, 2, 'COMPLETED');
 
 -- --------------------------------------------------------
 
@@ -2594,7 +2677,9 @@ INSERT INTO `shifts` (`shift_id`, `user_id`, `terminal_id`, `schedule_id`, `open
 (274, 2, 3, 4, '2026-10-23 10:50:05', '2026-10-23 11:41:14', 1000.00, 57, 1000.00, 1000.00, 57, 1000.00, 'CLOSED'),
 (275, 26, 11, 2, '2026-10-23 12:21:36', '2026-10-23 12:50:37', 1000.00, 57, 1865.00, 1865.00, 57, 1865.00, 'CLOSED'),
 (276, 2, 3, 4, '2026-10-23 12:51:33', '2026-10-23 13:39:27', 1000.00, 57, 1335.00, 1335.00, 57, 1335.00, 'CLOSED'),
-(277, 2, 3, 4, '2026-10-23 18:40:14', NULL, 500.00, 57, NULL, NULL, NULL, NULL, 'OPEN');
+(277, 2, 3, 4, '2026-10-23 18:40:14', '2026-10-23 19:46:15', 500.00, 57, 500.00, 662.00, 57, 162.00, 'CLOSED'),
+(278, 2, 3, 4, '2026-10-23 21:23:26', '2026-10-23 21:37:11', 1000.00, 57, 1000.00, 1000.00, 57, 1000.00, 'CLOSED'),
+(279, 2, 3, 4, '2026-10-24 22:29:55', '2026-10-25 00:17:02', 100.00, 57, 767.00, 767.00, 57, 767.00, 'CLOSED');
 
 -- --------------------------------------------------------
 
@@ -2683,7 +2768,10 @@ INSERT INTO `shift_cash_movement` (`movement_id`, `shift_id`, `movement_type`, `
 (62, 257, 'FLOAT_ADJUST', -10000.00, 'to much', 'APPROVED', 57, '2026-10-18 11:13:53', '2026-10-18 11:13:07'),
 (63, 269, 'FLOAT_ADJUST', -2000.00, 'to much money', 'APPROVED', 57, '2026-10-21 08:21:38', '2026-10-21 08:18:30'),
 (64, 277, 'CASH_DROP', 200.00, 'for safe keeping', 'APPROVED', 57, '2026-10-23 18:40:56', '2026-10-23 18:40:56'),
-(65, 277, 'CASH_DROP', 100.00, 'dsafsaf', 'APPROVED', 57, '2026-10-23 18:43:11', '2026-10-23 18:43:11');
+(65, 277, 'CASH_DROP', 100.00, 'dsafsaf', 'APPROVED', 57, '2026-10-23 18:43:11', '2026-10-23 18:43:11'),
+(66, 277, 'FLOAT_ADJUST', 15.00, 'there is 15 cash in the drawer', 'APPROVED', 57, '2026-10-23 19:42:45', '2026-10-23 19:42:45'),
+(67, 277, 'FLOAT_ADJUST', -500.00, 'it is still 500', 'APPROVED', 57, '2026-10-23 19:45:12', '2026-10-23 19:45:12'),
+(68, 279, 'FLOAT_ADJUST', 500.00, 'lack of change', 'APPROVED', 57, '2026-10-25 00:14:30', '2026-10-25 00:14:30');
 
 -- --------------------------------------------------------
 
@@ -2916,80 +3004,81 @@ CREATE TABLE `users` (
   `full_name` varchar(100) NOT NULL,
   `email` varchar(100) DEFAULT NULL,
   `role_id` int(11) DEFAULT NULL,
-  `status` varchar(20) NOT NULL DEFAULT 'ACTIVE'
+  `status` varchar(20) NOT NULL DEFAULT 'ACTIVE',
+  `supervisor_pin_hash` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`user_id`, `username`, `password_hash`, `full_name`, `email`, `role_id`, `status`) VALUES
-(1, 'admin', '$2y$12$p18eJ8BVEaQPpwy7nOLOWucb7V13vY5ER06/MccViX1oWgMz/e3rq', 'System Administrator', 'admin@pos.com', 1, 'ACTIVE'),
-(2, 'cashier01', '$2y$10$0zLkrKDvQYIa/15D3Avotesi/qqO1l6dJZFBQEmVotVo.lfD64PNK', 'Juan Dela Cruz', 'cashier@pos.com', 2, 'ACTIVE'),
-(3, 'accounting01', '$2y$10$0zLkrKDvQYIa/15D3Avotesi/qqO1l6dJZFBQEmVotVo.lfD64PNK', 'Maria Santos', 'accounting@pos.com', 3, 'ACTIVE'),
-(4, 'crecks01', '$2y$10$HRKq0BXtPDMKFRvYdjwwYuBAoIJOyAKhYppG5L9enduWV34sLi0nm', 'crecks daidigan', 'nickcharlesclarito@gmail.com', 2, 'INACTIVE'),
-(5, 'clerk03', '$2y$10$OIhCYPbV4hsULaSSLsmomuAO5/ZhLDcaDif1QSYGWyP2NJTydgVsm', 'crecks daidigan', 'clarito.nickcharles@gmail.com', 5, 'INACTIVE'),
-(6, 'cashier02', '$2y$10$0zLkrKDvQYIa/15D3Avotesi/qqO1l6dJZFBQEmVotVo.lfD64PNK', 'Nick Charles Clarito', 'nickcharlesclarito@gmail.com', 2, 'ACTIVE'),
-(7, 'admin02', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Jose Reyes', 'admin02@pos.com', 1, 'ACTIVE'),
-(8, 'admin03', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Maria Cruz', 'admin03@pos.com', 1, 'ACTIVE'),
-(9, 'accounting02', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Juan Santos', 'accounting02@pos.com', 3, 'ACTIVE'),
-(10, 'accounting03', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Ana Garcia', 'accounting03@pos.com', 3, 'ACTIVE'),
-(11, 'accounting04', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Pedro Mendoza', 'accounting04@pos.com', 3, 'ACTIVE'),
-(12, 'accounting05', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Rosa Flores', 'accounting05@pos.com', 3, 'ACTIVE'),
-(13, 'accounting06', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Carlos Villanueva', 'accounting06@pos.com', 3, 'ACTIVE'),
-(14, 'accounting07', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Elena Ramos', 'accounting07@pos.com', 3, 'ACTIVE'),
-(15, 'accounting08', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Miguel Bautista', 'accounting08@pos.com', 3, 'ACTIVE'),
-(16, 'accounting09', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Luz Aquino', 'accounting09@pos.com', 3, 'ACTIVE'),
-(17, 'accounting10', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Antonio Navarro', 'accounting10@pos.com', 3, 'ACTIVE'),
-(18, 'accounting11', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Carmen Castillo', 'accounting11@pos.com', 3, 'ACTIVE'),
-(19, 'accounting12', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Ramon Dizon', 'accounting12@pos.com', 3, 'ACTIVE'),
-(20, 'accounting13', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Teresa Lopez', 'accounting13@pos.com', 3, 'ACTIVE'),
-(21, 'cashier03', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Fernando Torres', 'cashier03@pos.com', 2, 'ACTIVE'),
-(22, 'cashier04', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Gloria Domingo', 'cashier04@pos.com', 2, 'ACTIVE'),
-(23, 'cashier05', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Rafael Salazar', 'cashier05@pos.com', 2, 'ACTIVE'),
-(24, 'cashier06', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Josefina Pascual', 'cashier06@pos.com', 2, 'ACTIVE'),
-(25, 'cashier07', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Eduardo Valdez', 'cashier07@pos.com', 2, 'ACTIVE'),
-(26, 'cashier08', '$2y$10$0zLkrKDvQYIa/15D3Avotesi/qqO1l6dJZFBQEmVotVo.lfD64PNK', 'Lourdes Soriano', 'cashier08@pos.com', 2, 'ACTIVE'),
-(27, 'cashier09', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Ricardo Rivera', 'cashier09@pos.com', 2, 'ACTIVE'),
-(28, 'cashier10', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Marites Gonzales', 'cashier10@pos.com', 2, 'ACTIVE'),
-(29, 'cashier11', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Roberto Fernandez', 'cashier11@pos.com', 2, 'ACTIVE'),
-(30, 'cashier12', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Cristina De Leon', 'cashier12@pos.com', 2, 'ACTIVE'),
-(31, 'cashier13', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Alberto Aguilar', 'cashier13@pos.com', 2, 'ACTIVE'),
-(32, 'cashier14', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Imelda Morales', 'cashier14@pos.com', 2, 'ACTIVE'),
-(33, 'cashier15', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Danilo Padilla', 'cashier15@pos.com', 2, 'ACTIVE'),
-(34, 'cashier16', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Jocelyn Marquez', 'cashier16@pos.com', 2, 'ACTIVE'),
-(35, 'cashier17', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Renato Tolentino', 'cashier17@pos.com', 2, 'ACTIVE'),
-(36, 'cashier18', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Divina Manalo', 'cashier18@pos.com', 2, 'ACTIVE'),
-(37, 'cashier19', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Arnel Lim', 'cashier19@pos.com', 2, 'ACTIVE'),
-(38, 'cashier20', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Maricel Tan', 'cashier20@pos.com', 2, 'ACTIVE'),
-(39, 'cashier21', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Jun Panganiban', 'cashier21@pos.com', 2, 'ACTIVE'),
-(40, 'cashier22', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Rowena Corpuz', 'cashier22@pos.com', 2, 'ACTIVE'),
-(41, 'cashier23', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Allan Ocampo', 'cashier23@pos.com', 2, 'ACTIVE'),
-(42, 'cashier24', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Analyn Magsaysay', 'cashier24@pos.com', 2, 'ACTIVE'),
-(43, 'cashier25', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Edgar Evangelista', 'cashier25@pos.com', 2, 'ACTIVE'),
-(44, 'cashier26', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Liza Cabrera', 'cashier26@pos.com', 2, 'ACTIVE'),
-(45, 'cashier27', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Noel Agustin', 'cashier27@pos.com', 2, 'ACTIVE'),
-(46, 'cashier28', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Sheila Zamora', 'cashier28@pos.com', 2, 'ACTIVE'),
-(47, 'cashier29', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Dennis Ibarra', 'cashier29@pos.com', 2, 'ACTIVE'),
-(48, 'cashier30', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Mylene Estrada', 'cashier30@pos.com', 2, 'ACTIVE'),
-(49, 'cashier31', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Jericho Luna', 'cashier31@pos.com', 2, 'ACTIVE'),
-(50, 'cashier32', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Joyce Macaraeg', 'cashier32@pos.com', 2, 'ACTIVE'),
-(51, 'cashier33', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Kevin Sison', 'cashier33@pos.com', 2, 'ACTIVE'),
-(52, 'cashier34', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Angelica Abad', 'cashier34@pos.com', 2, 'ACTIVE'),
-(53, 'cashier35', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Mark Delos Santos', 'cashier35@pos.com', 2, 'ACTIVE'),
-(54, 'cashier36', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Bianca Pineda', 'cashier36@pos.com', 2, 'ACTIVE'),
-(55, 'cashier37', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Paolo Robles', 'cashier37@pos.com', 2, 'ACTIVE'),
-(56, 'cashier38', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Camille Hernandez', 'cashier38@pos.com', 2, 'ACTIVE'),
-(57, 'supervisor01', '$2y$10$0zLkrKDvQYIa/15D3Avotesi/qqO1l6dJZFBQEmVotVo.lfD64PNK', 'Rodrigo Mercado', 'supervisor01@pos.com', 7, 'ACTIVE'),
-(58, 'supervisor02', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Beatriz Llamas', 'supervisor02@pos.com', 7, 'ACTIVE'),
-(59, 'supervisor03', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Orlando Dela Vega', 'supervisor03@pos.com', 7, 'ACTIVE'),
-(60, 'supervisor04', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Evelyn Sarmiento', 'supervisor04@pos.com', 7, 'ACTIVE'),
-(61, 'supervisor05', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Gilbert Ramirez', 'supervisor05@pos.com', 7, 'ACTIVE'),
-(62, 'supervisor06', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Norma Esguerra', 'supervisor06@pos.com', 7, 'ACTIVE'),
-(63, 'supervisor07', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Felix Buenaventura', 'supervisor07@pos.com', 7, 'ACTIVE'),
-(64, 'supervisor08', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Teresita Calderon', 'supervisor08@pos.com', 7, 'ACTIVE'),
-(65, 'supervisor09', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Vicente Alonzo', 'supervisor09@pos.com', 7, 'ACTIVE'),
-(66, 'supervisor10', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Lorna Dimagiba', 'supervisor10@pos.com', 7, 'ACTIVE');
+INSERT INTO `users` (`user_id`, `username`, `password_hash`, `full_name`, `email`, `role_id`, `status`, `supervisor_pin_hash`) VALUES
+(1, 'admin', '$2y$12$p18eJ8BVEaQPpwy7nOLOWucb7V13vY5ER06/MccViX1oWgMz/e3rq', 'System Administrator', 'admin@pos.com', 1, 'ACTIVE', NULL),
+(2, 'cashier01', '$2y$10$0zLkrKDvQYIa/15D3Avotesi/qqO1l6dJZFBQEmVotVo.lfD64PNK', 'Juan Dela Cruz', 'cashier@pos.com', 2, 'ACTIVE', NULL),
+(3, 'accounting01', '$2y$10$0zLkrKDvQYIa/15D3Avotesi/qqO1l6dJZFBQEmVotVo.lfD64PNK', 'Maria Santos', 'accounting@pos.com', 3, 'ACTIVE', NULL),
+(4, 'crecks01', '$2y$10$HRKq0BXtPDMKFRvYdjwwYuBAoIJOyAKhYppG5L9enduWV34sLi0nm', 'crecks daidigan', 'nickcharlesclarito@gmail.com', 2, 'INACTIVE', NULL),
+(5, 'clerk03', '$2y$10$OIhCYPbV4hsULaSSLsmomuAO5/ZhLDcaDif1QSYGWyP2NJTydgVsm', 'crecks daidigan', 'clarito.nickcharles@gmail.com', 5, 'INACTIVE', NULL),
+(6, 'cashier02', '$2y$10$0zLkrKDvQYIa/15D3Avotesi/qqO1l6dJZFBQEmVotVo.lfD64PNK', 'Nick Charles Clarito', 'nickcharlesclarito@gmail.com', 2, 'ACTIVE', NULL),
+(7, 'admin02', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Jose Reyes', 'admin02@pos.com', 1, 'ACTIVE', NULL),
+(8, 'admin03', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Maria Cruz', 'admin03@pos.com', 1, 'ACTIVE', NULL),
+(9, 'accounting02', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Juan Santos', 'accounting02@pos.com', 3, 'ACTIVE', NULL),
+(10, 'accounting03', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Ana Garcia', 'accounting03@pos.com', 3, 'ACTIVE', NULL),
+(11, 'accounting04', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Pedro Mendoza', 'accounting04@pos.com', 3, 'ACTIVE', NULL),
+(12, 'accounting05', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Rosa Flores', 'accounting05@pos.com', 3, 'ACTIVE', NULL),
+(13, 'accounting06', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Carlos Villanueva', 'accounting06@pos.com', 3, 'ACTIVE', NULL),
+(14, 'accounting07', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Elena Ramos', 'accounting07@pos.com', 3, 'ACTIVE', NULL),
+(15, 'accounting08', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Miguel Bautista', 'accounting08@pos.com', 3, 'ACTIVE', NULL),
+(16, 'accounting09', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Luz Aquino', 'accounting09@pos.com', 3, 'ACTIVE', NULL),
+(17, 'accounting10', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Antonio Navarro', 'accounting10@pos.com', 3, 'ACTIVE', NULL),
+(18, 'accounting11', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Carmen Castillo', 'accounting11@pos.com', 3, 'ACTIVE', NULL),
+(19, 'accounting12', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Ramon Dizon', 'accounting12@pos.com', 3, 'ACTIVE', NULL),
+(20, 'accounting13', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Teresa Lopez', 'accounting13@pos.com', 3, 'ACTIVE', NULL),
+(21, 'cashier03', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Fernando Torres', 'cashier03@pos.com', 2, 'ACTIVE', NULL),
+(22, 'cashier04', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Gloria Domingo', 'cashier04@pos.com', 2, 'ACTIVE', NULL),
+(23, 'cashier05', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Rafael Salazar', 'cashier05@pos.com', 2, 'ACTIVE', NULL),
+(24, 'cashier06', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Josefina Pascual', 'cashier06@pos.com', 2, 'ACTIVE', NULL),
+(25, 'cashier07', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Eduardo Valdez', 'cashier07@pos.com', 2, 'ACTIVE', NULL),
+(26, 'cashier08', '$2y$10$0zLkrKDvQYIa/15D3Avotesi/qqO1l6dJZFBQEmVotVo.lfD64PNK', 'Lourdes Soriano', 'cashier08@pos.com', 2, 'ACTIVE', NULL),
+(27, 'cashier09', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Ricardo Rivera', 'cashier09@pos.com', 2, 'ACTIVE', NULL),
+(28, 'cashier10', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Marites Gonzales', 'cashier10@pos.com', 2, 'ACTIVE', NULL),
+(29, 'cashier11', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Roberto Fernandez', 'cashier11@pos.com', 2, 'ACTIVE', NULL),
+(30, 'cashier12', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Cristina De Leon', 'cashier12@pos.com', 2, 'ACTIVE', NULL),
+(31, 'cashier13', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Alberto Aguilar', 'cashier13@pos.com', 2, 'ACTIVE', NULL),
+(32, 'cashier14', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Imelda Morales', 'cashier14@pos.com', 2, 'ACTIVE', NULL),
+(33, 'cashier15', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Danilo Padilla', 'cashier15@pos.com', 2, 'ACTIVE', NULL),
+(34, 'cashier16', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Jocelyn Marquez', 'cashier16@pos.com', 2, 'ACTIVE', NULL),
+(35, 'cashier17', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Renato Tolentino', 'cashier17@pos.com', 2, 'ACTIVE', NULL),
+(36, 'cashier18', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Divina Manalo', 'cashier18@pos.com', 2, 'ACTIVE', NULL),
+(37, 'cashier19', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Arnel Lim', 'cashier19@pos.com', 2, 'ACTIVE', NULL),
+(38, 'cashier20', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Maricel Tan', 'cashier20@pos.com', 2, 'ACTIVE', NULL),
+(39, 'cashier21', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Jun Panganiban', 'cashier21@pos.com', 2, 'ACTIVE', NULL),
+(40, 'cashier22', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Rowena Corpuz', 'cashier22@pos.com', 2, 'ACTIVE', NULL),
+(41, 'cashier23', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Allan Ocampo', 'cashier23@pos.com', 2, 'ACTIVE', NULL),
+(42, 'cashier24', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Analyn Magsaysay', 'cashier24@pos.com', 2, 'ACTIVE', NULL),
+(43, 'cashier25', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Edgar Evangelista', 'cashier25@pos.com', 2, 'ACTIVE', NULL),
+(44, 'cashier26', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Liza Cabrera', 'cashier26@pos.com', 2, 'ACTIVE', NULL),
+(45, 'cashier27', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Noel Agustin', 'cashier27@pos.com', 2, 'ACTIVE', NULL),
+(46, 'cashier28', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Sheila Zamora', 'cashier28@pos.com', 2, 'ACTIVE', NULL),
+(47, 'cashier29', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Dennis Ibarra', 'cashier29@pos.com', 2, 'ACTIVE', NULL),
+(48, 'cashier30', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Mylene Estrada', 'cashier30@pos.com', 2, 'ACTIVE', NULL),
+(49, 'cashier31', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Jericho Luna', 'cashier31@pos.com', 2, 'ACTIVE', NULL),
+(50, 'cashier32', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Joyce Macaraeg', 'cashier32@pos.com', 2, 'ACTIVE', NULL),
+(51, 'cashier33', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Kevin Sison', 'cashier33@pos.com', 2, 'ACTIVE', NULL),
+(52, 'cashier34', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Angelica Abad', 'cashier34@pos.com', 2, 'ACTIVE', NULL),
+(53, 'cashier35', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Mark Delos Santos', 'cashier35@pos.com', 2, 'ACTIVE', NULL),
+(54, 'cashier36', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Bianca Pineda', 'cashier36@pos.com', 2, 'ACTIVE', NULL),
+(55, 'cashier37', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Paolo Robles', 'cashier37@pos.com', 2, 'ACTIVE', NULL),
+(56, 'cashier38', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Camille Hernandez', 'cashier38@pos.com', 2, 'ACTIVE', NULL),
+(57, 'supervisor01', '$2y$10$0zLkrKDvQYIa/15D3Avotesi/qqO1l6dJZFBQEmVotVo.lfD64PNK', 'Rodrigo Mercado', 'supervisor01@pos.com', 7, 'ACTIVE', NULL),
+(58, 'supervisor02', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Beatriz Llamas', 'supervisor02@pos.com', 7, 'ACTIVE', NULL),
+(59, 'supervisor03', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Orlando Dela Vega', 'supervisor03@pos.com', 7, 'ACTIVE', NULL),
+(60, 'supervisor04', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Evelyn Sarmiento', 'supervisor04@pos.com', 7, 'ACTIVE', NULL),
+(61, 'supervisor05', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Gilbert Ramirez', 'supervisor05@pos.com', 7, 'ACTIVE', NULL),
+(62, 'supervisor06', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Norma Esguerra', 'supervisor06@pos.com', 7, 'ACTIVE', NULL),
+(63, 'supervisor07', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Felix Buenaventura', 'supervisor07@pos.com', 7, 'ACTIVE', NULL),
+(64, 'supervisor08', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Teresita Calderon', 'supervisor08@pos.com', 7, 'ACTIVE', NULL),
+(65, 'supervisor09', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Vicente Alonzo', 'supervisor09@pos.com', 7, 'ACTIVE', NULL),
+(66, 'supervisor10', '$2y$10$II4Os88iGu8VwkQ1GzlPl.lss2bW/ZCMr2FUuh1rCSIGQ9XN64rEK', 'Lorna Dimagiba', 'supervisor10@pos.com', 7, 'ACTIVE', NULL);
 
 --
 -- Indexes for dumped tables
@@ -3001,6 +3090,14 @@ INSERT INTO `users` (`user_id`, `username`, `password_hash`, `full_name`, `email
 ALTER TABLE `customers`
   ADD PRIMARY KEY (`customer_id`),
   ADD KEY `fk_customers_group_days` (`group_days_id`);
+
+--
+-- Indexes for table `email_notification_state`
+--
+ALTER TABLE `email_notification_state`
+  ADD PRIMARY KEY (`notification_key`),
+  ADD KEY `idx_email_notification_customer` (`customer_id`),
+  ADD KEY `idx_email_notification_invoice` (`invoice_id`);
 
 --
 -- Indexes for table `group_days`
@@ -3032,7 +3129,8 @@ ALTER TABLE `payments_hdr`
   ADD UNIQUE KEY `payment_number` (`payment_number`),
   ADD KEY `fk_payments_customer` (`customer_id`),
   ADD KEY `fk_payments_method` (`payment_method_id`),
-  ADD KEY `fk_payments_shift` (`shift_id`);
+  ADD KEY `fk_payments_shift` (`shift_id`),
+  ADD KEY `fk_payments_created_by` (`created_by`);
 
 --
 -- Indexes for table `payment_methods`
@@ -3048,7 +3146,7 @@ ALTER TABLE `pos_supervisor_actions`
   ADD PRIMARY KEY (`action_id`),
   ADD KEY `idx_pos_supervisor_actions_shift` (`shift_id`),
   ADD KEY `idx_pos_supervisor_actions_supervisor` (`supervisor_user_id`),
-  ADD KEY `idx_pos_supervisor_actions_sale` (`related_sale_id`);
+  ADD KEY `cashier_user_id` (`cashier_user_id`);
 
 --
 -- Indexes for table `products`
@@ -3089,16 +3187,6 @@ ALTER TABLE `sales_hdr`
   ADD KEY `fk_sales_terminal` (`terminal_id`),
   ADD KEY `fk_sales_user` (`created_by`),
   ADD KEY `fk_sales_shift` (`shift_id`);
-
---
--- Indexes for table `sale_void_requests`
---
-ALTER TABLE `sale_void_requests`
-  ADD PRIMARY KEY (`void_request_id`),
-  ADD KEY `idx_sale_void_status` (`status`),
-  ADD KEY `idx_sale_void_sales` (`sales_id`),
-  ADD KEY `fk_sale_void_requested_by` (`requested_by`),
-  ADD KEY `fk_sale_void_decided_by` (`decided_by`);
 
 --
 -- Indexes for table `shifts`
@@ -3176,19 +3264,19 @@ ALTER TABLE `group_days`
 -- AUTO_INCREMENT for table `invoice`
 --
 ALTER TABLE `invoice`
-  MODIFY `invoice_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=554;
+  MODIFY `invoice_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=570;
 
 --
 -- AUTO_INCREMENT for table `payments_dtl`
 --
 ALTER TABLE `payments_dtl`
-  MODIFY `payment_detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=432;
+  MODIFY `payment_detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=438;
 
 --
 -- AUTO_INCREMENT for table `payments_hdr`
 --
 ALTER TABLE `payments_hdr`
-  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=375;
+  MODIFY `payment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=381;
 
 --
 -- AUTO_INCREMENT for table `payment_methods`
@@ -3200,7 +3288,7 @@ ALTER TABLE `payment_methods`
 -- AUTO_INCREMENT for table `pos_supervisor_actions`
 --
 ALTER TABLE `pos_supervisor_actions`
-  MODIFY `action_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+  MODIFY `action_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
 -- AUTO_INCREMENT for table `products`
@@ -3224,31 +3312,25 @@ ALTER TABLE `roles`
 -- AUTO_INCREMENT for table `sales_dtl`
 --
 ALTER TABLE `sales_dtl`
-  MODIFY `sales_detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1593;
+  MODIFY `sales_detail_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1630;
 
 --
 -- AUTO_INCREMENT for table `sales_hdr`
 --
 ALTER TABLE `sales_hdr`
-  MODIFY `sales_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=572;
-
---
--- AUTO_INCREMENT for table `sale_void_requests`
---
-ALTER TABLE `sale_void_requests`
-  MODIFY `void_request_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `sales_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=588;
 
 --
 -- AUTO_INCREMENT for table `shifts`
 --
 ALTER TABLE `shifts`
-  MODIFY `shift_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=278;
+  MODIFY `shift_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=280;
 
 --
 -- AUTO_INCREMENT for table `shift_cash_movement`
 --
 ALTER TABLE `shift_cash_movement`
-  MODIFY `movement_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=66;
+  MODIFY `movement_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=69;
 
 --
 -- AUTO_INCREMENT for table `shift_schedule`
@@ -3291,6 +3373,13 @@ ALTER TABLE `customers`
   ADD CONSTRAINT `fk_customers_group_days` FOREIGN KEY (`group_days_id`) REFERENCES `group_days` (`id`);
 
 --
+-- Constraints for table `email_notification_state`
+--
+ALTER TABLE `email_notification_state`
+  ADD CONSTRAINT `email_notification_state_ibfk_1` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`customer_id`),
+  ADD CONSTRAINT `email_notification_state_ibfk_2` FOREIGN KEY (`invoice_id`) REFERENCES `invoice` (`invoice_id`);
+
+--
 -- Constraints for table `invoice`
 --
 ALTER TABLE `invoice`
@@ -3309,7 +3398,16 @@ ALTER TABLE `payments_dtl`
 ALTER TABLE `payments_hdr`
   ADD CONSTRAINT `fk_payments_customer` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`customer_id`),
   ADD CONSTRAINT `fk_payments_method` FOREIGN KEY (`payment_method_id`) REFERENCES `payment_methods` (`payment_method_id`),
-  ADD CONSTRAINT `fk_payments_shift` FOREIGN KEY (`shift_id`) REFERENCES `shifts` (`shift_id`);
+  ADD CONSTRAINT `fk_payments_shift` FOREIGN KEY (`shift_id`) REFERENCES `shifts` (`shift_id`),
+  ADD CONSTRAINT `fk_payments_created_by` FOREIGN KEY (`created_by`) REFERENCES `users` (`user_id`);
+
+--
+-- Constraints for table `pos_supervisor_actions`
+--
+ALTER TABLE `pos_supervisor_actions`
+  ADD CONSTRAINT `pos_supervisor_actions_ibfk_1` FOREIGN KEY (`shift_id`) REFERENCES `shifts` (`shift_id`),
+  ADD CONSTRAINT `pos_supervisor_actions_ibfk_2` FOREIGN KEY (`cashier_user_id`) REFERENCES `users` (`user_id`),
+  ADD CONSTRAINT `pos_supervisor_actions_ibfk_3` FOREIGN KEY (`supervisor_user_id`) REFERENCES `users` (`user_id`);
 
 --
 -- Constraints for table `products`
@@ -3333,14 +3431,6 @@ ALTER TABLE `sales_hdr`
   ADD CONSTRAINT `fk_sales_shift` FOREIGN KEY (`shift_id`) REFERENCES `shifts` (`shift_id`),
   ADD CONSTRAINT `fk_sales_terminal` FOREIGN KEY (`terminal_id`) REFERENCES `tbl_pos_terminal` (`terminal_id`),
   ADD CONSTRAINT `fk_sales_user` FOREIGN KEY (`created_by`) REFERENCES `users` (`user_id`);
-
---
--- Constraints for table `sale_void_requests`
---
-ALTER TABLE `sale_void_requests`
-  ADD CONSTRAINT `fk_sale_void_decided_by` FOREIGN KEY (`decided_by`) REFERENCES `users` (`user_id`),
-  ADD CONSTRAINT `fk_sale_void_requested_by` FOREIGN KEY (`requested_by`) REFERENCES `users` (`user_id`),
-  ADD CONSTRAINT `fk_sale_void_sales` FOREIGN KEY (`sales_id`) REFERENCES `sales_hdr` (`sales_id`);
 
 --
 -- Constraints for table `shifts`

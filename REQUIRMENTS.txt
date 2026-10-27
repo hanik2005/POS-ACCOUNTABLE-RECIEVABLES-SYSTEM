@@ -6,3 +6,29 @@ Push/Post the POS transaction to Accounts Receivable
 Generate Sales Report
 Expected Flow:
 POS Transaction → Post to AR → Accounts Receivable Record → Sales Report
+
+Mailer setup
+------------
+PHPMailer is installed with Composer. Set the SMTP host, port, encryption,
+username, password, sender email, and sender name using the POS_AR_SMTP_* and
+POS_AR_MAIL_* environment variables. Do not save SMTP credentials in source
+control. From the project root, run `composer install` to install dependencies.
+Alternatively, copy mailer_details.local.php.example to
+mailer_details.local.php in the project root, then enter your SMTP username,
+password, and sender email there; the local file is ignored by Git. For Gmail,
+use a Google App Password with 2-Step Verification enabled.
+
+For an existing database, run these once:
+- api_functional/supervisor_pin.sql
+- api_functional/email_notification_state.sql
+
+The changes are also included in pos_ar_database.sql for new database
+installations.
+Configure Windows Task Scheduler to run this once daily:
+D:\XAAMP\php\php.exe D:\XAAMP\htdocs\POS_AR_SYSTEM\api_functional\email_notifications.php
+
+Completed AR invoices are emailed with their saved PDF. The scheduled task
+sends one reminder for each unpaid invoice on or after its due date.
+Credit-limit notices are sent manually from the Credit Limit Report, once per
+over-limit period. The Aging Report can send one reminder per customer for
+each overdue aging period.

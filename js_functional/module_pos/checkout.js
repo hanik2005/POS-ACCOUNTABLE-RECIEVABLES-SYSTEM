@@ -11,6 +11,26 @@ const showCreditLimitDialog = (message) => {
   openMessageDialog("Credit limit reached", message);
 };
 
+const showInvoiceEmailToast = async (invoice) => {
+  const pdf = await invoice;
+  const sent = pdf && pdf.email && pdf.email.success === true;
+
+  Swal.fire({
+    toast: true,
+    position: "top-end",
+    icon: sent ? "success" : "error",
+    title: sent ? "Invoice sent to customer email" : "Invoice email was not sent",
+    text: sent
+      ? `${pdf.invoiceNumber} was emailed to the customer.`
+      : pdf && pdf.email
+        ? pdf.email.message
+        : "The invoice could not be prepared or emailed.",
+    showConfirmButton: false,
+    timer: 5000,
+    timerProgressBar: true,
+  });
+};
+
 export const startWalkInCheckout = () => {
   if (state.details.length == 0) {
     return;
@@ -242,6 +262,8 @@ export const saveSale = async (status, payment) => {
     amount: getTotalSales(),
     payment: payment || null,
   };
+  const emailInvoice = header.saleType == "AR"
+    || (header.saleType != "WALK_IN" && header.customerId != null);
 
   const jsonData = { header: header, details: state.details };
 
@@ -249,11 +271,18 @@ export const saveSale = async (status, payment) => {
   formData.append("operation", "insertSale");
   formData.append("json", JSON.stringify(jsonData));
 
-  const response = await axios({
-    url: `${baseAPI}/sales.php`,
-    method: "POST",
-    data: formData,
-  });
+  let response;
+
+  try {
+    response = await axios({
+      url: `${baseAPI}/sales.php`,
+      method: "POST",
+      data: formData,
+    });
+  } catch {
+    openMessageDialog("Sale not saved", "The server request failed. Check the connection and try again.");
+    return;
+  }
 
   if (response.data && response.data.success === false) {
     showCreditLimitDialog(response.data.message);
@@ -274,26 +303,32 @@ export const saveSale = async (status, payment) => {
     let afterDialog = null;
 
     if (status == "COMPLETED") {
-      const invoice = prepareInvoice(response.data);
+      const invoice = prepareInvoice(response.data, emailInvoice);
 
-      afterDialog = () => openPrintDialog(invoice);
+      if (emailInvoice) {
+        showInvoiceEmailToast(invoice);
+      } else {
+        afterDialog = () => openPrintDialog(invoice);
+      }
     }
 
     if (status == "HOLD") {
       openMessageDialog("Sale on hold", "Press F8 to recall it when the customer comes back.");
-    } else if (payment && balance > 0) {
+    } else if (!emailInvoice && payment && balance > 0) {
       openMessageDialog(
         "Partial payment",
         `${text}<br>Paid ${formatCurrency(payment.amountApplied)} · Balance ${formatCurrency(balance)} posted to Accounts Receivable`,
         afterDialog,
       );
-    } else if (payment) {
+    } else if (!emailInvoice && payment) {
       openMessageDialog(change > 0 ? `Change ${formatCurrency(change)}` : "Paid", text, afterDialog);
-    } else {
+    } else if (!emailInvoice) {
       openMessageDialog("Posted to Accounts Receivable", text, afterDialog);
     }
 
-    refreshShift();
+    refreshShift().catch(() => {
+      openMessageDialog("Shift refresh failed", "The sale was saved, but the current shift summary could not be refreshed.");
+    });
   } else {
     openMessageDialog("ERROR", "The sale was not saved.");
   }

@@ -18,12 +18,25 @@ export const movementLabel = (item) => {
   return parseFloat(item.amount) > 0 ? "Float add" : "Float remove";
 };
 
+const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+}[character]));
+
 export const openDrawerDialog = async () => {
   if (state.dialog) {
     return;
   }
 
-  await refreshShift();
+  try {
+    await refreshShift();
+  } catch {
+    openMessageDialog("Shift unavailable", "The active shift could not be loaded. Check the connection and try again.");
+    return;
+  }
 
   if (state.dialog || !state.shift) {
     return;
@@ -31,12 +44,20 @@ export const openDrawerDialog = async () => {
 
   const shift = state.shift;
 
-  const response = await axios.get(`${baseAPI}/shift.php`, {
-    params: {
-      operation: "getCashMovements",
-      json: JSON.stringify({ shiftId: shift.shift_id }),
-    },
-  });
+  let movements = [];
+
+  try {
+    const response = await axios.get(`${baseAPI}/shift.php`, {
+      params: {
+        operation: "getCashMovements",
+        json: JSON.stringify({ shiftId: shift.shift_id }),
+      },
+    });
+    movements = Array.isArray(response.data) ? response.data.slice(0, 5) : [];
+  } catch {
+    openMessageDialog("Cash drawer unavailable", "Cash movement history could not be loaded. Check the connection and try again.");
+    return;
+  }
 
   let index = 0;
 
@@ -52,26 +73,23 @@ export const openDrawerDialog = async () => {
      <div id="dialog-list" class="mt-2"></div>
      <input id="dialog-input" type="number" step="0.01" min="0.01" class="pos-input mt-2" placeholder="Amount">
      <input id="dialog-reason" type="text" class="pos-input mt-2" placeholder="Reason for movement" autocomplete="off">
-     ${response.data
-       .slice(0, 5)
+     ${movements
        .map(
          (item) => `
            <div class="list-row">
-             <span>${movementLabel(item)}</span>
-             <span>${item.status}</span>
-             <span>${formatCurrency(Math.abs(parseFloat(item.amount)))}</span>
-            <span>${item.approver_name || "Supervisor not recorded"}</span>
+             <span>${escapeHtml(movementLabel(item))}</span>
+             <span>${escapeHtml(item.status)}</span>
+             <span>${formatCurrency(Math.abs(Number(item.amount) || 0))}</span>
+             <span>${escapeHtml(item.approver_name || "Supervisor not recorded")}</span>
            </div>
          `,
        )
        .join("")}
-     <label class="dialog-label" for="supervisor-username">Supervisor username</label>
-     <input id="supervisor-username" type="text" class="pos-input mt-2"
-       placeholder="Supervisor username" autocomplete="username">
-     <label class="dialog-label" for="supervisor-password">Supervisor password</label>
-     <input id="supervisor-password" type="password" class="pos-input mt-2"
-       placeholder="Supervisor password" autocomplete="current-password">`,
-    "↑↓ select · Enter = next / record with supervisor sign-in · Esc = cancel",
+     <label class="dialog-label" for="supervisor-pin">Supervisor PIN</label>
+     <input id="supervisor-pin" type="password" inputmode="numeric" maxlength="6" class="pos-input mt-2"
+       placeholder="Enter 4-6 digit PIN" autocomplete="off">
+     <p id="drawer-error" class="dialog-text" role="alert"></p>`,
+    "↑↓ select · Enter = next / record with supervisor PIN · Esc = cancel",
     (e) => {
       if (e.key == "Escape") {
         e.preventDefault();
@@ -89,8 +107,7 @@ export const openDrawerDialog = async () => {
         } else {
           const nextField = {
             "dialog-input": "dialog-reason",
-            "dialog-reason": "supervisor-username",
-            "supervisor-username": "supervisor-password",
+            "dialog-reason": "supervisor-pin",
           }[document.activeElement.id];
 
           if (nextField) {
@@ -100,8 +117,7 @@ export const openDrawerDialog = async () => {
               drawerTypes[index],
               amount,
               document.getElementById("dialog-reason").value,
-              document.getElementById("supervisor-username").value.trim(),
-              document.getElementById("supervisor-password").value,
+              document.getElementById("supervisor-pin").value.trim(),
             );
           }
         }
@@ -113,9 +129,22 @@ export const openDrawerDialog = async () => {
   focusDialogInput();
 };
 
-export const saveMovement = async (type, amount, reason, supervisorUsername, supervisorPassword) => {
+export const saveMovement = async (type, amount, reason, supervisorPin) => {
   if (reason.trim() == "") {
+    document.getElementById("drawer-error").innerText = "Enter a reason for the cash movement.";
     document.getElementById("dialog-reason").focus();
+    return;
+  }
+
+  if (!/^\d{4,6}$/.test(supervisorPin)) {
+    document.getElementById("drawer-error").innerText = "Enter a 4-6 digit supervisor PIN.";
+    document.getElementById("supervisor-pin").focus();
+    return;
+  }
+
+  if (!state.shift || !Number.isFinite(amount) || amount <= 0) {
+    document.getElementById("drawer-error").innerText = "Enter a valid amount for an active shift.";
+    document.getElementById("dialog-input").focus();
     return;
   }
 
@@ -126,32 +155,51 @@ export const saveMovement = async (type, amount, reason, supervisorUsername, sup
     movementType: type.movementType,
     amount: amount * type.sign,
     reason: reason,
-    supervisorUsername: supervisorUsername,
-    supervisorPassword: supervisorPassword,
+    supervisorPin: supervisorPin,
   };
 
   const formData = new FormData();
   formData.append("operation", "saveCashMovement");
   formData.append("json", JSON.stringify(jsonData));
 
-  const response = await axios({
-    url: `${baseAPI}/shift.php`,
-    method: "POST",
-    data: formData,
-  });
+  let response;
+
+  try {
+    response = await axios({
+      url: `${baseAPI}/shift.php`,
+      method: "POST",
+      data: formData,
+    });
+  } catch {
+    openMessageDialog("Cash movement not saved", "The server request failed. Check the connection and try again.");
+    return;
+  }
+
+  let shiftRefreshFailed = false;
+  if (response.data == 1) {
+    try {
+      await refreshShift();
+    } catch {
+      shiftRefreshFailed = true;
+    }
+  }
+
+  const refreshMessage = shiftRefreshFailed
+    ? " The movement was saved, but the current shift summary could not be refreshed."
+    : "";
 
   if (response.data == 1 && type.movementType == "FLOAT_ADJUST") {
     openMessageDialog(
       "Float updated",
-      `${type.sign > 0 ? "Added" : "Removed"} ${formatCurrency(amount)}. The supervisor recorded the change at this POS.`,
+      `${type.sign > 0 ? "Added" : "Removed"} ${formatCurrency(amount)}. The supervisor recorded the change at this POS.${refreshMessage}`,
     );
   } else if (response.data == 1) {
     openMessageDialog(
       "Cash dropped",
-      `${formatCurrency(amount)} was recorded by the supervisor at this POS.`,
+      `${formatCurrency(amount)} was recorded by the supervisor at this POS.${refreshMessage}`,
     );
   } else if (response.data == 3) {
-    openMessageDialog("Supervisor verification failed", "Check the supervisor username and password.");
+    openMessageDialog("Supervisor PIN not recognized", "Check that the supervisor PIN is active and try again.");
   } else if (response.data == 4) {
     openMessageDialog(
       "Not enough cash",
@@ -161,5 +209,4 @@ export const saveMovement = async (type, amount, reason, supervisorUsername, sup
     openMessageDialog("ERROR", "The cash movement was not saved. Check the open shift and try again.");
   }
 
-  refreshShift();
 };

@@ -11,9 +11,9 @@ const pages = [
   { file: "units.html", title: "Units", roles: ["ADMIN"] },
   { file: "product_categories.html", title: "Product Categories", roles: ["ADMIN"] },
   { file: "users.html", title: "Users", roles: ["ADMIN"] },
-  { file: "pos.html", title: "POS", roles: ["CASHIER", "SUPERVISOR"], menu: true },
+  { file: "pos.html", title: "POS", roles: ["CASHIER"], menu: true },
   { file: "invoice.html", title: "Accounts Receivable", roles: ["ADMIN", "ACCOUNTING"], menu: true },
-  { file: "sales_report.html", title: "Sales Report", roles: ["ADMIN", "ACCOUNTING"], menu: true },
+  { file: "sales_report.html", title: "Sales Report", roles: ["ADMIN", "ACCOUNTING", "SUPERVISOR"], menu: true },
   { file: "aging_report.html", title: "Aging Report", roles: ["ADMIN", "ACCOUNTING"], menu: true },
   { file: "credit_limit_report.html", title: "Credit Limit Report", roles: ["ADMIN", "ACCOUNTING"], menu: true },
   {
@@ -28,6 +28,7 @@ const pages = [
     roles: ["ADMIN", "ACCOUNTING", "SUPERVISOR"],
     menu: true,
   },
+  { file: "supervisor_pin.html", title: "Supervisor PIN", roles: ["SUPERVISOR"], menu: true },
   { file: "terminal_assignment.html", title: "Terminal Assignment", roles: ["ADMIN"], menu: true },
 ];
 
@@ -35,6 +36,18 @@ const currentPage = window.location.pathname.split("/").pop();
 const currentPath = window.location.pathname.toLowerCase();
 
 const getPageHref = (file) => {
+  if (currentPath.includes("/interface/supervisor/")) {
+    const supervisorPagePaths = {
+      "shift_report.html": "shift_report.html",
+      "daily_report.html": "daily_report.html",
+      "sales_report.html": "sales_report.html",
+    };
+
+    if (supervisorPagePaths[file]) {
+      return supervisorPagePaths[file];
+    }
+  }
+
   if (currentPath.includes("/interface/cashier/")
     && [
       "invoice.html",
@@ -52,9 +65,20 @@ const getPageHref = (file) => {
 document.documentElement.style.visibility = "hidden";
 
 const checkSession = async () => {
-  const response = await axios.get(`${baseAPI}/session.php`, {
-    params: { operation: "getSession" },
-  });
+  let response;
+
+  try {
+    response = await axios.get(`${baseAPI}/session.php`, {
+      params: { operation: "getSession" },
+    });
+  } catch {
+    const errorMessage = document.createElement("div");
+    errorMessage.className = "alert alert-danger m-4";
+    errorMessage.textContent = "Unable to verify your session. Check the connection and refresh the page.";
+    document.body.replaceChildren(errorMessage);
+    document.documentElement.style.visibility = "visible";
+    return;
+  }
 
   if (response.status == 200 && response.data.success) {
     const user = response.data.user;
@@ -214,16 +238,29 @@ const logout = async () => {
   const formData = new FormData();
   formData.append("operation", "logout");
 
-  const response = await axios({
-    url: `${baseAPI}/session.php`,
-    method: "POST",
-    data: formData,
-  });
+  let response;
+
+  try {
+    response = await axios({
+      url: `${baseAPI}/session.php`,
+      method: "POST",
+      data: formData,
+    });
+  } catch {
+    if (window.Swal) {
+      Swal.fire("Logout failed", "The server request failed. Check the connection and try again.", "error");
+    } else {
+      window.alert("Logout failed. Check the connection and try again.");
+    }
+    return;
+  }
 
   if (response.data.success) {
     window.location.href = `${baseUrl}/index.html`;
+  } else if (window.Swal) {
+    Swal.fire("Logout failed", "The server did not end the session. Try again.", "error");
   } else {
-    Swal.fire("ERROR!");
+    window.alert("Logout failed. The server did not end the session.");
   }
 };
 

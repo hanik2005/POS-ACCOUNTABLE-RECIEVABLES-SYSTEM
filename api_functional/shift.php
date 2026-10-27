@@ -44,6 +44,31 @@ class Shift
     return $supervisor;
   }
 
+  function verifySupervisorPin($conn, $pin, $excludeUserId = null)
+  {
+    if (!preg_match('/\A[0-9]{4,6}\z/', $pin)) {
+      return false;
+    }
+
+    $sql = "SELECT u.user_id, u.supervisor_pin_hash
+        FROM users u
+        INNER JOIN roles r ON u.role_id = r.role_id
+        WHERE u.status = 'ACTIVE' AND r.status = 'ACTIVE'
+          AND UPPER(r.role_name) = 'SUPERVISOR'
+          AND u.supervisor_pin_hash IS NOT NULL";
+    $stmt = $conn->prepare($sql);
+    $stmt->execute();
+
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $supervisor) {
+      if ((!$excludeUserId || $supervisor['user_id'] != $excludeUserId)
+        && password_verify($pin, $supervisor['supervisor_pin_hash'])) {
+        return $supervisor;
+      }
+    }
+
+    return false;
+  }
+
   function getUserAssignments($conn, $userId)
   {
     $sql = "SELECT t.terminal_id, t.terminal_name, a.schedule_id,
@@ -302,12 +327,14 @@ class Shift
 
     $session = new Session();
     $userId = $session->getUserId();
+    $shiftId = isset($json['shiftId']) ? (int) $json['shiftId'] : 0;
     $createdAt = date('Y-m-d H:i:s');
     $movementType = !empty($json['movementType']) ? $json['movementType'] : "";
     $amount = isset($json['amount']) ? (float) $json['amount'] : 0;
-    $reason = !empty($json['reason']) ? $json['reason'] : null;
-    $supervisorUsername = isset($json['supervisorUsername']) ? trim($json['supervisorUsername']) : "";
-    $supervisorPassword = isset($json['supervisorPassword']) ? $json['supervisorPassword'] : "";
+    $reason = isset($json['reason']) && is_string($json['reason']) ? trim($json['reason']) : "";
+    $supervisorPin = isset($json['supervisorPin']) && is_string($json['supervisorPin'])
+      ? trim($json['supervisorPin'])
+      : "";
     $approvedAt = $createdAt;
     $roleName = strtoupper(isset($_SESSION['role_name']) ? $_SESSION['role_name'] : "");
 
@@ -315,18 +342,19 @@ class Shift
       return json_encode(2);
     }
 
-    $supervisor = $this->verifySupervisor($conn, $supervisorUsername, $supervisorPassword, $userId);
+    if ($shiftId < 1 || !in_array($movementType, ['FLOAT_ADJUST', 'CASH_DROP'], true)
+      || !is_finite($amount) || $amount == 0 || $reason == ""
+      || ($movementType == 'CASH_DROP' && $amount < 0)) {
+      return json_encode(0);
+    }
+
+    $supervisor = $this->verifySupervisorPin($conn, $supervisorPin, $userId);
 
     if (!$supervisor) {
       return json_encode(3);
     }
 
     try {
-      if (!in_array($movementType, ['FLOAT_ADJUST', 'CASH_DROP']) || $amount == 0
-        || trim((string) $reason) == "" || ($movementType == 'CASH_DROP' && $amount < 0)) {
-        throw new Exception("Invalid cash movement.");
-      }
-
       $conn->beginTransaction();
 
       //Only the open shift of the cashier logged in at this terminal.
@@ -334,7 +362,7 @@ class Shift
           WHERE shift_id = :shiftId AND user_id = :userId AND status = 'OPEN'
           FOR UPDATE";
       $stmt = $conn->prepare($sql);
-      $stmt->bindParam(":shiftId", $json['shiftId']);
+      $stmt->bindParam(":shiftId", $shiftId);
       $stmt->bindParam(":userId", $userId);
       $stmt->execute();
       $floatStart = $stmt->fetchColumn();
@@ -351,7 +379,7 @@ class Shift
           FROM shift_cash_movement
           WHERE shift_id = :shiftId AND status = 'APPROVED'";
       $stmt = $conn->prepare($sql);
-      $stmt->bindParam(":shiftId", $json['shiftId']);
+      $stmt->bindParam(":shiftId", $shiftId);
       $stmt->execute();
       $movementNet = (float) $stmt->fetchColumn();
 
@@ -360,7 +388,7 @@ class Shift
           INNER JOIN payment_methods pm ON p.payment_method_id = pm.payment_method_id
           WHERE p.shift_id = :shiftId AND UPPER(pm.method_name) = 'CASH'";
       $stmt = $conn->prepare($sql);
-      $stmt->bindParam(":shiftId", $json['shiftId']);
+      $stmt->bindParam(":shiftId", $shiftId);
       $stmt->execute();
       $cashSalesNet = (float) $stmt->fetchColumn();
       $floatLeft = round((float) $floatStart + $movementNet + $cashSalesNet, 2);
@@ -377,7 +405,7 @@ class Shift
           VALUES(:shiftId, :movementType, :amount, :reason, :status,
             :supervisorUserId, :approvedAt, :createdAt)";
       $stmt = $conn->prepare($sql);
-      $stmt->bindParam(":shiftId", $json['shiftId']);
+      $stmt->bindParam(":shiftId", $shiftId);
       $stmt->bindParam(":movementType", $movementType);
       $stmt->bindParam(":amount", $amount);
       $stmt->bindParam(":reason", $reason);
@@ -406,21 +434,23 @@ class Shift
     $session = new Session();
     $cashierUserId = $session->getUserId();
     $roleName = strtoupper(isset($_SESSION['role_name']) ? $_SESSION['role_name'] : "");
+    $shiftId = isset($json['shiftId']) ? (int) $json['shiftId'] : 0;
     $actionType = isset($json['actionType']) ? strtoupper($json['actionType']) : "";
-    $reason = isset($json['reason']) ? trim($json['reason']) : "";
+    $reason = isset($json['reason']) && is_string($json['reason']) ? trim($json['reason']) : "";
     $amount = isset($json['amount']) ? round((float) $json['amount'], 2) : -1;
-    $supervisorUsername = isset($json['supervisorUsername']) ? trim($json['supervisorUsername']) : "";
-    $supervisorPassword = isset($json['supervisorPassword']) ? $json['supervisorPassword'] : "";
+    $supervisorPin = isset($json['supervisorPin']) && is_string($json['supervisorPin'])
+      ? trim($json['supervisorPin'])
+      : "";
     $details = json_encode(isset($json['details']) ? $json['details'] : []);
     $salesId = !empty($json['salesId']) ? (int) $json['salesId'] : null;
 
-    if (!$cashierUserId || $roleName != 'CASHIER'
+    if (!$cashierUserId || $roleName != 'CASHIER' || $shiftId < 1
       || !in_array($actionType, ['VOID_LINE', 'VOID_SALE'], true)
-      || $reason == "" || $amount < 0) {
+      || $reason == "" || !is_finite($amount) || $amount < 0) {
       return json_encode(0);
     }
 
-    $supervisor = $this->verifySupervisor($conn, $supervisorUsername, $supervisorPassword, $cashierUserId);
+    $supervisor = $this->verifySupervisorPin($conn, $supervisorPin, $cashierUserId);
 
     if (!$supervisor) {
       return json_encode(3);
@@ -433,7 +463,7 @@ class Shift
           WHERE shift_id = :shiftId AND user_id = :cashierUserId AND status = 'OPEN'
           FOR UPDATE";
       $stmt = $conn->prepare($sql);
-      $stmt->bindParam(":shiftId", $json['shiftId']);
+      $stmt->bindParam(":shiftId", $shiftId);
       $stmt->bindParam(":cashierUserId", $cashierUserId);
       $stmt->execute();
       $shiftId = $stmt->fetchColumn();
@@ -445,7 +475,7 @@ class Shift
 
       if ($actionType == 'VOID_SALE' && $salesId) {
         $sql = "UPDATE sales_hdr
-            SET status = 'VOID'
+            SET status = 'CANCELLED'
             WHERE sales_id = :salesId AND created_by = :cashierUserId
               AND shift_id = :shiftId AND status = 'HOLD'";
         $stmt = $conn->prepare($sql);
@@ -463,15 +493,14 @@ class Shift
       $supervisorUserId = $supervisor['user_id'];
       $actionAt = date('Y-m-d H:i:s');
       $sql = "INSERT INTO pos_supervisor_actions(shift_id, cashier_user_id, supervisor_user_id,
-          action_type, related_sale_id, details_json, reason, amount, action_at)
-          VALUES(:shiftId, :cashierUserId, :supervisorUserId, :actionType, :salesId,
+          action_type, details_json, reason, amount, action_at)
+          VALUES(:shiftId, :cashierUserId, :supervisorUserId, :actionType,
             :details, :reason, :amount, :actionAt)";
       $stmt = $conn->prepare($sql);
       $stmt->bindParam(":shiftId", $shiftId);
       $stmt->bindParam(":cashierUserId", $cashierUserId);
       $stmt->bindParam(":supervisorUserId", $supervisorUserId);
       $stmt->bindParam(":actionType", $actionType);
-      $stmt->bindParam(":salesId", $salesId);
       $stmt->bindParam(":details", $details);
       $stmt->bindParam(":reason", $reason);
       $stmt->bindParam(":amount", $amount);
@@ -493,14 +522,24 @@ class Shift
     include "../api/connection-pdo.php";
 
     $json = json_decode($json, true);
+    $session = new Session();
+    $userId = $session->getUserId();
+    $roleName = strtoupper(isset($_SESSION['role_name']) ? $_SESSION['role_name'] : "");
+    $shiftId = isset($json['shiftId']) ? (int) $json['shiftId'] : 0;
+
+    if (!$userId || $roleName != 'CASHIER' || $shiftId < 1) {
+      return json_encode([]);
+    }
 
     $sql = "SELECT m.*, u.full_name AS approver_name
         FROM shift_cash_movement m
         LEFT JOIN users u ON m.approved_by = u.user_id
-        WHERE m.shift_id = :shiftId
+        INNER JOIN shifts sh ON m.shift_id = sh.shift_id
+        WHERE m.shift_id = :shiftId AND sh.user_id = :userId AND sh.status = 'OPEN'
         ORDER BY m.movement_id DESC";
     $stmt = $conn->prepare($sql);
-    $stmt->bindParam(":shiftId", $json['shiftId']);
+    $stmt->bindParam(":shiftId", $shiftId);
+    $stmt->bindParam(":userId", $userId);
     $stmt->execute();
     $rs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -525,7 +564,7 @@ class Shift
       $params = [":shiftId" => $json['shiftId']];
 
       if ($roleName == 'CASHIER') {
-        $where .= " AND sh.user_id = :cashierUserId";
+        $where .= " AND sh.user_id = :cashierUserId AND sh.status = 'OPEN'";
         $params[":cashierUserId"] = $session->getUserId();
       }
     } else {
@@ -533,7 +572,7 @@ class Shift
       $params = [":dateFrom" => $json['dateFrom'], ":dateTo" => $json['dateTo']];
 
       if ($roleName == 'CASHIER') {
-        $where .= " AND sh.user_id = :cashierUserId";
+        $where .= " AND sh.user_id = :cashierUserId AND sh.status = 'OPEN'";
         $params[":cashierUserId"] = $session->getUserId();
       } else if (!empty($json['userId'])) {
         $where .= " AND sh.user_id = :userId";
@@ -603,27 +642,11 @@ class Shift
           GROUP BY sale_channels.shift_id
         ) channels ON sh.shift_id = channels.shift_id
         LEFT JOIN (
-          SELECT void_events.shift_id,
-            SUM(void_events.void_transactions) AS void_transactions,
-            SUM(void_events.void_sales) AS void_sales
-          FROM (
-            SELECT s.shift_id, COUNT(*) AS void_transactions,
-              SUM(s.total_amount) AS void_sales
-            FROM sales_hdr s
-            WHERE s.status = 'VOID'
-              AND NOT EXISTS (
-                SELECT 1 FROM pos_supervisor_actions a
-                WHERE a.related_sale_id = s.sales_id AND a.action_type = 'VOID_SALE'
-              )
-            GROUP BY s.shift_id
-            UNION ALL
-            SELECT a.shift_id, COUNT(*) AS void_transactions,
-              SUM(a.amount) AS void_sales
-            FROM pos_supervisor_actions a
-            WHERE a.action_type = 'VOID_SALE'
-            GROUP BY a.shift_id
-          ) void_events
-          GROUP BY void_events.shift_id
+          SELECT shift_id, COUNT(*) AS void_transactions,
+            SUM(amount) AS void_sales
+          FROM pos_supervisor_actions
+          WHERE action_type = 'VOID_SALE'
+          GROUP BY shift_id
         ) voids ON sh.shift_id = voids.shift_id
         LEFT JOIN (
           SELECT shift_id,
@@ -693,15 +716,15 @@ class Shift
     }
 
     $where = "WHERE s.status = 'COMPLETED' AND s.customer_id IS NOT NULL
-        AND (DATE(s.sales_date) BETWEEN :dateFrom AND :dateTo
+        AND (DATE(s.sales_date) BETWEEN :salesFrom AND :salesTo
           OR EXISTS (SELECT 1 FROM payments_hdr period_payment
             INNER JOIN payments_dtl period_detail ON period_payment.payment_id = period_detail.payment_id
             WHERE period_detail.invoice_id = i.invoice_id
               AND (period_payment.remarks IS NULL OR period_payment.remarks <> 'Paid at POS')
               AND DATE(period_payment.payment_date) BETWEEN :collectionFrom AND :collectionTo))";
     $params = [
-      ":dateFrom" => $json['dateFrom'],
-      ":dateTo" => $json['dateTo'],
+      ":salesFrom" => $json['dateFrom'],
+      ":salesTo" => $json['dateTo'],
       ":paymentFrom" => $json['dateFrom'],
       ":paymentTo" => $json['dateTo'],
       ":collectionFrom" => $json['dateFrom'],
@@ -709,21 +732,23 @@ class Shift
     ];
 
     if ($roleName == 'CASHIER') {
-      $where .= " AND s.created_by = :userId";
+      $where .= " AND s.created_by = :userId AND shift_info.status = 'OPEN'";
       $params[":userId"] = $userId;
     } else if (!empty($json['userId'])) {
       $where .= " AND s.created_by = :userId";
       $params[":userId"] = $json['userId'];
     }
 
-    $sql = "SELECT i.invoice_id, i.invoice_number, s.shift_id, s.sales_date,
+    $sql = "SELECT i.invoice_id, i.invoice_number, s.shift_id, shift_info.status AS shift_status, s.sales_date,
         t.terminal_name, c.customer_name, u.full_name AS cashier, i.amount_due,
         IFNULL(initial_paid.amount_applied, 0) AS paid_at_sale,
         GREATEST(i.amount_due - IFNULL(initial_paid.amount_applied, 0), 0) AS charged_to_ar,
         IFNULL(period_paid.amount_applied, 0) AS collected_in_period,
+        IFNULL(period_paid.accounting_staff, '-') AS accounting_staff,
         GREATEST(i.amount_due - IFNULL(all_paid.amount_applied, 0), 0) AS current_balance
         FROM sales_hdr s
         INNER JOIN invoice i ON i.sales_id = s.sales_id
+        LEFT JOIN shifts shift_info ON shift_info.shift_id = s.shift_id
         INNER JOIN customers c ON s.customer_id = c.customer_id
         INNER JOIN users u ON s.created_by = u.user_id
         LEFT JOIN tbl_pos_terminal t ON s.terminal_id = t.terminal_id
@@ -741,9 +766,13 @@ class Shift
           GROUP BY d.invoice_id
         ) all_paid ON all_paid.invoice_id = i.invoice_id
         LEFT JOIN (
-          SELECT d.invoice_id, SUM(d.amount_applied) AS amount_applied
+          SELECT d.invoice_id, SUM(d.amount_applied) AS amount_applied,
+            GROUP_CONCAT(DISTINCT payment_user.full_name
+              ORDER BY payment_user.full_name SEPARATOR ', ')
+              AS accounting_staff
           FROM payments_hdr p
           INNER JOIN payments_dtl d ON p.payment_id = d.payment_id
+          LEFT JOIN users payment_user ON p.created_by = payment_user.user_id
           WHERE DATE(p.payment_date) BETWEEN :paymentFrom AND :paymentTo
             AND (p.remarks IS NULL OR p.remarks <> 'Paid at POS')
           GROUP BY d.invoice_id
@@ -785,7 +814,7 @@ class Shift
     ];
     $shifts = json_decode($this->getShiftReport(json_encode($shiftJson)), true);
     $salesWhere = "WHERE DATE(sh.opened_at) = :openedDate
-        AND s.status IN ('COMPLETED', 'VOID')";
+        AND s.status = 'COMPLETED'";
     $salesParams = [":openedDate" => $date];
 
     if (!empty($userId)) {
@@ -803,9 +832,7 @@ class Shift
         COUNT(DISTINCT CASE WHEN s.status = 'COMPLETED'
           AND s.customer_id IS NOT NULL THEN s.customer_id END) AS ar_customers,
         IFNULL(SUM(CASE WHEN s.status = 'COMPLETED'
-          AND s.customer_id IS NOT NULL THEN IFNULL(ar.ar_charged, 0) ELSE 0 END), 0) AS ar_charged,
-        IFNULL(SUM(CASE WHEN s.status = 'VOID' THEN 1 ELSE 0 END), 0) AS void_count,
-        IFNULL(SUM(CASE WHEN s.status = 'VOID' THEN s.total_amount ELSE 0 END), 0) AS void_sales
+          AND s.customer_id IS NOT NULL THEN IFNULL(ar.ar_charged, 0) ELSE 0 END), 0) AS ar_charged
         FROM sales_hdr s
         INNER JOIN shifts sh ON s.shift_id = sh.shift_id
         LEFT JOIN (

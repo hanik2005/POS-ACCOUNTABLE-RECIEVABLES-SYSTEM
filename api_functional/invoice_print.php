@@ -3,15 +3,32 @@ require_once __DIR__ . "/../api/config-cors.php";
 
 date_default_timezone_set('Asia/Manila');
 
-include "../api/session.php";
+require_once __DIR__ . "/../api/session.php";
 
 class InvoicePrint
 {
+  function canAccessInvoices()
+  {
+    return !empty($_SESSION['user_id'])
+      && strtoupper($_SESSION['role_name'] ?? '') == 'CASHIER';
+  }
+
   function getInvoicePrint($json)
   {
-    include "../api/connection-pdo.php";
+    if (!$this->canAccessInvoices()) {
+      http_response_code(empty($_SESSION['user_id']) ? 401 : 403);
+      return json_encode(0);
+    }
 
     $json = json_decode($json, true);
+    $salesId = isset($json['salesId']) ? (int) $json['salesId'] : 0;
+
+    if ($salesId < 1) {
+      http_response_code(400);
+      return json_encode(0);
+    }
+
+    include __DIR__ . "/../api/connection-pdo.php";
 
     $sql = "SELECT s.sales_id, s.sales_date, s.total_amount,
         COALESCE(c.customer_name, 'Walk-in customer') AS customer_name, c.address,
@@ -24,9 +41,10 @@ class InvoicePrint
         INNER JOIN invoice i ON s.sales_id = i.sales_id
         LEFT JOIN users u ON s.created_by = u.user_id
         LEFT JOIN tbl_pos_terminal t ON s.terminal_id = t.terminal_id
-        WHERE s.sales_id = :salesId";
+        WHERE s.sales_id = :salesId AND s.created_by = :userId AND s.status = 'COMPLETED'";
     $stmt = $conn->prepare($sql);
-    $stmt->bindParam(":salesId", $json['salesId']);
+    $stmt->bindValue(":salesId", $salesId, PDO::PARAM_INT);
+    $stmt->bindValue(":userId", (int) $_SESSION['user_id'], PDO::PARAM_INT);
     $stmt->execute();
     $sale = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -40,7 +58,7 @@ class InvoicePrint
         WHERE d.sales_id = :salesId
         ORDER BY d.sales_detail_id";
     $stmt = $conn->prepare($sql);
-    $stmt->bindParam(":salesId", $json['salesId']);
+    $stmt->bindValue(":salesId", $salesId, PDO::PARAM_INT);
     $stmt->execute();
     $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -64,25 +82,54 @@ class InvoicePrint
 
   function saveInvoiceFile($json)
   {
-    include "../api/connection-pdo.php";
+    if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+      http_response_code(405);
+      return json_encode(0);
+    }
+
+    if (!$this->canAccessInvoices()) {
+      http_response_code(empty($_SESSION['user_id']) ? 401 : 403);
+      return json_encode(0);
+    }
 
     $json = json_decode($json, true);
+    $invoiceNumber = isset($json['invoiceNumber']) && is_string($json['invoiceNumber'])
+      ? $json['invoiceNumber']
+      : "";
+
+    if ($invoiceNumber == "" || !preg_match('/\A[A-Za-z0-9_-]+\z/', $invoiceNumber)) {
+      http_response_code(400);
+      return json_encode(0);
+    }
+
+    include __DIR__ . "/../api/connection-pdo.php";
 
     $returnValue = 0;
 
-    $sql = "SELECT invoice_id FROM invoice WHERE invoice_number = :invoiceNumber";
+    $sql = "SELECT i.invoice_id
+        FROM invoice i
+        INNER JOIN sales_hdr s ON i.sales_id = s.sales_id
+        WHERE i.invoice_number = :invoiceNumber AND s.created_by = :userId
+          AND s.status = 'COMPLETED'";
     $stmt = $conn->prepare($sql);
-    $stmt->bindParam(":invoiceNumber", $json['invoiceNumber']);
+    $stmt->bindValue(":invoiceNumber", $invoiceNumber);
+    $stmt->bindValue(":userId", (int) $_SESSION['user_id'], PDO::PARAM_INT);
     $stmt->execute();
 
     $file = isset($_FILES['file']) ? $_FILES['file'] : null;
 
-    if ($stmt->fetchColumn() !== false && $file && $file['error'] == UPLOAD_ERR_OK && $file['size'] <= 2097152) {
+    if ($stmt->fetchColumn() !== false && $file && $file['error'] == UPLOAD_ERR_OK
+      && $file['size'] > 0 && $file['size'] <= 2097152
+      && !empty($file['tmp_name']) && is_uploaded_file($file['tmp_name'])) {
       $folder = $this->getFolder();
       $isPdf = file_get_contents($file['tmp_name'], false, null, 0, 4) === "%PDF";
 
-      if ($isPdf && (is_dir($folder) || mkdir($folder, 0777, true))) {
-        $filePath = $folder . $this->getFileName($json['invoiceNumber']);
+      if (!is_dir($folder)) {
+        @mkdir($folder, 0755, true);
+      }
+
+      if ($isPdf && is_dir($folder)) {
+        $filePath = $folder . $this->getFileName($invoiceNumber);
 
         if (file_exists($filePath) || move_uploaded_file($file['tmp_name'], $filePath)) {
           $returnValue = 1;
@@ -104,19 +151,32 @@ class InvoicePrint
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-  $operation = $_GET['operation'];
+  $operation = $_GET['operation'] ?? '';
   $json = isset($_GET['json']) ? $_GET['json'] : "";
 } else if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-  $operation = $_POST['operation'];
+  $operation = $_POST['operation'] ?? '';
   $json = isset($_POST['json']) ? $_POST['json'] : "";
+} else {
+  http_response_code(405);
+  echo json_encode(0);
+  exit;
 }
 
 $invoicePrint = new InvoicePrint();
 switch ($operation) {
   case "getInvoicePrint":
+    if ($_SERVER['REQUEST_METHOD'] != 'GET') {
+      http_response_code(405);
+      echo json_encode(0);
+      break;
+    }
     echo $invoicePrint->getInvoicePrint($json);
     break;
   case "saveInvoiceFile":
     echo $invoicePrint->saveInvoiceFile($json);
+    break;
+  default:
+    http_response_code(400);
+    echo json_encode(0);
     break;
 }

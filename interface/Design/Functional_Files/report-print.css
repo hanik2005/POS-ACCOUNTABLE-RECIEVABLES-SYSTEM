@@ -1,0 +1,174 @@
+@page {
+  size: landscape;
+  margin: 10mm;
+}
+
+.report-print-summary {
+  display: none;
+}
+
+@media print {
+  html,
+  body {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 8pt !important;
+  }
+
+  .navbar,
+  .no-print,
+  #app-header {
+    display: none !important;
+  }
+
+  main,
+  .container,
+  .container-fluid,
+  .content {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .card,
+  .report-summary {
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    color: #000 !important;
+    break-inside: auto;
+  }
+
+  .card-body {
+    padding: 0 !important;
+  }
+
+  .table-responsive {
+    overflow: visible !important;
+  }
+
+  .report-table,
+  .report-table th,
+  .report-table td {
+    white-space: normal !important;
+  }
+
+  .report-table {
+    font-size: 6pt !important;
+  }
+
+  table,
+  .report-print-summary {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-collapse: collapse !important;
+    color: #000 !important;
+  }
+
+  th,
+  td {
+    border: 1px solid #777 !important;
+    padding: 3px 4px !important;
+    color: #000 !important;
+    vertical-align: top !important;
+    overflow-wrap: anywhere;
+  }
+
+  thead th {
+    background: #e8e8e8 !important;
+    font-weight: 700 !important;
+  }
+
+  .report-summary-cards,
+  .sales-report-cards {
+    display: none !important;
+  }
+
+  .report-print-summary {
+    display: table !important;
+    margin: 0 0 8px !important;
+    font-size: 8pt !important;
+  }
+
+  .sales-report-table {
+    display: block !important;
+  }
+
+  .sales-report-table table {
+    font-size: 7pt !important;
+  }
+
+  .shift-report-list {
+    display: block !important;
+  }
+
+  .shift-report-pagination,
+  .report-accounting-ar .shift-report-pagination {
+    display: none !important;
+  }
+
+  .report-print-section {
+    margin: 10px 0;
+    break-inside: auto;
+  }
+
+  .report-print-section h3,
+  .report-print-summary-title {
+    margin: 0 0 5px;
+    color: #000 !important;
+    font-size: 10pt;
+  }
+
+  .shift-print-table {
+    table-layout: fixed;
+    font-size: 6.5pt !important;
+  }
+
+  .shift-print-table th:nth-child(1) { width: 13%; }
+  .shift-print-table th:nth-child(2) { width: 10%; }
+  .shift-print-table th:nth-child(3) { width: 10%; }
+  .shift-print-table th:nth-child(4) { width: 19%; }
+  .shift-print-table th:nth-child(5) { width: 14%; }
+  .shift-print-table th:nth-child(6) { width: 24%; }
+  .shift-print-table th:nth-child(7) { width: 10%; }
+
+  .shift-print-details > div {
+    margin-bottom: 2px;
+  }
+
+  .shift-print-ar-table {
+    width: 100% !important;
+    margin: 2px 0 0;
+    font-size: 6pt !important;
+  }
+
+  .shift-print-ar-table th,
+  .shift-print-ar-table td {
+    padding: 2px !important;
+  }
+
+  .report-summary-title,
+  .report-summary-item span,
+  .report-summary-item strong,
+  .report-eyebrow,
+  .report-meta,
+  .page-title,
+  .page-subtitle,
+  .text-muted,
+  .text-secondary {
+    color: #000 !important;
+  }
+
+  .badge {
+    border: 1px solid #777 !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+}

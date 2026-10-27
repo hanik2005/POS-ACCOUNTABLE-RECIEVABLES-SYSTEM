@@ -7,11 +7,51 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="../Design/Master_Files/style.css" rel="stylesheet">
   <link href="../Design/Functional_Files/sweetalert-dark.css" rel="stylesheet">
+  <link href="../Design/Functional_Files/report-print.css" rel="stylesheet">
   <style>
     @media print {
       .navbar,
       .no-print {
         display: none !important;
+      }
+
+      @page {
+        size: landscape;
+      }
+
+      .sales-report-table {
+        display: block !important;
+      }
+
+      .sales-report-cards {
+        display: none !important;
+      }
+
+      .sales-report-table table {
+        font-size: 8pt;
+      }
+    }
+
+    .sales-report-fields {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem 1rem;
+    }
+
+    .sales-report-fields dt {
+      color: var(--admin-muted, #8b97aa);
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .sales-report-fields dd {
+      margin-bottom: 0;
+      overflow-wrap: anywhere;
+    }
+
+    @media (min-width: 576px) {
+      .sales-report-fields {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
       }
     }
   </style>
@@ -62,16 +102,17 @@
           <div class="dashboard-section-title">Reports</div>
           <h2 class="page-title mt-2 mb-1">Sales Report</h2>
           <p class="page-subtitle mb-0">
-            Review completed and void sales, AR charges, collections, and balances.
+            Review completed sales, void sale actions, AR charges, collections, and balances.
+            Period: <strong id="reportPeriod">-</strong>
           </p>
         </div>
         <div class="d-flex flex-wrap align-items-end gap-2 no-print">
           <div>
-            <label for="dateFrom" class="form-label">Sales and collection from</label>
+            <label for="dateFrom" class="form-label">Report period from</label>
             <input type="date" id="dateFrom" class="form-control">
           </div>
           <div>
-            <label for="dateTo" class="form-label">Sales and collection to</label>
+            <label for="dateTo" class="form-label">Report period to</label>
             <input type="date" id="dateTo" class="form-control">
           </div>
           <button type="button" id="generateBtn" class="btn btn-primary">Generate</button>
@@ -123,25 +164,79 @@
         </div>
         <div class="col-6 col-lg-3">
           <div class="card h-100"><div class="card-body">
-            <small class="text-muted">Current AR Balance</small>
+            <small class="text-muted">Open AR from Period Sales</small>
             <h5 id="sumOutstanding" class="mt-2 mb-0">&#8369;0.00</h5>
           </div></div>
         </div>
         <div class="col-6 col-lg-3">
           <div class="card h-100"><div class="card-body">
-            <small class="text-muted">Voided Transactions</small>
-            <h5 id="sumVoidedTransactions" class="mt-2 mb-0">0</h5>
+            <small class="text-muted">Void Sale Actions</small>
+            <h5 id="sumVoidSaleActions" class="mt-2 mb-0">0</h5>
           </div></div>
         </div>
         <div class="col-6 col-lg-3">
           <div class="card h-100"><div class="card-body">
-            <small class="text-muted">Voided Sales</small>
-            <h5 id="sumVoided" class="mt-2 mb-0">&#8369;0.00</h5>
+            <small class="text-muted">Void Sale Action Amount</small>
+            <h5 id="sumVoidSaleAmount" class="mt-2 mb-0">&#8369;0.00</h5>
+          </div></div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="card h-100"><div class="card-body">
+            <small class="text-muted">Void Line Actions</small>
+            <h5 id="sumVoidLineCount" class="mt-2 mb-0">0</h5>
+          </div></div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="card h-100"><div class="card-body">
+            <small class="text-muted">Void Line Amount</small>
+            <h5 id="sumVoidLineAmount" class="mt-2 mb-0">&#8369;0.00</h5>
           </div></div>
         </div>
       </div>
+      <section class="card mb-3 no-print">
+        <div class="card-body">
+          <div class="row g-2 align-items-end no-print">
+            <div class="col-12 col-md-6 col-xl-3">
+              <label for="searchSales" class="form-label">Search sales</label>
+              <input
+                type="search"
+                id="searchSales"
+                class="form-control"
+                placeholder="Invoice, customer, terminal or cashier"
+              >
+            </div>
+            <div class="col-6 col-md-3 col-xl-2">
+              <label for="saleTypeFilter" class="form-label">Sale type</label>
+              <select id="saleTypeFilter" class="form-select">
+                <option value="all">All sale types</option>
+                <option value="WALK_IN">Walk-in</option>
+                <option value="AR">Accounts receivable</option>
+              </select>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+              <label for="terminalFilter" class="form-label">Terminal</label>
+              <select id="terminalFilter" class="form-select">
+                <option value="all">All terminals</option>
+              </select>
+            </div>
+            <div class="col-6 col-md-4 col-xl-2">
+              <label for="cashierFilter" class="form-label">Cashier</label>
+              <select id="cashierFilter" class="form-select">
+                <option value="all">All cashiers</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-4 col-xl-1 text-md-end">
+              <span class="text-muted small" id="matchingCount">0 sales</span>
+            </div>
+          </div>
+        </div>
+      </section>
       <section class="card">
         <div class="card-body" id="main-div"></div>
+      </section>
+      <section class="card mt-3">
+        <div class="card-header">Void Sale Actions</div>
+        <div class="card-body" id="void-sales-actions-body"></div>
       </section>
     </div>
   </main>

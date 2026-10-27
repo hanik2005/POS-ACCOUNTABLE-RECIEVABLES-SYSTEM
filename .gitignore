@@ -1,0 +1,8 @@
+/vendor/
+/mailer_details.local.php
+/.env
+/.env.*
+!/.env.example
+/invoices/*.pdf
+/composer.lock
+/composer.json

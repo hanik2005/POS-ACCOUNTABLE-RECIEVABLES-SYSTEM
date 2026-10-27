@@ -310,14 +310,15 @@ class Sales
           $stmt->execute();
           $paymentNumber = sprintf("PAY-%s-%04d", date('Y'), $stmt->fetchColumn());
 
-          $sql = "INSERT INTO payments_hdr(payment_number, customer_id, payment_method_id, shift_id, payment_date,
+          $sql = "INSERT INTO payments_hdr(payment_number, customer_id, payment_method_id, shift_id, created_by, payment_date,
               amount, amount_tendered, change_amount, reference_number, remarks)
-              VALUES(:paymentNumber, :customerId, :methodId, :shiftId, :paymentDate, :amount, :amountTendered, :changeAmount, :reference, :remarks)";
+              VALUES(:paymentNumber, :customerId, :methodId, :shiftId, :createdBy, :paymentDate, :amount, :amountTendered, :changeAmount, :reference, :remarks)";
           $stmt = $conn->prepare($sql);
           $stmt->bindParam(":paymentNumber", $paymentNumber);
           $stmt->bindParam(":customerId", $customerId);
           $stmt->bindParam(":methodId", $payment['paymentMethodId']);
           $stmt->bindParam(":shiftId", $shiftId);
+          $stmt->bindParam(":createdBy", $userId);
           $stmt->bindParam(":paymentDate", $salesDate);
           $stmt->bindParam(":amount", $amountApplied);
           $stmt->bindParam(":amountTendered", $amountTendered);
@@ -422,7 +423,7 @@ class Sales
     $userId = $session->getUserId();
 
     $sql = "UPDATE sales_hdr
-        SET status = 'VOID'
+        SET status = 'CANCELLED'
         WHERE sales_id = :salesId AND created_by = :userId AND status = 'HOLD'";
     $stmt = $conn->prepare($sql);
     $stmt->bindParam(":salesId", $json['salesId']);
@@ -538,282 +539,6 @@ class Sales
     $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     return json_encode(["sale" => $sale, "items" => $items]);
-  }
-
-  function requestSaleVoid($json)
-  {
-    include "../api/connection-pdo.php";
-
-    $json = json_decode($json, true);
-    $session = new Session();
-    $userId = $session->getUserId();
-    $roleName = isset($_SESSION['role_name']) ? strtoupper($_SESSION['role_name']) : "";
-    $salesId = isset($json['salesId']) ? (int) $json['salesId'] : 0;
-    $reason = isset($json['reason']) ? trim($json['reason']) : "";
-
-    if ($roleName != 'CASHIER' || $salesId < 1) {
-      return json_encode(3);
-    }
-
-    try {
-      $conn->beginTransaction();
-
-      $sql = "SELECT sales_id
-          FROM sales_hdr
-          WHERE sales_id = :salesId AND created_by = :userId AND status = 'COMPLETED'
-            AND shift_id IN (SELECT shift_id FROM shifts WHERE user_id = :shiftUserId AND status = 'OPEN')
-          FOR UPDATE";
-      $stmt = $conn->prepare($sql);
-      $stmt->bindParam(":salesId", $salesId);
-      $stmt->bindParam(":userId", $userId);
-      $stmt->bindParam(":shiftUserId", $userId);
-      $stmt->execute();
-
-      if (!$stmt->fetchColumn()) {
-        $conn->rollBack();
-        return json_encode(3);
-      }
-
-      $sql = "SELECT void_request_id
-          FROM sale_void_requests
-          WHERE sales_id = :salesId AND status = 'PENDING'
-          LIMIT 1";
-      $stmt = $conn->prepare($sql);
-      $stmt->bindParam(":salesId", $salesId);
-      $stmt->execute();
-
-      if ($stmt->fetchColumn()) {
-        $conn->commit();
-        return json_encode(2);
-      }
-
-      $sql = "INSERT INTO sale_void_requests(sales_id, requested_by, reason, status, decision_mode, requested_at)
-          VALUES(:salesId, :userId, :reason, 'PENDING', 'REQUEST', :requestedAt)";
-      $stmt = $conn->prepare($sql);
-      $stmt->bindParam(":salesId", $salesId);
-      $stmt->bindParam(":userId", $userId);
-      $stmt->bindParam(":reason", $reason);
-      $requestedAt = date('Y-m-d H:i:s');
-      $stmt->bindParam(":requestedAt", $requestedAt);
-      $stmt->execute();
-
-      $conn->commit();
-      return json_encode(1);
-    } catch (Exception $e) {
-      if ($conn->inTransaction()) {
-        $conn->rollBack();
-      }
-      return json_encode(0);
-    }
-  }
-
-  function authorizeVoidSale($json)
-  {
-    include "../api/connection-pdo.php";
-
-    $json = json_decode($json, true);
-    $session = new Session();
-    $cashierId = $session->getUserId();
-    $roleName = isset($_SESSION['role_name']) ? strtoupper($_SESSION['role_name']) : "";
-    $salesId = isset($json['salesId']) ? (int) $json['salesId'] : 0;
-    $supervisorUsername = isset($json['supervisorUsername']) ? trim($json['supervisorUsername']) : "";
-    $supervisorPassword = isset($json['supervisorPassword']) ? $json['supervisorPassword'] : "";
-    $reason = isset($json['reason']) ? trim($json['reason']) : "";
-
-    if ($roleName != 'CASHIER' || $salesId < 1 || $supervisorUsername == "" || $supervisorPassword == "") {
-      return json_encode(3);
-    }
-
-    $sql = "SELECT u.user_id, u.password_hash
-        FROM users u
-        INNER JOIN roles r ON u.role_id = r.role_id
-        WHERE u.username = :username AND u.status = 'ACTIVE' AND r.status = 'ACTIVE'
-          AND UPPER(r.role_name) = 'SUPERVISOR'
-        LIMIT 1";
-    $stmt = $conn->prepare($sql);
-    $stmt->bindParam(":username", $supervisorUsername);
-    $stmt->execute();
-    $supervisor = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if (!$supervisor || !password_verify($supervisorPassword, $supervisor['password_hash'])) {
-      return json_encode(3);
-    }
-
-    try {
-      $conn->beginTransaction();
-
-      $sql = "SELECT sales_id
-          FROM sales_hdr
-          WHERE sales_id = :salesId AND created_by = :cashierId AND status = 'COMPLETED'
-            AND shift_id IN (SELECT shift_id FROM shifts WHERE user_id = :shiftCashierId AND status = 'OPEN')
-          FOR UPDATE";
-      $stmt = $conn->prepare($sql);
-      $stmt->bindParam(":salesId", $salesId);
-      $stmt->bindParam(":cashierId", $cashierId);
-      $stmt->bindParam(":shiftCashierId", $cashierId);
-      $stmt->execute();
-
-      if (!$stmt->fetchColumn()) {
-        $conn->rollBack();
-        return json_encode(4);
-      }
-
-      $sql = "SELECT void_request_id
-          FROM sale_void_requests
-          WHERE sales_id = :salesId AND status = 'PENDING'
-          LIMIT 1
-          FOR UPDATE";
-      $stmt = $conn->prepare($sql);
-      $stmt->bindParam(":salesId", $salesId);
-      $stmt->execute();
-      $requestId = $stmt->fetchColumn();
-      $decidedAt = date('Y-m-d H:i:s');
-      $supervisorId = $supervisor['user_id'];
-
-      if ($requestId) {
-        $sql = "UPDATE sale_void_requests
-            SET status = 'APPROVED', decision_mode = 'DIRECT', decided_by = :supervisorId,
-              decided_at = :decidedAt, reason = :reason
-            WHERE void_request_id = :requestId AND status = 'PENDING'";
-        $stmt = $conn->prepare($sql);
-        $stmt->bindParam(":requestId", $requestId);
-        $stmt->bindParam(":supervisorId", $supervisorId);
-        $stmt->bindParam(":decidedAt", $decidedAt);
-        $stmt->bindParam(":reason", $reason);
-        $stmt->execute();
-      } else {
-        $sql = "INSERT INTO sale_void_requests(sales_id, requested_by, reason, status, decision_mode,
-            decided_by, requested_at, decided_at)
-            VALUES(:salesId, :cashierId, :reason, 'APPROVED', 'DIRECT', :supervisorId, :requestedAt, :decidedAt)";
-        $stmt = $conn->prepare($sql);
-        $stmt->bindParam(":salesId", $salesId);
-        $stmt->bindParam(":cashierId", $cashierId);
-        $stmt->bindParam(":reason", $reason);
-        $stmt->bindParam(":supervisorId", $supervisorId);
-        $requestedAt = $decidedAt;
-        $stmt->bindParam(":requestedAt", $requestedAt);
-        $stmt->bindParam(":decidedAt", $decidedAt);
-        $stmt->execute();
-      }
-
-      $sql = "UPDATE sales_hdr SET status = 'VOID'
-          WHERE sales_id = :salesId AND status = 'COMPLETED'";
-      $stmt = $conn->prepare($sql);
-      $stmt->bindParam(":salesId", $salesId);
-      $stmt->execute();
-
-      $sql = "UPDATE invoice SET status = 'VOID' WHERE sales_id = :salesId";
-      $stmt = $conn->prepare($sql);
-      $stmt->bindParam(":salesId", $salesId);
-      $stmt->execute();
-
-      $conn->commit();
-      return json_encode(1);
-    } catch (Exception $e) {
-      if ($conn->inTransaction()) {
-        $conn->rollBack();
-      }
-      return json_encode(0);
-    }
-  }
-
-  function getSaleVoidRequests()
-  {
-    include "../api/connection-pdo.php";
-
-    $roleName = isset($_SESSION['role_name']) ? strtoupper($_SESSION['role_name']) : "";
-
-    if ($roleName != 'SUPERVISOR') {
-      return json_encode([]);
-    }
-
-    $sql = "SELECT v.void_request_id, v.sales_id, v.reason, v.status, v.decision_mode,
-        v.requested_at, v.decided_at, s.total_amount, s.sales_date,
-        i.invoice_number, COALESCE(c.customer_name, 'Walk-in customer') AS customer_name,
-        u.full_name AS cashier,
-        a.full_name AS approver_name
-        FROM sale_void_requests v
-        INNER JOIN sales_hdr s ON v.sales_id = s.sales_id
-        LEFT JOIN invoice i ON s.sales_id = i.sales_id
-        LEFT JOIN customers c ON s.customer_id = c.customer_id
-        INNER JOIN users u ON v.requested_by = u.user_id
-        LEFT JOIN users a ON v.decided_by = a.user_id
-        ORDER BY (v.status = 'PENDING') DESC, v.void_request_id DESC";
-    $stmt = $conn->prepare($sql);
-    $stmt->execute();
-
-    return json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
-  }
-
-  function decideSaleVoid($json)
-  {
-    include "../api/connection-pdo.php";
-
-    $json = json_decode($json, true);
-    $session = new Session();
-    $userId = $session->getUserId();
-    $roleName = isset($_SESSION['role_name']) ? strtoupper($_SESSION['role_name']) : "";
-    $requestId = isset($json['requestId']) ? (int) $json['requestId'] : 0;
-    $status = isset($json['status']) && $json['status'] == 'APPROVED' ? 'APPROVED' : 'REJECTED';
-
-    if ($roleName != 'SUPERVISOR' || $requestId < 1) {
-      return json_encode(3);
-    }
-
-    try {
-      $conn->beginTransaction();
-
-      $sql = "SELECT sales_id
-          FROM sale_void_requests
-          WHERE void_request_id = :requestId AND status = 'PENDING'
-          FOR UPDATE";
-      $stmt = $conn->prepare($sql);
-      $stmt->bindParam(":requestId", $requestId);
-      $stmt->execute();
-      $salesId = $stmt->fetchColumn();
-
-      if (!$salesId) {
-        $conn->rollBack();
-        return json_encode(2);
-      }
-
-      if ($status == 'APPROVED') {
-        $sql = "UPDATE sales_hdr SET status = 'VOID'
-            WHERE sales_id = :salesId AND status = 'COMPLETED'";
-        $stmt = $conn->prepare($sql);
-        $stmt->bindParam(":salesId", $salesId);
-        $stmt->execute();
-
-        if ($stmt->rowCount() == 0) {
-          $conn->rollBack();
-          return json_encode(2);
-        }
-
-        $sql = "UPDATE invoice SET status = 'VOID' WHERE sales_id = :salesId";
-        $stmt = $conn->prepare($sql);
-        $stmt->bindParam(":salesId", $salesId);
-        $stmt->execute();
-      }
-
-      $decidedAt = date('Y-m-d H:i:s');
-      $sql = "UPDATE sale_void_requests
-          SET status = :status, decision_mode = 'REQUEST', decided_by = :userId, decided_at = :decidedAt
-          WHERE void_request_id = :requestId AND status = 'PENDING'";
-      $stmt = $conn->prepare($sql);
-      $stmt->bindParam(":status", $status);
-      $stmt->bindParam(":userId", $userId);
-      $stmt->bindParam(":decidedAt", $decidedAt);
-      $stmt->bindParam(":requestId", $requestId);
-      $stmt->execute();
-
-      $conn->commit();
-      return json_encode(1);
-    } catch (Exception $e) {
-      if ($conn->inTransaction()) {
-        $conn->rollBack();
-      }
-      return json_encode(0);
-    }
   }
 
   function getAllSales()

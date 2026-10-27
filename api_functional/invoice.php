@@ -15,9 +15,10 @@ class Invoice
       return json_encode([]);
     }
 
-   $sql = "SELECT i.*, s.sales_date, s.customer_id, c.customer_name,
+    $sql = "SELECT i.*, s.sales_date, s.customer_id, c.customer_name,
         IFNULL(pd.total_paid, 0) AS total_paid,
-        GREATEST(0, i.amount_due - IFNULL(pd.total_paid, 0)) AS balance
+        GREATEST(0, i.amount_due - IFNULL(pd.total_paid, 0)) AS balance,
+        DATEDIFF(CURDATE(), i.due_date) AS days_past_due
         FROM invoice i
         INNER JOIN sales_hdr s ON i.sales_id = s.sales_id
         LEFT JOIN customers c ON s.customer_id = c.customer_id

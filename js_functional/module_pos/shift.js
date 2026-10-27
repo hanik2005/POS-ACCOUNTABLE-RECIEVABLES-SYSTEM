@@ -218,6 +218,7 @@ export const openCloseShiftDialog = async (afterClose) => {
         <tr><td>Terminal</td><td>${report.terminal_name}</td></tr>
         <tr><td>Schedule</td><td>${report.schedule_name}</td></tr>
         <tr><td>Opened</td><td>${formatTime(report.opened_at)}</td></tr>
+        <tr><td>Starting cash / float</td><td>${formatCurrency(parseFloat(report.float_start))}</td></tr>
         <tr><td>Transactions</td><td>${formatNumber(report.transactions, 0)}</td></tr>
         <tr><td>Gross sales</td><td>${formatCurrency(gross)}</td></tr>
         <tr><td>Paid at sale (POS)</td><td>${formatCurrency(parseFloat(report.paid_at_sale))}</td></tr>
@@ -226,7 +227,6 @@ export const openCloseShiftDialog = async (afterClose) => {
         <tr><td>Voided sales (amount)</td><td>${formatCurrency(parseFloat(report.void_sales))}</td></tr>
         <tr><td>Voided lines (count)</td><td>${formatNumber(report.void_line_count, 0)}</td></tr>
         <tr><td>Voided lines (amount)</td><td>${formatCurrency(parseFloat(report.void_line_amount))}</td></tr>
-        <tr><td>Float start</td><td>${formatCurrency(parseFloat(report.float_start))}</td></tr>
         <tr><td>Float added</td><td>${formatCurrency(parseFloat(report.float_added))}</td></tr>
         <tr><td>Float removed</td><td>${formatCurrency(parseFloat(report.float_removed))}</td></tr>
         <tr><td>Cash received</td><td>${formatCurrency(parseFloat(report.cash_received))}</td></tr>
