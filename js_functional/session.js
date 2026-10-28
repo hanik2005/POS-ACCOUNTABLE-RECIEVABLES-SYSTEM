@@ -14,6 +14,7 @@ const pages = [
   { file: "pos.html", title: "POS", roles: ["CASHIER"], menu: true },
   { file: "invoice.html", title: "Accounts Receivable", roles: ["ADMIN", "ACCOUNTING"], menu: true },
   { file: "sales_report.html", title: "Sales Report", roles: ["ADMIN", "ACCOUNTING", "SUPERVISOR"], menu: true },
+  { file: "pos_activity_report.html", title: "POS Activity", roles: ["ADMIN", "ACCOUNTING"], menu: true },
   { file: "aging_report.html", title: "Aging Report", roles: ["ADMIN", "ACCOUNTING"], menu: true },
   { file: "credit_limit_report.html", title: "Credit Limit Report", roles: ["ADMIN", "ACCOUNTING"], menu: true },
   {

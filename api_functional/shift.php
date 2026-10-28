@@ -517,6 +517,162 @@ class Shift
     }
   }
 
+  function authorizeHeldSaleRemoval($json)
+  {
+    include "../api/connection-pdo.php";
+
+    $json = json_decode($json, true);
+    $session = new Session();
+    $cashierUserId = $session->getUserId();
+    $roleName = strtoupper(isset($_SESSION['role_name']) ? $_SESSION['role_name'] : "");
+    $shiftId = isset($json['shiftId']) ? (int) $json['shiftId'] : 0;
+    $salesId = isset($json['salesId']) ? (int) $json['salesId'] : 0;
+    $reason = isset($json['reason']) && is_string($json['reason']) ? trim($json['reason']) : "";
+    $supervisorPin = isset($json['supervisorPin']) && is_string($json['supervisorPin'])
+      ? trim($json['supervisorPin'])
+      : "";
+
+    if (!$cashierUserId || $roleName != 'CASHIER') {
+      return json_encode(2);
+    }
+
+    if ($shiftId < 1 || $salesId < 1 || !preg_match('/\A.{1,255}\z/us', $reason)) {
+      return json_encode(0);
+    }
+
+    $supervisor = $this->verifySupervisorPin($conn, $supervisorPin, $cashierUserId);
+
+    if (!$supervisor) {
+      return json_encode(3);
+    }
+
+    try {
+      $conn->beginTransaction();
+
+      $sql = "SELECT shift_id FROM shifts
+          WHERE shift_id = :shiftId AND user_id = :cashierUserId AND status = 'OPEN'
+          FOR UPDATE";
+      $stmt = $conn->prepare($sql);
+      $stmt->bindParam(":shiftId", $shiftId);
+      $stmt->bindParam(":cashierUserId", $cashierUserId);
+      $stmt->execute();
+      $activeShiftId = $stmt->fetchColumn();
+
+      if (!$activeShiftId) {
+        $conn->rollBack();
+        return json_encode(4);
+      }
+
+      $sql = "SELECT total_amount
+          FROM sales_hdr
+          WHERE sales_id = :salesId AND created_by = :cashierUserId AND status = 'HOLD'
+          FOR UPDATE";
+      $stmt = $conn->prepare($sql);
+      $stmt->bindParam(":salesId", $salesId);
+      $stmt->bindParam(":cashierUserId", $cashierUserId);
+      $stmt->execute();
+      $totalAmount = $stmt->fetchColumn();
+
+      if ($totalAmount === false) {
+        $conn->rollBack();
+        return json_encode(4);
+      }
+
+      $sql = "SELECT d.product_id, p.product_name, d.unit_price, d.quantity, d.line_total
+          FROM sales_dtl d
+          INNER JOIN products p ON d.product_id = p.product_id
+          WHERE d.sales_id = :salesId
+          ORDER BY d.sales_detail_id";
+      $stmt = $conn->prepare($sql);
+      $stmt->bindParam(":salesId", $salesId);
+      $stmt->execute();
+      $heldLines = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+      if (count($heldLines) == 0) {
+        $conn->rollBack();
+        return json_encode(4);
+      }
+
+      $details = [];
+      $detailTotalCents = 0;
+
+      foreach ($heldLines as $line) {
+        $quantity = (int) $line['quantity'];
+        $unitPrice = round((float) $line['unit_price'], 2);
+        $lineAmount = round((float) $line['line_total'], 2);
+
+        if ($quantity < 1 || $unitPrice < 0 || $lineAmount < 0
+          || round($unitPrice * $quantity, 2) != $lineAmount) {
+          $conn->rollBack();
+          return json_encode(4);
+        }
+
+        $details[] = [
+          "productId" => (int) $line['product_id'],
+          "productName" => $line['product_name'],
+          "productPrice" => $unitPrice,
+          "qty" => $quantity,
+          "amount" => $lineAmount,
+        ];
+        $detailTotalCents += (int) round($lineAmount * 100);
+      }
+
+      $amount = round((float) $totalAmount, 2);
+
+      if ($detailTotalCents != (int) round($amount * 100)) {
+        $conn->rollBack();
+        return json_encode(4);
+      }
+
+      $sql = "UPDATE sales_hdr SET status = 'CANCELLED'
+          WHERE sales_id = :salesId AND created_by = :cashierUserId AND status = 'HOLD'";
+      $stmt = $conn->prepare($sql);
+      $stmt->bindParam(":salesId", $salesId);
+      $stmt->bindParam(":cashierUserId", $cashierUserId);
+      $stmt->execute();
+
+      if ($stmt->rowCount() == 0) {
+        $conn->rollBack();
+        return json_encode(4);
+      }
+
+      $supervisorUserId = $supervisor['user_id'];
+      $actionType = 'VOID_SALE';
+      $detailsJson = json_encode($details);
+
+      if ($detailsJson === false) {
+        $conn->rollBack();
+        return json_encode(0);
+      }
+
+      $actionAt = date('Y-m-d H:i:s');
+      $sql = "INSERT INTO pos_supervisor_actions(shift_id, cashier_user_id, supervisor_user_id,
+          action_type, details_json, reason, amount, action_at)
+          VALUES(:shiftId, :cashierUserId, :supervisorUserId, :actionType,
+            :details, :reason, :amount, :actionAt)";
+      $stmt = $conn->prepare($sql);
+      $stmt->bindParam(":shiftId", $activeShiftId);
+      $stmt->bindParam(":cashierUserId", $cashierUserId);
+      $stmt->bindParam(":supervisorUserId", $supervisorUserId);
+      $stmt->bindParam(":actionType", $actionType);
+      $stmt->bindParam(":details", $detailsJson);
+      $stmt->bindParam(":reason", $reason);
+      $stmt->bindParam(":amount", $amount);
+      $stmt->bindParam(":actionAt", $actionAt);
+      $stmt->execute();
+
+      $conn->commit();
+      return json_encode(1);
+    } catch (Throwable $e) {
+      if ($conn->inTransaction()) {
+        $conn->rollBack();
+      }
+
+      error_log("Held sale removal failed: " . $e->getMessage());
+      return json_encode(0);
+    }
+  }
+
   function getCashMovements($json)
   {
     include "../api/connection-pdo.php";
@@ -1002,6 +1158,9 @@ switch ($operation) {
     break;
   case "authorizePosVoid":
     echo $shift->authorizePosVoid($json);
+    break;
+  case "authorizeHeldSaleRemoval":
+    echo $shift->authorizeHeldSaleRemoval($json);
     break;
   case "getCashMovements":
     echo $shift->getCashMovements($json);

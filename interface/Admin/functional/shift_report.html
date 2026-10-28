@@ -50,6 +50,7 @@
           <li class="nav-item">
             <a class="nav-link" href="sales_report.html">Sales Report</a>
           </li>
+          <li class="nav-item"><a class="nav-link" href="pos_activity_report.html">POS Activity</a></li>
           <li class="nav-item">
             <a class="nav-link" href="credit_limit_report.html">Credit Limit Report</a>
           </li>
@@ -95,22 +96,29 @@
             </div>
           </div>
           <div class="row g-2 align-items-end mb-3 no-print" role="group" aria-label="Filter register shifts">
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-3">
               <label for="shiftTerminal" class="form-label">Terminal</label>
               <select id="shiftTerminal" class="form-select">
                 <option value="">All terminals</option>
               </select>
             </div>
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-3">
               <label for="shiftCashier" class="form-label">Search cashier</label>
               <input type="search" id="shiftCashier" class="form-control" placeholder="Enter cashier name">
             </div>
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-3">
               <label for="shiftStatus" class="form-label">Shift status</label>
               <select id="shiftStatus" class="form-select">
                 <option value="">All shifts</option>
                 <option value="open">Open</option>
                 <option value="closed">Closed</option>
+              </select>
+            </div>
+            <div class="col-12 col-md-3">
+              <label for="shiftAccountingAr" class="form-label">Accounting AR activity</label>
+              <select id="shiftAccountingAr" class="form-select">
+                <option value="include">Include</option>
+                <option value="exclude">Exclude</option>
               </select>
             </div>
           </div>

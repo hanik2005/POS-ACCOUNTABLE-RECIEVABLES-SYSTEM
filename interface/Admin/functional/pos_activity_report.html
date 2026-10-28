@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>POS Activity Report - POS &amp; AR</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="../../Design/Master_Files/style.css" rel="stylesheet">
+  <link href="../../Design/Functional_Files/sweetalert-dark.css" rel="stylesheet">
+  <link href="../../Design/Functional_Files/shift-report.css" rel="stylesheet">
+  <link href="../../Design/Functional_Files/report-print.css" rel="stylesheet">
+  <style>
+    .pos-activity-fields {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: .65rem 1rem;
+      margin: 0;
+    }
+
+    .pos-activity-fields > div {
+      min-width: 0;
+    }
+
+    .pos-activity-fields dt {
+      margin-bottom: .15rem;
+      color: #94a3b8;
+      font-size: .75rem;
+      font-weight: 500;
+    }
+
+    .pos-activity-fields dd {
+      margin: 0;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .pos-activity-field-wide {
+      grid-column: 1 / -1;
+    }
+
+    .pos-activity-reconciliation {
+      min-width: 0;
+      font-size: .78rem;
+    }
+
+    .pos-activity-reconciliation > div {
+      margin-bottom: .15rem;
+      overflow-wrap: anywhere;
+    }
+
+    @media print {
+      .pos-activity-cards {
+        display: none !important;
+      }
+
+      .pos-activity-table {
+        display: block !important;
+      }
+
+      .pos-activity-table table {
+        font-size: 6pt !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="invoice.html">POS &amp; AR INC</a>
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#mainNavbar"
+        aria-controls="mainNavbar"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="mainNavbar">
+        <ul class="navbar-nav ms-auto mt-2">
+          <li class="nav-item"><a class="nav-link" href="../dashboard.html">Dashboard</a></li>
+          <li class="nav-item"><a class="nav-link" href="invoice.html">Accounts Receivable</a></li>
+          <li class="nav-item"><a class="nav-link" href="aging_report.html">Aging Report</a></li>
+          <li class="nav-item"><a class="nav-link" href="sales_report.html">Sales Report</a></li>
+          <li class="nav-item"><a class="nav-link" href="pos_activity_report.html">POS Activity</a></li>
+          <li class="nav-item"><a class="nav-link" href="credit_limit_report.html">Credit Limit Report</a></li>
+          <li class="nav-item"><a class="nav-link" href="shift_report.html">Shift Report</a></li>
+          <li class="nav-item"><a class="nav-link" href="daily_report.html">Daily Z-Report</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  <main class="container-fluid">
+    <div class="content">
+      <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
+        <div>
+          <div class="dashboard-section-title">Reports</div>
+          <h2 class="page-title mt-2 mb-1">POS Activity Report</h2>
+          <p class="page-subtitle mb-0">
+            Review voids, cash movements, staff involved, and shift reconciliation.
+            Period: <strong id="reportPeriod">-</strong>
+          </p>
+        </div>
+        <div class="d-flex flex-wrap align-items-end gap-2 no-print">
+          <div>
+            <label for="dateFrom" class="form-label">From</label>
+            <input type="date" id="dateFrom" class="form-control">
+          </div>
+          <div>
+            <label for="dateTo" class="form-label">To</label>
+            <input type="date" id="dateTo" class="form-control">
+          </div>
+          <button type="button" id="generateBtn" class="btn btn-primary">Generate</button>
+          <button type="button" id="printBtn" class="btn btn-secondary">Print</button>
+        </div>
+      </div>
+
+      <div class="row g-3 mb-3 report-summary-cards">
+        <div class="col-12 col-md-4">
+          <div class="card h-100"><div class="card-body">
+            <small class="text-muted">Activity records</small>
+            <h5 id="activityCount" class="mt-2 mb-0">0</h5>
+          </div></div>
+        </div>
+        <div class="col-12 col-md-4">
+          <div class="card h-100"><div class="card-body">
+            <small class="text-muted">Voided amount</small>
+            <h5 id="voidAmount" class="mt-2 mb-0">&#8369;0.00</h5>
+          </div></div>
+        </div>
+        <div class="col-12 col-md-4">
+          <div class="card h-100"><div class="card-body">
+            <small class="text-muted">Cash movement amount</small>
+            <h5 id="movementAmount" class="mt-2 mb-0">&#8369;0.00</h5>
+          </div></div>
+        </div>
+      </div>
+
+      <section class="card mb-3 no-print">
+        <div class="card-body">
+          <div class="row g-2 align-items-end">
+            <div class="col-12 col-md-6 col-xl-3">
+              <label for="searchActivity" class="form-label">Search activity</label>
+              <input type="search" id="searchActivity" class="form-control" placeholder="Shift, staff, item or reason">
+            </div>
+            <div class="col-6 col-md-3 col-xl-2">
+              <label for="activityTypeFilter" class="form-label">Activity type</label>
+              <select id="activityTypeFilter" class="form-select">
+                <option value="all">All activity</option>
+                <option value="VOID_SALE">Void sale</option>
+                <option value="VOID_LINE">Void line</option>
+                <option value="CASH_DROP">Cash drop</option>
+                <option value="FLOAT_ADD">Float added</option>
+                <option value="FLOAT_REMOVE">Float removed</option>
+              </select>
+            </div>
+            <div class="col-6 col-md-3 col-xl-2">
+              <label for="terminalFilter" class="form-label">Terminal</label>
+              <select id="terminalFilter" class="form-select"><option value="all">All terminals</option></select>
+            </div>
+            <div class="col-6 col-md-3 col-xl-2">
+              <label for="cashierFilter" class="form-label">Cashier</label>
+              <select id="cashierFilter" class="form-select"><option value="all">All cashiers</option></select>
+            </div>
+            <div class="col-6 col-md-3 col-xl-2">
+              <label for="supervisorFilter" class="form-label">Involved supervisor</label>
+              <select id="supervisorFilter" class="form-select"><option value="all">All supervisors</option></select>
+            </div>
+            <div class="col-6 col-md-3 col-xl-1">
+              <label for="statusFilter" class="form-label">Status</label>
+              <select id="statusFilter" class="form-select">
+                <option value="all">All</option>
+                <option value="APPROVED">Approved</option>
+                <option value="PENDING">Pending</option>
+                <option value="REJECTED">Rejected</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-body" id="activityReport"></div>
+      </section>
+    </div>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script type="module" src="../../../js_functional/session.js"></script>
+  <script type="module" src="../../../js_functional/pos_activity_report.js"></script>
+</body>
+</html>

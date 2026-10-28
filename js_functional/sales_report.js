@@ -7,10 +7,7 @@ sessionStorage.setItem("baseAPI", baseAPI);
 
 let currentPage = 1;
 let reportSales = [];
-let reportVoidSaleActions = [];
 let reportCollectionsInPeriod = 0;
-let reportVoidLineCount = 0;
-let reportVoidLineAmount = 0;
 let printing = false;
 
 const formatDate = (date) => {
@@ -137,17 +134,11 @@ const loadSalesReport = async () => {
     }
 
     reportSales = response.data.sales;
-    reportVoidSaleActions = Array.isArray(response.data.void_sale_actions)
-      ? response.data.void_sale_actions
-      : [];
     reportCollectionsInPeriod = Number(response.data.collections_in_period) || 0;
-    reportVoidLineCount = Number(response.data.void_line_count) || 0;
-    reportVoidLineAmount = Number(response.data.void_line_amount) || 0;
     currentPage = 1;
     document.getElementById("reportPeriod").textContent = `${dateFrom} to ${dateTo}`;
     populateFilterOptions();
     displaySummary(reportSales);
-    renderVoidSalesActions();
     renderSalesReport();
   } catch (error) {
     console.error("Unable to load Sales Report:", error);
@@ -222,10 +213,6 @@ const displaySummary = (sales) => {
   const currentBalanceCents = completed.reduce((sum, sale) => {
     return sum + Math.round((Number(sale.current_balance) || 0) * 100);
   }, 0);
-  const voidSaleActionCents = reportVoidSaleActions.reduce((sum, action) => {
-    return sum + Math.round((Number(action.amount) || 0) * 100);
-  }, 0);
-
   document.getElementById("sumTransactions").textContent = formatNumber(completed.length, 0);
   document.getElementById("sumTotalSales").textContent = formatCurrency(grossSalesCents / 100);
   document.getElementById("sumNetSales").textContent = formatCurrency((grossSalesCents - vatCents) / 100);
@@ -234,10 +221,6 @@ const displaySummary = (sales) => {
   document.getElementById("sumPostedAR").textContent = formatCurrency(chargedToArCents / 100);
   document.getElementById("sumCollected").textContent = formatCurrency(reportCollectionsInPeriod);
   document.getElementById("sumOutstanding").textContent = formatCurrency(currentBalanceCents / 100);
-  document.getElementById("sumVoidSaleActions").textContent = formatNumber(reportVoidSaleActions.length, 0);
-  document.getElementById("sumVoidSaleAmount").textContent = formatCurrency(voidSaleActionCents / 100);
-  document.getElementById("sumVoidLineCount").textContent = formatNumber(reportVoidLineCount, 0);
-  document.getElementById("sumVoidLineAmount").textContent = formatCurrency(reportVoidLineAmount);
 };
 
 const renderSalesReport = () => {
@@ -249,37 +232,6 @@ const renderSalesReport = () => {
 const renderSaleRegister = (sale) => {
   return `<div>${escapeHtml(sale.terminal_name || "-")}</div>
     <small class="text-muted">${escapeHtml(sale.cashier || "-")}</small>`;
-};
-
-const renderVoidSalesActions = () => {
-  const body = document.getElementById("void-sales-actions-body");
-  const rows = reportVoidSaleActions.map((action) => `<tr>
-    <td class="text-nowrap">${escapeHtml(action.action_at)}</td>
-    <td>${escapeHtml(action.shift_id)}</td>
-    <td>${escapeHtml(action.terminal_name || "-")}</td>
-    <td>${escapeHtml(action.cashier || "-")}</td>
-    <td>${escapeHtml(action.supervisor || "-")}</td>
-    <td>${escapeHtml(action.reason || "-")}</td>
-    <td class="text-end text-nowrap">${formatCurrency(Number(action.amount) || 0)}</td>
-  </tr>`).join("");
-
-  body.innerHTML = `
-    <div class="table-responsive">
-      <table class="table table-hover table-striped table-sm align-middle mb-0">
-        <thead>
-          <tr>
-            <th>Action date</th>
-            <th>Shift</th>
-            <th>Terminal</th>
-            <th>Cashier</th>
-            <th>Supervisor</th>
-            <th>Reason</th>
-            <th class="text-end">Amount</th>
-          </tr>
-        </thead>
-        <tbody>${rows || '<tr><td colspan="7" class="text-center text-muted py-4">No void sale actions in this period.</td></tr>'}</tbody>
-      </table>
-    </div>`;
 };
 
 const renderSalesReportTable = (sales) => {

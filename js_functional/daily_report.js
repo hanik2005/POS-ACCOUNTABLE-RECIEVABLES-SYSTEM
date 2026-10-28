@@ -6,6 +6,7 @@ import { addPrintSummaryTables, removePrintSummaryTables } from "../js/module/re
 sessionStorage.setItem("baseAPI", baseAPI);
 
 let shiftPage = 1;
+let accountingArPage = 1;
 let reportData = null;
 
 const formatDate = (date) => {
@@ -77,6 +78,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   document.getElementById("dailyBtn").addEventListener("click", () => {
     shiftPage = 1;
+    accountingArPage = 1;
     loadDailyReport();
   });
   document.getElementById("printBtn").addEventListener("click", () => {
@@ -88,28 +90,53 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 window.addEventListener("beforeprint", () => {
   displayShiftTable(reportData ? reportData.shifts : []);
+  displayAccountingArActivity(reportData?.accountingArActivity || [], true);
   addPrintSummaryTables();
 });
 
 window.addEventListener("afterprint", () => {
   removePrintSummaryTables();
   displayShiftCards(reportData ? reportData.shifts : []);
+  displayAccountingArActivity(reportData?.accountingArActivity || []);
 });
 
 const loadDailyReport = async () => {
+  const date = document.getElementById("dailyDate").value;
   const jsonData = {
-    date: document.getElementById("dailyDate").value,
+    date: date,
   };
 
-  const response = await axios.get(`${baseAPI}/shift.php`, {
-    params: {
-      operation: "getDailyReport",
-      json: JSON.stringify(jsonData),
-    },
-  });
+  let dailyResponse;
+  let arResponse;
 
-  if (response.status == 200 && response.data.summary) {
-    reportData = response.data;
+  try {
+    [dailyResponse, arResponse] = await Promise.all([
+      axios.get(`${baseAPI}/shift.php`, {
+        params: {
+          operation: "getDailyReport",
+          json: JSON.stringify(jsonData),
+        },
+      }),
+      axios.get(`${baseAPI}/shift.php`, {
+        params: {
+          operation: "getShiftArDetails",
+          json: JSON.stringify({ dateFrom: date, dateTo: date }),
+        },
+      }),
+    ]);
+  } catch (error) {
+    console.error("Unable to load the Daily Z-report and Accounting AR activity:", error);
+    Swal.fire("Error", "Daily Z-report could not be loaded. Check the connection and try again.", "error");
+    return;
+  }
+
+  if (dailyResponse.status == 200 && dailyResponse.data.summary && Array.isArray(arResponse.data)) {
+    reportData = {
+      ...dailyResponse.data,
+      accountingArActivity: arResponse.data.filter((report) => {
+        return (parseFloat(report.collected_in_period) || 0) > 0;
+      }),
+    };
     displayDailyReport(reportData);
   } else {
     Swal.fire("Error", "Daily Z-report could not be loaded.", "error");
@@ -122,6 +149,7 @@ const displayDailyReport = (report) => {
   displayPaymentMethods(report.paymentMethods);
   displayCashDrawer(report.drawer);
   displayShiftCards(report.shifts);
+  displayAccountingArActivity(report.accountingArActivity);
 };
 
 const displaySummary = (summary) => {
@@ -199,6 +227,61 @@ const displayPaymentMethods = (methods) => {
       </table>
     </div>
   `;
+};
+
+const displayAccountingArActivity = (reports, printAll = false) => {
+  const main = document.getElementById("accounting-ar-div");
+
+  if (!main) {
+    return;
+  }
+
+  main.innerHTML = "";
+
+  if (!reports.length) {
+    main.innerHTML = '<p class="report-empty-message">No AR payments through Accounting were recorded on this date.</p>';
+    return;
+  }
+
+  const { rows, current } = paginate(reports, accountingArPage);
+  const visibleReports = printAll ? reports : rows;
+
+  accountingArPage = current;
+  main.innerHTML = `
+    <div class="report-ar-table-wrap">
+      <table class="report-ar-table report-accounting-ar-table">
+        <thead>
+          <tr>
+            <th scope="col">Invoice number</th>
+            <th scope="col">Customer</th>
+            <th scope="col" class="text-end">Invoice amount</th>
+            <th scope="col" class="text-end">AR payment</th>
+            <th scope="col">Accounting staff</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${visibleReports.map((report) => `
+            <tr>
+              <td data-label="Invoice number">${escapeHtml(report.invoice_number || "Invoice")}</td>
+              <td data-label="Customer">${escapeHtml(report.customer_name || "-")}</td>
+              <td data-label="Invoice amount" class="text-end">${amount(report.amount_due)}</td>
+              <td data-label="AR payment" class="text-end">${amount(report.collected_in_period)}</td>
+              <td data-label="Accounting staff">${escapeHtml(report.accounting_staff || "-")}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  if (!printAll) {
+    const pagination = createPagination(reports.length, accountingArPage, (page) => {
+      accountingArPage = page;
+      displayAccountingArActivity(reports);
+    });
+    pagination.classList.add("shift-report-pagination");
+    main.appendChild(pagination);
+  }
 };
 
 const displayCashDrawer = (drawer) => {

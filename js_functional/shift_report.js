@@ -313,6 +313,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("shiftTerminal").addEventListener("change", refreshShiftFilters);
   document.getElementById("shiftCashier").addEventListener("input", refreshShiftFilters);
   document.getElementById("shiftStatus").addEventListener("change", refreshShiftFilters);
+  document.getElementById("shiftAccountingAr")?.addEventListener("change", refreshShiftFilters);
 
   loadShiftReport();
 });
@@ -557,7 +558,7 @@ const displayShiftReport = (shifts) => {
   const filteredArReports = cashierMode
     ? arReports.filter((report) => allShiftIds.has(getShiftKey(report.shift_id)))
     : getFilteredArReports(shifts, filteredShifts, arReports);
-  const accountingArReports = cashierMode
+  const accountingArReports = cashierMode || document.getElementById("shiftAccountingAr")?.value === "exclude"
     ? []
     : filteredArReports.filter((report) => (parseFloat(report.collected_in_period) || 0) > 0);
   const { rows: accountingArRows, current: accountingArCurrent } = paginate(
@@ -604,7 +605,7 @@ const displayShiftReport = (shifts) => {
     cashDrop += parseFloat(shift.cash_drop) || 0;
   });
 
-  filteredArReports.forEach((report) => {
+  accountingArReports.forEach((report) => {
     arCollectedAmount += parseFloat(report.collected_in_period) || 0;
   });
 
@@ -754,8 +755,8 @@ const displayShiftReport = (shifts) => {
 
   main.appendChild(list);
 
-  if (!cashierMode && (filteredShifts.length > 0 || filteredArReports.length > 0)) {
-    main.insertAdjacentHTML("beforeend", renderReportSummary("Totals for matching shifts and AR activity", [
+  if (!cashierMode && (filteredShifts.length > 0 || accountingArReports.length > 0)) {
+    const summaryFields = [
       { label: "Transactions", value: formatNumber(transactions, 0) },
       { label: "Gross sales", value: amount(grossSales) },
       { label: "Paid at sale (POS)", value: amount(paidAtSale) },
@@ -766,8 +767,17 @@ const displayShiftReport = (shifts) => {
       { label: "Void lines (amount)", value: amount(voidLineAmount) },
       { label: "Cash drops (count)", value: formatNumber(cashDropCount, 0) },
       { label: "Cash drops (amount)", value: amount(cashDrop) },
-      { label: "AR payments collected", value: amount(arCollectedAmount) },
-    ]));
+    ];
+    const accountingArIncluded = document.getElementById("shiftAccountingAr")?.value !== "exclude";
+
+    if (accountingArIncluded) {
+      summaryFields.push({ label: "AR payments collected", value: amount(arCollectedAmount) });
+    }
+
+    main.insertAdjacentHTML("beforeend", renderReportSummary(
+      accountingArIncluded ? "Totals for matching shifts and AR activity" : "Totals for matching shifts",
+      summaryFields,
+    ));
   }
 
   if (!printing && !cashierMode) {
