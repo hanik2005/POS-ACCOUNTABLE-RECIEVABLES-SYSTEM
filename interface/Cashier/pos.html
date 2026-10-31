@@ -29,6 +29,9 @@
         <div class="entry-row product-entry-row">
           <label class="entry-qty-label" for="entry">PRODUCT</label>
           <input type="text" id="entry" autocomplete="off" placeholder="Scan barcode or type product name">
+          <label class="entry-qty-label" for="entry-qty">QTY</label>
+          <input type="number" id="entry-qty" min="1" step="1" value="1" inputmode="numeric" autocomplete="off"
+            aria-label="Product quantity">
         </div>
         <div id="suggest" class="suggest"></div>
         <div id="entry-message" class="entry-message"></div>
@@ -57,14 +60,14 @@
       <div class="last-item" id="last-item">-</div>
       <div class="side-label">KEYS</div>
       <div class="key-list">
-        <div><kbd>Enter</kbd> add item / on empty = walk-in checkout</div>
+        <div><kbd>Enter</kbd> select product / add with quantity; empty = walk-in checkout</div>
         <div><kbd>F5</kbd> Accounts Receivable checkout</div>
-        <div>Search a product and press Enter to enter its quantity</div>
+        <div>Type a product and press Enter, enter the quantity, then press Enter to add it</div>
         <div><kbd>↑</kbd> <kbd>↓</kbd> select line</div>
-        <div><kbd>+</kbd> <kbd>-</kbd> change quantity</div>
+        <div><kbd>+</kbd> increase quantity · <kbd>-</kbd> reduce with supervisor PIN</div>
         <div><kbd>F12</kbd> adjust selected line quantity</div>
         <div><kbd>Del</kbd> void selected line</div>
-        <div><kbd>Esc</kbd> void sale (supervisor sign-in)</div>
+        <div><kbd>Esc</kbd> void sale (supervisor PIN)</div>
       </div>
     </div>
   </div>

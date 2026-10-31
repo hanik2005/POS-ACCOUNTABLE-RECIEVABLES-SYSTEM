@@ -13,8 +13,9 @@
     .entry-row { display: flex; gap: 8px; }
     .entry-qty-label { align-self: center; color: #8b9ab3; font-size: .8rem; letter-spacing: .06em; }
     #entry { flex: 1; min-width: 0; font-size: 1.6rem; padding: 10px 16px; background: #0b0f17; color: #fff; border: 2px solid #35e08a; border-radius: 8px; outline: none; }
-    .suggest { position: absolute; top: 58px; left: 86px; right: 0; z-index: 50; background: #1b2332; border: 1px solid #2c3a52; border-radius: 0 0 8px 8px; }
-    .suggest-item { width: 100%; color: #e6edf7; background: transparent; border: 0; text-align: left; cursor: pointer; padding: 8px 16px; font-size: 1.15rem; display: flex; justify-content: space-between; }
+    #entry-qty { width: 105px; font-size: 1.35rem; padding: 8px 10px; background: #0b0f17; color: #fff; border: 2px solid #2f5fb3; border-radius: 8px; outline: none; }
+    .suggest { position: absolute; top: 58px; left: 86px; right: 120px; z-index: 50; background: #1b2332; border: 1px solid #2c3a52; border-radius: 0 0 8px 8px; }
+    .suggest-item { width: 100%; color: #e6edf7; background: transparent; border: 0; text-align: left; cursor: pointer; padding: 8px 16px; font: inherit; font-size: 1.15rem; display: flex; justify-content: space-between; }
     .suggest-item.active, .list-row.active { background: #2f5fb3; }
     .entry-message { min-height: 22px; color: #ffb454; font-size: .95rem; padding: 2px 4px; }
     .cart-wrap { flex: 1; overflow-y: auto; background: #161d2b; border-radius: 8px; }
@@ -22,8 +23,6 @@
     .cart-table th { position: sticky; top: 0; background: #0b0f17; padding: 8px 14px; font-size: .8rem; letter-spacing: .06em; color: #8b9ab3; }
     .cart-table td { padding: 9px 14px; border-bottom: 1px solid #222c3f; }
     .cart-table tr.selected td { background: #25406b; }
-    .cart-qty-edit { width: 100%; color: inherit; background: transparent; border: 0; padding: 0; font: inherit; text-align: right; cursor: pointer; }
-    .cart-qty-edit:hover { color: #35e08a; text-decoration: underline; }
     .cart-qty-input { width: 86px; color: #fff; background: #0b0f17; border: 1px solid #35e08a; border-radius: 4px; padding: 2px 5px; font: inherit; text-align: right; }
     .text-end { text-align: right; }
     .side-label { font-size: .72rem; letter-spacing: .08em; color: #8b9ab3; margin-top: 14px; }
@@ -85,7 +84,8 @@
       .entry-row { gap: 5px; }
       .entry-qty-label { font-size: .7rem; }
       #entry { padding: 8px 10px; font-size: 1.05rem; }
-      .suggest { left: 68px; top: 47px; }
+      #entry-qty { width: 72px; font-size: 1rem; padding: 7px 5px; }
+      .suggest { left: 68px; right: 82px; top: 47px; }
       .cart-table { min-width: 480px; font-size: 1rem; }
       .cart-table th, .cart-table td { padding: 7px 8px; }
       .pos-right { padding: 12px; }

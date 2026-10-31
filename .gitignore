@@ -6,3 +6,4 @@
 /invoices/*.pdf
 /composer.lock
 /composer.json
+/saved/

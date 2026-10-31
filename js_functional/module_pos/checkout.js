@@ -2,7 +2,7 @@ import { baseAPI } from "./config.js";
 import { state } from "./state.js";
 import { formatCurrency, toCents, isCashMethod, moveIndex } from "./utils.js";
 import { openDialog, closeDialog, openMessageDialog } from "./dialog.js";
-import { getTotalSales, getTotalQty, resetSale, displayCustomer } from "./cart.js";
+import { getTotalSales, getTotalQty, resetSale, displayCustomer, saveCartDraft } from "./cart.js";
 import { openCustomerDialog } from "./customer.js";
 import { refreshShift } from "./shift.js";
 import { prepareInvoice, openPrintDialog } from "./invoice.js";
@@ -38,6 +38,7 @@ export const startWalkInCheckout = () => {
 
   state.saleType = "WALK_IN";
   state.customer = null;
+  saveCartDraft();
   displayCustomer();
   openPayDialog();
 };
@@ -48,10 +49,12 @@ export const startArCheckout = () => {
   }
 
   state.saleType = "AR";
+  saveCartDraft();
 
   if (!state.customer) {
     openCustomerDialog(openCheckoutDialog, () => {
       state.saleType = null;
+      saveCartDraft();
     });
     return;
   }
@@ -68,6 +71,7 @@ export const openCheckoutDialog = () => {
   }
 
   state.saleType = "AR";
+  saveCartDraft();
   const terms = state.customers.find((item) => item.customer_id == customer.customerId);
   const creditLimit = terms ? toCents(terms.credit_limit) : 0;
   const outstandingBalance = terms ? toCents(terms.outstanding_balance) : 0;

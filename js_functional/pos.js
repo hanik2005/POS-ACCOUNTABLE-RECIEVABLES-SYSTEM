@@ -4,7 +4,21 @@ import { goFullScreen, enterFullScreen } from "./module_pos/fullscreen.js";
 import { loadPosOptions } from "./module_pos/options.js";
 import { loadPosSession, refreshShift, openCloseShiftDialog } from "./module_pos/shift.js";
 import { openDrawerDialog } from "./module_pos/drawer.js";
-import { displayCart, displayCustomer, addEntry, clearEntry, moveSuggestion, onEntryInput, moveSelected, changeQty, editQty, voidLine } from "./module_pos/cart.js";
+import {
+  displayCart,
+  displayCustomer,
+  addEntry,
+  submitEntryQuantity,
+  clearEntry,
+  moveSuggestion,
+  onEntryInput,
+  initializeProductSuggestionSelection,
+  moveSelected,
+  changeQty,
+  editQty,
+  voidLine,
+  restoreCartDraft,
+} from "./module_pos/cart.js";
 import { openCustomerDialog } from "./module_pos/customer.js";
 import { startArCheckout, startWalkInCheckout } from "./module_pos/checkout.js";
 import { holdSale, openRecallDialog, openVoidSaleDialog } from "./module_pos/hold.js";
@@ -16,6 +30,13 @@ const onPageLoad = async () => {
 
   await loadPosOptions();
   await loadPosSession();
+
+  if (restoreCartDraft()) {
+    displayCart();
+    displayCustomer();
+    const selectedItem = state.details[state.selected];
+    document.getElementById("last-item").innerText = `${selectedItem.productName}  x${selectedItem.qty}`;
+  }
 };
 
 document.addEventListener("keydown", (e) => {
@@ -75,7 +96,13 @@ document.addEventListener("keydown", (e) => {
     case "Escape":
       e.preventDefault();
 
-      if (entry().value != "") {
+      if (document.activeElement.id == "entry-qty") {
+        if (state.pendingProduct) {
+          clearEntry();
+        } else {
+          entry().focus();
+        }
+      } else if (entry().value != "") {
         clearEntry();
       } else {
         openVoidSaleDialog();
@@ -87,6 +114,10 @@ document.addEventListener("keydown", (e) => {
       break;
     case "ArrowDown":
     case "ArrowUp":
+      if (["entry-qty", "cart-qty-input"].includes(document.activeElement.id)) {
+        return;
+      }
+
       e.preventDefault();
 
       if (state.suggestions.length > 0) {
@@ -97,13 +128,18 @@ document.addEventListener("keydown", (e) => {
       break;
     case "+":
     case "-":
-      if (entry().value == "") {
+      if (entry().value == "" && !["entry-qty", "cart-qty-input"].includes(document.activeElement.id)) {
         e.preventDefault();
         changeQty(e.key == "+" ? 1 : -1);
       }
       break;
     case "Enter":
       e.preventDefault();
+
+      if (document.activeElement.id == "entry-qty") {
+        submitEntryQuantity();
+        return;
+      }
 
       if (entry().value.trim() == "") {
         startWalkInCheckout();
@@ -116,6 +152,7 @@ document.addEventListener("keydown", (e) => {
 
 document.addEventListener("DOMContentLoaded", () => {
   entry().addEventListener("input", onEntryInput);
+  initializeProductSuggestionSelection();
 
   document.getElementById("btn-drawer").addEventListener("click", () => {
     openDrawerDialog();
@@ -130,7 +167,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.addEventListener("click", (e) => {
-    if (!state.dialog && !e.target.closest(".entry-wrap")) {
+    if (!state.dialog && !e.target.closest(".entry-wrap") && !e.target.closest("#cart-qty-input")) {
       entry().focus();
     }
   });

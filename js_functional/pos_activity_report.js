@@ -8,6 +8,7 @@ sessionStorage.setItem("baseAPI", baseAPI);
 const activityLabels = {
   VOID_SALE: "Void sale",
   VOID_LINE: "Void line",
+  QUANTITY_REDUCE: "Quantity reduced",
   CASH_DROP: "Cash drop",
   FLOAT_ADD: "Float added",
   FLOAT_REMOVE: "Float removed",
@@ -57,6 +58,10 @@ const getDetailsText = (activity) => {
     return items.map((item) => {
       const name = String(item.productName || "Product");
       const quantity = Number(item.qty) || 0;
+
+      if (activity.activity_type == "QUANTITY_REDUCE" && item.quantityBefore && item.quantityAfter) {
+        return `${name} (${formatNumber(item.quantityBefore, 0)} to ${formatNumber(item.quantityAfter, 0)}, reduced ${formatNumber(quantity, 0)})`;
+      }
 
       return quantity > 0 ? `${name} \u00d7${formatNumber(quantity, 0)}` : name;
     }).join(", ");

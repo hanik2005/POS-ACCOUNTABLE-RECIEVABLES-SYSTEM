@@ -80,7 +80,7 @@ class PosActivityReport
           LEFT JOIN users supervisor ON psa.supervisor_user_id = supervisor.user_id
           LEFT JOIN users opening_supervisor ON sh.opening_supervisor_user_id = opening_supervisor.user_id
           LEFT JOIN users closing_supervisor ON sh.supervisor_user_id = closing_supervisor.user_id
-          WHERE psa.action_type IN ('VOID_SALE', 'VOID_LINE')
+          WHERE psa.action_type IN ('VOID_SALE', 'VOID_LINE', 'QUANTITY_REDUCE')
             AND DATE(psa.action_at) BETWEEN :voidDateFrom AND :voidDateTo
 
           UNION ALL

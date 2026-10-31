@@ -19,31 +19,6 @@ class Shift
     return $now >= $startTime || $now < $endTime;
   }
 
-  function verifySupervisor($conn, $username, $password, $excludeUserId = null)
-  {
-    if ($username == "" || $password == "") {
-      return false;
-    }
-
-    $sql = "SELECT u.user_id, u.password_hash
-        FROM users u
-        INNER JOIN roles r ON u.role_id = r.role_id
-        WHERE u.username = :username AND u.status = 'ACTIVE' AND r.status = 'ACTIVE'
-          AND UPPER(r.role_name) = 'SUPERVISOR'
-        LIMIT 1";
-    $stmt = $conn->prepare($sql);
-    $stmt->bindParam(":username", $username);
-    $stmt->execute();
-    $supervisor = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if (!$supervisor || !password_verify($password, $supervisor['password_hash'])
-      || ($excludeUserId && $supervisor['user_id'] == $excludeUserId)) {
-      return false;
-    }
-
-    return $supervisor;
-  }
-
   function verifySupervisorPin($conn, $pin, $excludeUserId = null)
   {
     if (!preg_match('/\A[0-9]{4,6}\z/', $pin)) {
@@ -152,18 +127,19 @@ class Shift
     $floatStart = isset($json['floatStart']) && is_numeric($json['floatStart'])
       ? round((float) $json['floatStart'], 2)
       : -1;
-    $supervisorUsername = isset($json['supervisorUsername']) ? trim($json['supervisorUsername']) : "";
-    $supervisorPassword = isset($json['supervisorPassword']) ? $json['supervisorPassword'] : "";
+    $supervisorPin = isset($json['supervisorPin']) && is_string($json['supervisorPin'])
+      ? trim($json['supervisorPin'])
+      : "";
 
     if (!$userId || $roleName != 'CASHIER') {
       return json_encode(3);
     }
 
-    if ($floatStart < 0 || $supervisorUsername == "" || $supervisorPassword == "") {
+    if ($floatStart < 0 || !preg_match('/\A[0-9]{4,6}\z/', $supervisorPin)) {
       return json_encode(0);
     }
 
-    $supervisor = $this->verifySupervisor($conn, $supervisorUsername, $supervisorPassword, $userId);
+    $supervisor = $this->verifySupervisorPin($conn, $supervisorPin, $userId);
 
     if (!$supervisor) {
       return json_encode(4);
@@ -220,8 +196,9 @@ class Shift
     $closedAt = date('Y-m-d H:i:s');
     $cashierClosingCash = isset($json['cashierClosingCash']) ? $json['cashierClosingCash'] : null;
     $supervisorClosingCash = isset($json['supervisorClosingCash']) ? $json['supervisorClosingCash'] : null;
-    $supervisorUsername = isset($json['supervisorUsername']) ? trim($json['supervisorUsername']) : "";
-    $supervisorPassword = isset($json['supervisorPassword']) ? $json['supervisorPassword'] : "";
+    $supervisorPin = isset($json['supervisorPin']) && is_string($json['supervisorPin'])
+      ? trim($json['supervisorPin'])
+      : "";
 
     if ($roleName != 'CASHIER' || !$cashierUserId) {
       return json_encode(4);
@@ -229,23 +206,13 @@ class Shift
 
     if (!is_numeric($cashierClosingCash) || !is_numeric($supervisorClosingCash)
       || $cashierClosingCash < 0 || $supervisorClosingCash < 0
-      || $supervisorUsername == "" || $supervisorPassword == "") {
+      || !preg_match('/\A[0-9]{4,6}\z/', $supervisorPin)) {
       return json_encode(0);
     }
 
-    $sql = "SELECT u.user_id, u.password_hash, r.role_name
-        FROM users u
-        INNER JOIN roles r ON u.role_id = r.role_id
-        WHERE u.username = :username AND u.status = 'ACTIVE' AND r.status = 'ACTIVE'
-        LIMIT 1";
-    $stmt = $conn->prepare($sql);
-    $stmt->bindParam(":username", $supervisorUsername);
-    $stmt->execute();
-    $supervisor = $stmt->fetch(PDO::FETCH_ASSOC);
+    $supervisor = $this->verifySupervisorPin($conn, $supervisorPin, $cashierUserId);
 
-    if (!$supervisor || strtoupper($supervisor['role_name']) != 'SUPERVISOR'
-      || $supervisor['user_id'] == $cashierUserId
-      || !password_verify($supervisorPassword, $supervisor['password_hash'])) {
+    if (!$supervisor) {
       return json_encode(3);
     }
     $supervisorUserId = $supervisor['user_id'];
@@ -445,9 +412,27 @@ class Shift
     $salesId = !empty($json['salesId']) ? (int) $json['salesId'] : null;
 
     if (!$cashierUserId || $roleName != 'CASHIER' || $shiftId < 1
-      || !in_array($actionType, ['VOID_LINE', 'VOID_SALE'], true)
+      || !in_array($actionType, ['VOID_LINE', 'VOID_SALE', 'QUANTITY_REDUCE'], true)
       || $reason == "" || !is_finite($amount) || $amount < 0) {
       return json_encode(0);
+    }
+
+    if ($actionType == 'QUANTITY_REDUCE') {
+      $item = isset($json['details']) && is_array($json['details']) ? $json['details'] : [];
+      $quantityBefore = isset($item['quantityBefore']) ? (int) $item['quantityBefore'] : 0;
+      $quantityAfter = isset($item['quantityAfter']) ? (int) $item['quantityAfter'] : 0;
+      $quantityReduced = isset($item['qty']) ? (int) $item['qty'] : 0;
+      $unitPrice = isset($item['productPrice']) && is_numeric($item['productPrice'])
+        ? (float) $item['productPrice']
+        : -1;
+      $expectedAmount = round(($quantityBefore - $quantityAfter) * $unitPrice, 2);
+
+      if ($quantityBefore < 2 || $quantityAfter < 1 || $quantityAfter >= $quantityBefore
+        || $quantityReduced != $quantityBefore - $quantityAfter || $unitPrice < 0
+        || !isset($item['productId']) || empty($item['productName'])
+        || abs($amount - $expectedAmount) > 0.009) {
+        return json_encode(0);
+      }
     }
 
     $supervisor = $this->verifySupervisorPin($conn, $supervisorPin, $cashierUserId);

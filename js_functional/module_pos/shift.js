@@ -34,7 +34,7 @@ export const loadPosSession = async () => {
     openMessageDialog(
       "Supervisor at POS",
       "Cash drawer and void approvals happen on the active cashier POS. "
-        + "Log out, let the cashier open their shift, then enter your credentials in the approval prompt.",
+        + "Log out, let the cashier open their shift, then enter your PIN in the approval prompt.",
     );
     return;
   }
@@ -81,12 +81,9 @@ export const openStartShiftDialog = () => {
         <label class="dialog-label" for="dialog-input">Supervisor-approved starting float</label>
         <input id="dialog-input" type="number" step="0.01" min="0" class="pos-input"
           placeholder="Starting float" autocomplete="off">
-        <label class="dialog-label" for="supervisor-username">Supervisor username</label>
-        <input id="supervisor-username" type="text" class="pos-input"
-          placeholder="Supervisor username" autocomplete="username">
-        <label class="dialog-label" for="supervisor-password">Supervisor password</label>
-        <input id="supervisor-password" type="password" class="pos-input"
-          placeholder="Supervisor password" autocomplete="current-password">`
+        <label class="dialog-label" for="supervisor-pin">Supervisor PIN</label>
+        <input id="supervisor-pin" type="password" inputmode="numeric" maxlength="6" class="pos-input"
+          placeholder="Enter 4-6 digit PIN" autocomplete="off">`
         : ""}`;
   }
 
@@ -104,8 +101,7 @@ export const openStartShiftDialog = () => {
         e.preventDefault();
         if (canStartShift) {
           const nextField = {
-            "dialog-input": "supervisor-username",
-            "supervisor-username": "supervisor-password",
+            "dialog-input": "supervisor-pin",
           }[document.activeElement.id];
 
           if (nextField) {
@@ -138,30 +134,28 @@ export const openStartShiftDialog = () => {
 
 const submitOpenShift = () => {
   const floatStart = document.getElementById("dialog-input").value;
-  const supervisorUsername = document.getElementById("supervisor-username").value.trim();
-  const supervisorPassword = document.getElementById("supervisor-password").value;
+  const supervisorPin = document.getElementById("supervisor-pin").value.trim();
 
   if (floatStart == "" || !Number.isFinite(Number(floatStart)) || Number(floatStart) < 0
-    || supervisorUsername == "" || supervisorPassword == "") {
+    || !/^\d{4,6}$/.test(supervisorPin)) {
     openMessageDialog(
       "Starting float required",
-      "Enter the float counted by the supervisor and the supervisor's username and password.",
+      "Enter the float counted by the supervisor and a valid 4-6 digit supervisor PIN.",
       openStartShiftDialog,
     );
     return;
   }
 
   closeDialog();
-  openShift(Number(floatStart), supervisorUsername, supervisorPassword);
+  openShift(Number(floatStart), supervisorPin);
 };
 
-export const openShift = async (floatStart, supervisorUsername, supervisorPassword) => {
+export const openShift = async (floatStart, supervisorPin) => {
   const formData = new FormData();
   formData.append("operation", "openShift");
   formData.append("json", JSON.stringify({
     floatStart: floatStart,
-    supervisorUsername: supervisorUsername,
-    supervisorPassword: supervisorPassword,
+    supervisorPin: supervisorPin,
   }));
 
   const response = await axios({
@@ -181,7 +175,7 @@ export const openShift = async (floatStart, supervisorUsername, supervisorPasswo
   } else if (response.data == 4) {
     openMessageDialog(
       "Supervisor verification failed",
-      "Check that the username and password belong to an active supervisor.",
+      "Check that the PIN belongs to an active supervisor account.",
       openStartShiftDialog,
     );
   } else {
@@ -245,12 +239,9 @@ export const openCloseShiftDialog = async (afterClose) => {
       <label class="dialog-label" for="supervisor-closing-cash">Supervisor counted cash</label>
        <input id="supervisor-closing-cash" type="number" step="0.01" min="0" class="pos-input"
          placeholder="Supervisor count" autocomplete="off">
-      <label class="dialog-label" for="supervisor-username">Supervisor username</label>
-       <input id="supervisor-username" type="text" class="pos-input"
-         placeholder="Supervisor username" autocomplete="username">
-      <label class="dialog-label" for="supervisor-password">Supervisor password</label>
-       <input id="supervisor-password" type="password" class="pos-input"
-         placeholder="Supervisor password" autocomplete="current-password">
+      <label class="dialog-label" for="supervisor-pin">Supervisor PIN</label>
+       <input id="supervisor-pin" type="password" inputmode="numeric" maxlength="6" class="pos-input"
+         placeholder="Enter 4-6 digit PIN" autocomplete="off">
       <div class="dialog-actions">
         <button type="button" id="confirm-close-shift" class="pos-action-button">Confirm Close Shift</button>
         <button type="button" id="cancel-close-shift" class="pos-action-button secondary">Cancel</button>
@@ -264,8 +255,7 @@ export const openCloseShiftDialog = async (afterClose) => {
         e.preventDefault();
         const nextField = {
           "dialog-input": "supervisor-closing-cash",
-          "supervisor-closing-cash": "supervisor-username",
-          "supervisor-username": "supervisor-password",
+          "supervisor-closing-cash": "supervisor-pin",
         }[document.activeElement.id];
 
         if (nextField) {
@@ -291,18 +281,17 @@ export const openCloseShiftDialog = async (afterClose) => {
 const submitCloseShift = (afterClose) => {
   const cashierClosingCash = document.getElementById("dialog-input").value;
   const supervisorClosingCash = document.getElementById("supervisor-closing-cash").value;
-  const supervisorUsername = document.getElementById("supervisor-username").value.trim();
-  const supervisorPassword = document.getElementById("supervisor-password").value;
+  const supervisorPin = document.getElementById("supervisor-pin").value.trim();
 
   if (
     cashierClosingCash == "" || supervisorClosingCash == ""
     || !Number.isFinite(Number(cashierClosingCash)) || !Number.isFinite(Number(supervisorClosingCash))
     || Number(cashierClosingCash) < 0 || Number(supervisorClosingCash) < 0
-    || supervisorUsername == "" || supervisorPassword == ""
+    || !/^\d{4,6}$/.test(supervisorPin)
   ) {
     openMessageDialog(
       "Complete the closing count",
-      "Enter both cash counts and the supervisor credentials.",
+      "Enter both cash counts and a valid 4-6 digit supervisor PIN.",
       () => openCloseShiftDialog(afterClose),
     );
     return;
@@ -311,8 +300,7 @@ const submitCloseShift = (afterClose) => {
   closeShift({
     cashierClosingCash: Number(cashierClosingCash),
     supervisorClosingCash: Number(supervisorClosingCash),
-    supervisorUsername: supervisorUsername,
-    supervisorPassword: supervisorPassword,
+    supervisorPin: supervisorPin,
   }, afterClose);
 };
 
@@ -344,7 +332,7 @@ const closeShift = async (closingData, afterClose) => {
   } else if (response.data == 3) {
     openMessageDialog(
       "Supervisor verification failed",
-      "Check that the username and password belong to an active supervisor.",
+      "Check that the PIN belongs to an active supervisor account.",
       () => openCloseShiftDialog(afterClose),
     );
   } else if (response.data == 4) {

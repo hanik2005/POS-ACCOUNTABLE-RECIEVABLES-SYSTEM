@@ -11,6 +11,8 @@ export const state = {
   terminal: null,
   shift: null,
   selected: -1,
+  editingQtyIndex: -1,
+  pendingProduct: null,
   suggestions: [],
   suggestIndex: 0,
   dialog: null,

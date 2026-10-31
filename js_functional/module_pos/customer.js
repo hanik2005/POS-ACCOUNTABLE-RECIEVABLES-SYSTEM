@@ -1,7 +1,7 @@
 import { state } from "./state.js";
 import { focusDialogInput, moveIndex } from "./utils.js";
 import { openDialog, closeDialog } from "./dialog.js";
-import { displayCustomer } from "./cart.js";
+import { displayCustomer, saveCartDraft } from "./cart.js";
 
 export const openCustomerDialog = (after, onCancel) => {
   let list = [];
@@ -42,6 +42,7 @@ export const openCustomerDialog = (after, onCancel) => {
 
         if (item) {
           state.customer = { customerId: item.customer_id, customerName: item.customer_name };
+          saveCartDraft();
 
           displayCustomer();
           closeDialog();

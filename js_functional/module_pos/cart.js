@@ -1,7 +1,7 @@
 import { baseAPI } from "./config.js";
 import { state } from "./state.js";
 import { entry, formatCurrency, formatNumber, showStatus } from "./utils.js";
-import { openDialog, closeDialog, openMessageDialog } from "./dialog.js";
+import { openMessageDialog } from "./dialog.js";
 import { openSupervisorApprovalDialog } from "./supervisor.js";
 
 const escapeHtml = (value) => {
@@ -14,6 +14,130 @@ const escapeHtml = (value) => {
       "'": "&#039;",
     }[character];
   });
+};
+
+const getCartDraftKey = () => {
+  const shiftId = Number(state.shift && state.shift.shift_id);
+
+  return Number.isInteger(shiftId) && shiftId > 0 ? `posCartDraft:${shiftId}` : null;
+};
+
+const removeCartDraft = (storageKey) => {
+  try {
+    sessionStorage.removeItem(storageKey);
+  } catch {
+    // Ignore storage errors so an expired or unavailable draft cannot block POS.
+  }
+};
+
+export const saveCartDraft = () => {
+  const storageKey = getCartDraftKey();
+
+  if (!storageKey) {
+    return;
+  }
+
+  try {
+    if (state.details.length == 0) {
+      sessionStorage.removeItem(storageKey);
+      return;
+    }
+
+    sessionStorage.setItem(storageKey, JSON.stringify({
+      shiftId: Number(state.shift.shift_id),
+      details: state.details.map((item) => ({
+        productId: item.productId,
+        productName: item.productName,
+        productPrice: item.productPrice,
+        qty: item.qty,
+        amount: item.amount,
+      })),
+      customer: state.customer,
+      saleType: state.saleType,
+      recallId: state.recallId,
+      selected: state.selected,
+    }));
+  } catch {
+    // Keep the POS usable if browser storage is unavailable or full.
+  }
+};
+
+export const restoreCartDraft = () => {
+  const storageKey = getCartDraftKey();
+
+  if (!storageKey) {
+    return false;
+  }
+
+  let draft;
+
+  try {
+    const savedDraft = sessionStorage.getItem(storageKey);
+
+    if (!savedDraft) {
+      return false;
+    }
+
+    draft = JSON.parse(savedDraft);
+  } catch {
+    removeCartDraft(storageKey);
+    return false;
+  }
+
+  if (!draft || typeof draft != "object"
+    || Number(draft.shiftId) != Number(state.shift.shift_id) || !Array.isArray(draft.details)) {
+    removeCartDraft(storageKey);
+    return false;
+  }
+
+  const details = draft.details.map((item) => {
+    if (!item || typeof item != "object") {
+      return null;
+    }
+
+    const productId = Number(item.productId);
+    const productPrice = Number(item.productPrice);
+    const qty = Number(item.qty);
+
+    if (!Number.isInteger(productId) || productId < 1
+      || !Number.isFinite(productPrice) || productPrice < 0
+      || !Number.isInteger(qty) || qty < 1) {
+      return null;
+    }
+
+    const price = Math.round(productPrice * 100) / 100;
+
+    return {
+      productId: productId,
+      productName: String(item.productName || `Product ${productId}`),
+      productPrice: price,
+      qty: qty,
+      amount: Math.round(price * qty * 100) / 100,
+    };
+  }).filter(Boolean);
+
+  if (details.length == 0) {
+    removeCartDraft(storageKey);
+    return false;
+  }
+
+  state.details = details;
+  state.customer = draft.customer && Number.isInteger(Number(draft.customer.customerId))
+    && Number(draft.customer.customerId) > 0
+    ? {
+      customerId: Number(draft.customer.customerId),
+      customerName: String(draft.customer.customerName || ""),
+    }
+    : null;
+  state.saleType = ["AR", "WALK_IN"].includes(draft.saleType) ? draft.saleType : null;
+  state.recallId = Number.isInteger(Number(draft.recallId)) && Number(draft.recallId) > 0
+    ? Number(draft.recallId)
+    : null;
+  state.selected = Number.isInteger(Number(draft.selected))
+    ? Math.min(Math.max(Number(draft.selected), 0), details.length - 1)
+    : details.length - 1;
+
+  return true;
 };
 
 export const displaySuggestions = () => {
@@ -40,25 +164,46 @@ export const displaySuggestions = () => {
   box.innerHTML = state.suggestions
     .map(
       (product, i) => `
-        <div class="suggest-item ${i == state.suggestIndex ? "active" : ""}">
+        <button type="button" class="suggest-item ${i == state.suggestIndex ? "active" : ""}"
+          data-product-index="${i}" aria-label="Select ${escapeHtml(product.product_name)}">
           <span>${escapeHtml(product.product_name)}</span>
           <span>${formatCurrency(parseFloat(product.unit_price))}</span>
-        </div>
+        </button>
       `,
     )
     .join("");
 };
 
 export const onEntryInput = () => {
+  state.pendingProduct = null;
+  document.getElementById("entry-qty").value = "1";
+  const wasEditingQuantity = state.editingQtyIndex >= 0;
+  state.editingQtyIndex = -1;
+
+  if (wasEditingQuantity) {
+    displayCart();
+  }
+
   state.suggestIndex = 0;
   showStatus("");
   displaySuggestions();
 };
 
 export const clearEntry = () => {
+  state.pendingProduct = null;
+  document.getElementById("entry-qty").value = "1";
+  const wasEditingQuantity = state.editingQtyIndex >= 0;
+  state.editingQtyIndex = -1;
+
+  if (wasEditingQuantity) {
+    displayCart();
+  }
+
   entry().value = "";
   state.suggestIndex = 0;
+  showStatus("");
   displaySuggestions();
+  entry().focus();
 };
 
 export const moveSuggestion = (step) => {
@@ -90,10 +235,13 @@ export const displayCart = () => {
   tbody.innerHTML = state.details
     .map(
       (item, i) => `
-        <tr class="${i == state.selected ? "selected" : ""}">
+        <tr class="${i == state.selected ? "selected" : ""}" data-cart-index="${i}">
           <td>${escapeHtml(item.productName)}</td>
           <td class="text-end">${formatCurrency(item.productPrice)}</td>
-          <td class="text-end">${formatNumber(item.qty, 0)}</td>
+          <td class="text-end">${i == state.editingQtyIndex
+            ? `<input id="cart-qty-input" type="number" min="1" step="1" value="${item.qty}"
+                class="cart-qty-input" aria-label="Adjust quantity for ${escapeHtml(item.productName)}">`
+            : formatNumber(item.qty, 0)}</td>
           <td class="text-end">${formatCurrency(item.amount)}</td>
         </tr>
       `,
@@ -108,6 +256,41 @@ export const displayCart = () => {
 
   document.getElementById("total").innerText = formatCurrency(getTotalSales());
   document.getElementById("count").innerText = formatNumber(getTotalQty(), 0);
+  saveCartDraft();
+
+  const quantityInput = document.getElementById("cart-qty-input");
+
+  if (quantityInput) {
+    quantityInput.addEventListener("keydown", (event) => {
+      if (event.key == "Enter") {
+        event.preventDefault();
+        event.stopPropagation();
+        saveEditedQuantity(quantityInput.value);
+      } else if (event.key == "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        state.editingQtyIndex = -1;
+        displayCart();
+        entry().focus();
+      }
+    });
+  }
+};
+
+export const initializeProductSuggestionSelection = () => {
+  const suggestionBox = document.getElementById("suggest");
+
+  if (!suggestionBox.dataset.productSelectionBound) {
+    suggestionBox.dataset.productSelectionBound = "true";
+    suggestionBox.addEventListener("click", (event) => {
+      const suggestion = event.target.closest("[data-product-index]");
+      const product = suggestion ? state.suggestions[Number(suggestion.dataset.productIndex)] : null;
+
+      if (product) {
+        selectProductForQuantity(product);
+      }
+    });
+  }
 };
 
 export const displayCustomer = () => {
@@ -143,41 +326,26 @@ export const addToCart = (product, qty) => {
 };
 
 const addProduct = (product, qty) => {
+  state.editingQtyIndex = -1;
   addToCart(product, qty);
+  state.pendingProduct = null;
+  document.getElementById("entry-qty").value = "1";
   entry().value = "";
   state.suggestIndex = 0;
+  state.suggestions = [];
   showStatus("");
   displaySuggestions();
   entry().focus();
 };
 
-const openQuantityDialog = (product) => {
-  openDialog(
-    "Enter quantity",
-    `<p class="dialog-text">${escapeHtml(product.product_name)} - ${formatCurrency(parseFloat(product.unit_price))}</p>
-     <label class="dialog-label" for="dialog-input">Quantity</label>
-     <input id="dialog-input" type="number" min="1" step="1" value="1" class="pos-input" autocomplete="off">`,
-    "Enter = add product \u00b7 Esc = cancel",
-    (e) => {
-      if (e.key == "Escape") {
-        e.preventDefault();
-        closeDialog();
-      } else if (e.key == "Enter") {
-        e.preventDefault();
-        const qty = Number(document.getElementById("dialog-input").value);
+const selectProductForQuantity = (product) => {
+  state.pendingProduct = product;
+  state.suggestions = [];
+  document.getElementById("suggest").innerHTML = "";
+  document.getElementById("entry-qty").value = "1";
+  showStatus(`${product.product_name} selected. Enter a quantity.`);
 
-        if (!Number.isInteger(qty) || qty < 1) {
-          document.getElementById("dialog-input").focus();
-          return;
-        }
-
-        closeDialog();
-        addProduct(product, qty);
-      }
-    },
-  );
-
-  const quantityInput = document.getElementById("dialog-input");
+  const quantityInput = document.getElementById("entry-qty");
   quantityInput.focus();
   quantityInput.select();
 };
@@ -204,7 +372,30 @@ export const addEntry = () => {
     return;
   }
 
-  openQuantityDialog(product);
+  selectProductForQuantity(product);
+};
+
+export const submitEntryQuantity = () => {
+  if (!state.pendingProduct) {
+    if (entry().value.trim() != "") {
+      addEntry();
+    } else {
+      entry().focus();
+    }
+    return;
+  }
+
+  const quantityInput = document.getElementById("entry-qty");
+  const qty = Number(quantityInput.value);
+
+  if (!Number.isInteger(qty) || qty < 1) {
+    showStatus("Enter a whole quantity of 1 or more.");
+    quantityInput.focus();
+    quantityInput.select();
+    return;
+  }
+
+  addProduct(state.pendingProduct, qty);
 };
 
 export const moveSelected = (step) => {
@@ -212,6 +403,7 @@ export const moveSelected = (step) => {
     return;
   }
 
+  state.editingQtyIndex = -1;
   state.selected = Math.min(Math.max(state.selected + step, 0), state.details.length - 1);
 
   displayCart();
@@ -222,9 +414,24 @@ export const changeQty = (step) => {
     return;
   }
 
+  if (state.editingQtyIndex >= 0) {
+    state.editingQtyIndex = -1;
+    displayCart();
+  }
+
   const item = state.details[state.selected];
 
-  item.qty = Math.max(item.qty + step, 1);
+  if (step < 0) {
+    if (item.qty <= 1) {
+      voidLine();
+      return;
+    }
+
+    requestQuantityReduction(item, item.qty - 1);
+    return;
+  }
+
+  item.qty += step;
   item.amount = item.productPrice * item.qty;
 
   displayCart();
@@ -236,39 +443,112 @@ export const editQty = () => {
     return;
   }
 
+  state.editingQtyIndex = -1;
   const item = state.details[state.selected];
+  state.editingQtyIndex = state.selected;
+  displayCart();
 
-  openDialog(
-    "Adjust quantity",
-    `<p class="dialog-text">${escapeHtml(item.productName)}</p>
-     <label class="dialog-label" for="dialog-input">Quantity</label>
-     <input id="dialog-input" type="number" min="1" step="1" value="${item.qty}" class="pos-input" autocomplete="off">`,
-    "Enter = save quantity \u00b7 Esc = cancel",
-    (e) => {
-      if (e.key == "Escape") {
-        e.preventDefault();
-        closeDialog();
-      } else if (e.key == "Enter") {
-        e.preventDefault();
-        const quantity = Number(document.getElementById("dialog-input").value);
-
-        if (!Number.isInteger(quantity) || quantity < 1) {
-          document.getElementById("dialog-input").focus();
-          return;
-        }
-
-        item.qty = quantity;
-        item.amount = item.productPrice * quantity;
-        document.getElementById("last-item").innerText = `${item.productName}  x${formatNumber(quantity, 0)}`;
-        displayCart();
-        closeDialog();
-      }
-    },
-  );
-
-  const quantityInput = document.getElementById("dialog-input");
+  const quantityInput = document.getElementById("cart-qty-input");
   quantityInput.focus();
   quantityInput.select();
+};
+
+const saveEditedQuantity = (value) => {
+  const quantity = Number(value);
+  const item = state.details[state.editingQtyIndex];
+
+  if (!item) {
+    state.editingQtyIndex = -1;
+    displayCart();
+    return;
+  }
+
+  if (!Number.isInteger(quantity) || quantity < 1) {
+    showStatus("Enter a whole quantity of 1 or more.");
+    const quantityInput = document.getElementById("cart-qty-input");
+    quantityInput.focus();
+    quantityInput.select();
+    return;
+  }
+
+  if (quantity < item.qty) {
+    requestQuantityReduction(item, quantity);
+    return;
+  }
+
+  applyEditedQuantity(item, quantity);
+};
+
+const applyEditedQuantity = (item, quantity) => {
+  const itemIndex = state.details.indexOf(item);
+
+  if (itemIndex < 0) {
+    return;
+  }
+
+  item.qty = quantity;
+  item.amount = item.productPrice * quantity;
+  state.selected = itemIndex;
+  state.editingQtyIndex = -1;
+  document.getElementById("last-item").innerText = `${item.productName}  x${formatNumber(quantity, 0)}`;
+  displayCart();
+  entry().focus();
+};
+
+const requestQuantityReduction = (item, quantity) => {
+  const quantityBefore = item.qty;
+  const quantityReduced = quantityBefore - quantity;
+  const reducedAmount = Math.round(item.productPrice * quantityReduced * 100) / 100;
+  const details = {
+    productId: item.productId,
+    productName: item.productName,
+    productPrice: item.productPrice,
+    qty: quantityReduced,
+    quantityBefore: quantityBefore,
+    quantityAfter: quantity,
+    amount: reducedAmount,
+  };
+
+  state.editingQtyIndex = -1;
+  displayCart();
+
+  openSupervisorApprovalDialog(
+    "Reduce quantity",
+    `Reduce ${escapeHtml(item.productName)} from ${formatNumber(quantityBefore, 0)} to ${formatNumber(quantity, 0)}? Amount reduced: ${formatCurrency(reducedAmount)}.`,
+    async (credentials) => {
+      const formData = new FormData();
+      formData.append("operation", "authorizePosVoid");
+      formData.append("json", JSON.stringify({
+        shiftId: state.shift ? state.shift.shift_id : null,
+        actionType: "QUANTITY_REDUCE",
+        amount: reducedAmount,
+        details: details,
+        supervisorPin: credentials.supervisorPin,
+        reason: credentials.reason,
+      }));
+
+      const response = await axios({
+        url: `${baseAPI}/shift.php`,
+        method: "POST",
+        data: formData,
+      });
+
+      if (response.data == 1) {
+        applyEditedQuantity(item, quantity);
+        return {
+          success: true,
+          afterClose: () => openMessageDialog("Quantity reduced", "The supervisor approved and recorded the quantity reduction."),
+        };
+      }
+
+      return {
+        success: false,
+        message: response.data == 3
+          ? "Supervisor PIN not recognized. Check that the PIN is active and try again."
+          : "The quantity could not be reduced. Confirm the open shift and try again.",
+      };
+    },
+  );
 };
 
 export const voidLine = () => {
@@ -327,6 +607,9 @@ export const resetSale = () => {
   state.saleType = null;
   state.recallId = null;
   state.selected = -1;
+  state.editingQtyIndex = -1;
+  state.pendingProduct = null;
+  document.getElementById("entry-qty").value = "1";
 
   document.getElementById("last-item").innerText = "-";
 
